@@ -125,29 +125,29 @@ export function EditProductModal({ isOpen, onClose, item, onSuccess }: EditProdu
         <div className="px-6 py-2 overflow-y-auto custom-scrollbar flex flex-col gap-5">
           
           {/* Top Section: Image + Name */}
-          <div className="flex gap-4">
+          <div className="flex gap-6 items-start">
             {/* Image Preview / Upload */}
             <div 
-              className="relative group w-[110px] h-[110px] shrink-0 cursor-pointer"
+              className="relative group w-[120px] h-[120px] shrink-0 cursor-pointer pt-[21px]"
               onClick={() => !isUploading && fileInputRef.current?.click()}
             >
-              <div className="w-full h-full rounded-2xl border-2 border-border-main overflow-hidden bg-surface flex items-center justify-center relative">
+              <div className="w-full h-full rounded-2xl border-2 border-border-main overflow-hidden bg-surface flex items-center justify-center relative shadow-sm transition-all group-hover:border-accent group-hover:shadow-md">
                 {formData.imageUrl ? (
                   <img src={formData.imageUrl} alt="Preview" className="w-full h-full object-contain" />
                 ) : (
-                  <Package size={32} className="text-muted-text/30" />
+                  <Package size={36} className="text-muted-text/30" />
                 )}
                 
                 {isUploading && (
-                  <div className="absolute inset-0 bg-black/20 backdrop-blur-[1px] flex items-center justify-center">
+                  <div className="absolute inset-0 bg-black/20 backdrop-blur-[1px] flex items-center justify-center z-10">
                     <Loader2 size={24} className="animate-spin text-white" />
                   </div>
                 )}
               </div>
               
               {!isUploading && (
-                <div className="absolute inset-0 bg-black/40 opacity-0 group-hover:opacity-100 flex flex-col items-center justify-center text-white text-[10px] font-bold rounded-2xl transition-all backdrop-blur-[2px]">
-                  <Upload size={18} className="mb-1" />
+                <div className="absolute top-[21px] left-0 right-0 bottom-0 bg-black/40 opacity-0 group-hover:opacity-100 flex flex-col items-center justify-center text-white text-[10px] font-bold rounded-2xl transition-all backdrop-blur-[2px] z-20">
+                  <Upload size={20} className="mb-1" />
                   CHANGE
                 </div>
               )}
@@ -163,15 +163,17 @@ export function EditProductModal({ isOpen, onClose, item, onSuccess }: EditProdu
 
             {/* Product Name */}
             <div className="flex-1 flex flex-col gap-1.5">
-              <label className="text-[12px] font-black text-primary-text uppercase tracking-wider flex justify-between">
+              <label className="text-[12px] font-bold text-primary-text uppercase tracking-widest flex justify-between items-center pr-1">
                 Product Name
-                <span className="text-[10px] text-muted-text lowercase font-medium">{formData.name.length}/500</span>
+                <span className="text-[10px] text-muted-text lowercase font-medium tracking-normal bg-surface px-2 py-0.5 rounded-full border border-border-main/50">
+                  {formData.name.length}<span className="opacity-40 mx-0.5">/</span>500
+                </span>
               </label>
               <textarea
                 value={formData.name}
                 onChange={e => setFormData({ ...formData, name: e.target.value })}
                 maxLength={500}
-                className="w-full h-[110px] px-3.5 py-3 bg-surface border border-border-main rounded-xl text-[13px] font-medium text-primary-text focus:outline-none focus:ring-2 focus:ring-accent/10 focus:border-secondary-text transition-all resize-none"
+                className="w-full h-[120px] px-4 py-3 bg-surface border border-border-main rounded-2xl text-[13px] font-medium text-primary-text focus:outline-none focus:ring-2 focus:ring-accent/10 focus:border-secondary-text transition-all resize-none shadow-sm placeholder:text-muted-text/50"
                 placeholder="Enter product name..."
               />
             </div>

@@ -161,7 +161,7 @@ export function InfiniteScrollTable<T>({
                   <th className="px-4 py-3.5 w-12 text-center">
                     <div
                       onClick={() => onToggleSelectAll?.(!allSelected)}
-                      className={`w-4 h-4 rounded-[4px] border flex items-center justify-center transition-all cursor-pointer mx-auto ${allSelected ? 'bg-accent border-accent-border' : 'border-accent-border dark:border-white/20 bg-card hover:border-secondary-text'}`}
+                      className={`w-4 h-4 rounded-[4px] border flex items-center justify-center transition-all cursor-pointer mx-auto ${allSelected ? 'bg-accent' : 'border-accent bg-card hover:border-secondary-text'}`}
                     >
                       {allSelected && <Check size={12} className="text-accent-fg" strokeWidth={4} />}
                     </div>
@@ -184,7 +184,7 @@ export function InfiniteScrollTable<T>({
                     <td className="px-4 py-4 w-12 text-center align-top pt-5">
                       <div
                         onClick={() => onToggleSelect?.(keyExtractor(row, index))}
-                        className={`w-4 h-4 rounded-[4px] border flex items-center justify-center transition-all cursor-pointer mx-auto ${selectedKeys.has(keyExtractor(row, index)) ? 'bg-accent border-accent-border' : 'border-accent-border dark:border-white/20 bg-card hover:border-secondary-text'}`}
+                        className={`w-4 h-4 rounded-[4px] border flex items-center justify-center transition-all cursor-pointer mx-auto ${selectedKeys.has(keyExtractor(row, index)) ? 'bg-accent border-accent-border' : 'border-accent bg-card hover:border-secondary-text'}`}
                       >
                         {selectedKeys.has(keyExtractor(row, index)) && <Check size={12} className="text-accent-fg" strokeWidth={4} />}
                       </div>
