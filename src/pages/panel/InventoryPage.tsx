@@ -1,5 +1,5 @@
 import { useState, useCallback, useEffect, useRef } from 'react'
-import { useSearchParams } from 'react-router-dom'
+import { useSearchParams, useNavigate } from 'react-router-dom'
 import { PackagePlus, LayoutGrid, ArrowRightLeft, PackageMinus, RotateCw } from 'lucide-react'
 import { SiteFilter } from '../../components/filters/SiteFilter'
 import { ProductFilter } from '../../components/filters/ProductFilter'
@@ -25,6 +25,7 @@ const LineChartIcon = () => (
 
 export default function InventoryPage() {
   const [searchParams, setSearchParams] = useSearchParams()
+  const navigate = useNavigate()
   
   // States
   const [selectedSites, setSelectedSites] = useState<Site[]>([])
@@ -294,7 +295,16 @@ export default function InventoryPage() {
         />
         
         <div className="flex items-center gap-3 w-full sm:w-auto">
-          <button className="flex-1 sm:flex-none flex items-center justify-center gap-1.5 px-4 py-2 bg-btn-primary hover:opacity-90 text-btn-primary-fg text-[13px] font-semibold rounded-lg border border-border-main/50 transition-all shadow-sm tracking-wide">
+          <button 
+            onClick={() => {
+              const url = new URLSearchParams()
+              if (selectedSites.length > 0) {
+                url.set('site', selectedSites[0].id.toString())
+              }
+              navigate(`/app/panel/inventory/consumption?${url.toString()}`)
+            }}
+            className="flex-1 sm:flex-none flex items-center justify-center gap-1.5 px-4 py-2 bg-btn-primary hover:opacity-90 text-btn-primary-fg text-[13px] font-semibold rounded-lg border border-border-main/50 transition-all shadow-sm tracking-wide"
+          >
             <LineChartIcon />
             Consumption
           </button>

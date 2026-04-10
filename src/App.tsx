@@ -1,16 +1,23 @@
 import './App.css'
+import 'react-loading-skeleton/dist/skeleton.css'
 import { BrowserRouter, Routes, Route } from 'react-router-dom'
 import { Toaster } from 'react-hot-toast'
+import { SkeletonTheme } from 'react-loading-skeleton'
 
 import LandingPage from './pages/LandingPage'
 import InventoryPage from './pages/panel/InventoryPage'
 import AuthGuard from './guards/AuthGuard'
 import AppLayout from './layouts/AppLayout'
+import DailyConsumptionPage from './pages/panel/DailyConsumptionPage'
 
 function App() {
   return (
     <BrowserRouter>
-      <Toaster
+      <SkeletonTheme 
+        baseColor="var(--bg-secondary)" 
+        highlightColor="var(--bg-app)"
+      >
+        <Toaster
         position="bottom-right"
         toastOptions={{
           duration: 4000,
@@ -40,10 +47,12 @@ function App() {
         <Route element={<AuthGuard />}>
           <Route element={<AppLayout />}>
             <Route path="/app/panel/inventory" element={<InventoryPage />} />
+            <Route path="/app/panel/inventory/consumption" element={<DailyConsumptionPage />} />
             {/* Add more protected routes here */}
           </Route>
         </Route>
       </Routes>
+      </SkeletonTheme>
     </BrowserRouter>
   )
 }

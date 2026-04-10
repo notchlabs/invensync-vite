@@ -1,5 +1,5 @@
-import { useState, useEffect } from 'react'
-import { X, Package, Loader2, Minus, Plus, AlertCircle, ShoppingBag, Send } from 'lucide-react'
+import React, { useState, useEffect } from 'react'
+import { X, Package, Loader2, Minus, Plus, AlertCircle, ShoppingBag, Send, Trash2 } from 'lucide-react'
 import { InventoryService } from '../../services/inventoryService'
 import { ConsumptionUnitSelect } from '../common/ConsumptionUnitSelect'
 import { FriendlyDateTimePicker } from '../common/FriendlyDateTimePicker'
@@ -38,6 +38,30 @@ export function ConsumeStockModal({ isOpen, onClose, items, onSuccess }: Consume
     }
   }, [isOpen, items])
 
+  // Validation: Multi-site check
+  const fromSites = Array.from(new Set(currentItems.map(item => item.siteId)))
+  const isMultiSite = fromSites.length > 1
+  const fromSiteName = currentItems.length > 0 ? currentItems[0].site : ''
+
+  const removeProduct = (productId: number, siteId: number) => {
+    setCurrentItems(prev => prev.filter(i => !(i.productId === productId && i.siteId === siteId)))
+  }
+
+  const removeSiteProducts = (siteId: number) => {
+    setCurrentItems(prev => prev.filter(i => i.siteId !== siteId))
+  }
+
+  const groupedItems = currentItems.reduce((acc, item) => {
+    if (!acc[item.siteId]) {
+      acc[item.siteId] = {
+        siteName: item.site,
+        items: []
+      }
+    }
+    acc[item.siteId].items.push(item)
+    return acc
+  }, {} as Record<number, { siteName: string, items: InventoryItem[] }>)
+
   const handleQtyChange = (productId: number, siteId: number, value: string, max: number) => {
     const key = `${productId}-${siteId}`
     const num = parseFloat(value) || 0
@@ -49,12 +73,13 @@ export function ConsumeStockModal({ isOpen, onClose, items, onSuccess }: Consume
   }
 
   const handleConsume = async () => {
+    if (isMultiSite) return
     if (!consumptionUnit) {
       setError('Please select a consumption unit')
       return
     }
 
-    const consumeRecords = items.map(item => ({
+    const consumeRecords = currentItems.map(item => ({
       sourceSiteId: item.siteId,
       sourceSiteName: item.site,
       productId: item.productId,
@@ -72,7 +97,7 @@ export function ConsumeStockModal({ isOpen, onClose, items, onSuccess }: Consume
 
     try {
       const payload = {
-        siteId: items[0].siteId, // Assuming consumption is for the site of the selected items
+        siteId: currentItems[0].siteId, // Assuming consumption is for the site of the selected items
         consumptionUnitId: consumptionUnit.id,
         consumptionDate: consumptionDate,
         records: consumeRecords
@@ -171,14 +196,46 @@ export function ConsumeStockModal({ isOpen, onClose, items, onSuccess }: Consume
                       <Check size={12} className="text-accent-fg" strokeWidth={4} />
                     </div>
                   </th>
-                  <th className="px-6 py-4">Product Name</th>
-                  <th className="px-6 py-4">Site</th>
-                  <th className="px-6 py-4 text-center">Qty to consume</th>
-                  <th className="px-6 py-4 text-right">Available Stock</th>
+                  <th className="px-6 py-4 w-[60%]">Product Name</th>
+                  <th className="px-6 py-4 w-[30%] text-center">Qty to consume</th>
+                  <th className="px-6 py-4 w-[10%] text-right"></th>
                 </tr>
               </thead>
               <tbody className="divide-y divide-border-main/50">
-                {currentItems.map((item) => {
+                {currentItems.length === 0 ? (
+                  <tr>
+                    <td colSpan={5} className="py-20 text-center">
+                      <div className="flex flex-col items-center gap-3 opacity-30">
+                        <Package size={48} />
+                        <span className="text-[14px] font-black uppercase tracking-widest">No Items Selected</span>
+                      </div>
+                    </td>
+                  </tr>
+                ) : (
+                  Object.entries(groupedItems).map(([siteIdStr, group]) => (
+                    <React.Fragment key={`group-${siteIdStr}`}>
+                      {/* Site Header Row */}
+                      <tr>
+                        <td colSpan={5} className={`px-6 py-3 border-b border-border-main ${isMultiSite ? 'bg-rose-500/5 text-rose-500' : 'bg-header/50'}`}>
+                          <div className="flex items-center justify-between">
+                            <div className="flex items-center gap-2 text-[11px] font-black uppercase tracking-widest">
+                              <span className="opacity-60">Consuming from:</span>
+                              <span className={`px-2 py-1 rounded-md border ${isMultiSite ? 'border-rose-500/20 bg-rose-500/10 text-rose-500' : 'border-border-main bg-surface text-primary-text'}`}>{group.siteName}</span>
+                            </div>
+                            {isMultiSite && (
+                              <button 
+                                onClick={() => removeSiteProducts(Number(siteIdStr))}
+                                className="text-[10px] font-black text-rose-500 hover:text-card hover:bg-rose-500 px-3 py-1.5 rounded-lg transition-all flex items-center gap-1.5 uppercase tracking-widest border border-rose-500/20"
+                              >
+                                <Trash2 size={12} />
+                                Remove All
+                              </button>
+                            )}
+                          </div>
+                        </td>
+                      </tr>
+                      {/* Products for this site */}
+                      {group.items.map((item) => {
                   const key = `${item.productId}-${item.siteId}`
                   const currentQty = records[key] || 0
                   
@@ -205,47 +262,48 @@ export function ConsumeStockModal({ isOpen, onClose, items, onSuccess }: Consume
                         </div>
                       </td>
                       <td className="px-6 py-4 align-middle">
-                        <div className="text-[13px] font-medium text-secondary-text">
-                          {item.site}
-                        </div>
-                      </td>
-                      <td className="px-6 py-4 align-middle">
-                        <div className="flex items-center justify-center overflow-hidden h-[42px] max-w-[120px] mx-auto border border-border-main rounded-xl bg-card shadow-sm focus-within:ring-2 focus-within:ring-accent/10 transition-all">
-                          <button 
-                            onClick={() => handleQtyChange(item.productId, item.siteId, String(Math.max(0, currentQty - 1)), item.quantity)}
-                            className="w-10 h-full flex items-center justify-center hover:bg-surface text-muted-text hover:text-primary-text"
-                          >
-                            <Minus size={14} />
-                          </button>
-                          <input
-                            type="number"
-                            step="0.01"
-                            value={currentQty === 0 ? '' : currentQty}
-                            onChange={(e) => handleQtyChange(item.productId, item.siteId, e.target.value, item.quantity)}
-                            className="w-16 h-full text-center text-[14px] font-black text-primary-text bg-transparent outline-none [appearance:textfield] [&::-webkit-outer-spin-button]:appearance-none [&::-webkit-inner-spin-button]:appearance-none"
-                            placeholder="0"
-                          />
-                          <button 
-                            onClick={() => handleQtyChange(item.productId, item.siteId, String(Math.min(item.quantity, currentQty + 1)), item.quantity)}
-                            className="w-10 h-full flex items-center justify-center hover:bg-surface text-muted-text hover:text-primary-text"
-                          >
-                            <Plus size={14} />
-                          </button>
-                        </div>
-                      </td>
-                      <td className="px-6 py-4 text-right align-middle">
-                        <div className="flex flex-col items-end">
-                          <span className="text-[14px] font-black text-emerald-600 tracking-tight">
-                            {item.quantity.toLocaleString()}
-                          </span>
-                          <span className="text-[10px] font-black text-emerald-500  tracking-widest bg-emerald-500/10 px-1.5 rounded mt-1">
-                            {item.unit}
+                        <div className="flex items-center justify-center gap-3 mx-auto">
+                          <div className="flex items-center overflow-hidden h-[42px] max-w-[120px] border border-border-main rounded-xl bg-card shadow-sm focus-within:ring-2 focus-within:ring-accent/10 transition-all shrink-0">
+                            <button 
+                              onClick={() => handleQtyChange(item.productId, item.siteId, String(Math.max(0, currentQty - 1)), item.quantity)}
+                              className="w-10 h-full flex items-center justify-center hover:bg-surface text-muted-text hover:text-primary-text"
+                            >
+                              <Minus size={14} />
+                            </button>
+                            <input
+                              type="number"
+                              step="0.01"
+                              value={currentQty === 0 ? '' : currentQty}
+                              onChange={(e) => handleQtyChange(item.productId, item.siteId, e.target.value, item.quantity)}
+                              className="w-16 h-full text-center text-[14px] font-black text-primary-text bg-transparent outline-none [appearance:textfield] [&::-webkit-outer-spin-button]:appearance-none [&::-webkit-inner-spin-button]:appearance-none"
+                              placeholder="0"
+                            />
+                            <button 
+                              onClick={() => handleQtyChange(item.productId, item.siteId, String(Math.min(item.quantity, currentQty + 1)), item.quantity)}
+                              className="w-10 h-full flex items-center justify-center hover:bg-surface text-muted-text hover:text-primary-text"
+                            >
+                              <Plus size={14} />
+                            </button>
+                          </div>
+                          <span className="text-[11px] text-muted-text font-black tracking-widest whitespace-nowrap">
+                            / {item.quantity} {item.unit}
                           </span>
                         </div>
+                      </td>
+                      <td className="px-6 py-4 pr-8 text-right align-middle">
+                        <button 
+                          onClick={() => removeProduct(item.productId, item.siteId)}
+                          className="p-2 text-muted-text/40 hover:text-red-500 hover:bg-red-50 rounded-lg transition-all"
+                        >
+                          <Trash2 size={16} />
+                        </button>
                       </td>
                     </tr>
                   )
                 })}
+                    </React.Fragment>
+                  ))
+                )}
               </tbody>
             </table>
           )}
@@ -253,49 +311,63 @@ export function ConsumeStockModal({ isOpen, onClose, items, onSuccess }: Consume
 
         {/* Condensed Footer */}
         {!isAllConsumed && (
-          <div className="p-4 bg-header border-t border-border-main flex flex-col gap-4 sm:gap-3">
-            <div className="flex flex-col sm:flex-row sm:items-center gap-4">
-              {/* Left: Consumption Logic */}
-              <div className="w-full sm:flex-1 min-w-0">
-                <ConsumptionUnitSelect
-                  siteId={items[0]?.siteId}
-                  value={consumptionUnit}
-                  onChange={setConsumptionUnit}
-                  error={error?.includes('consumption unit')}
-                  openUpwards={true}
-                />
+          <div className="p-4 bg-header border-t border-border-main">
+            {isMultiSite ? (
+              <div className="flex items-center gap-4 text-rose-500 bg-rose-500/5 p-4 rounded-xl border border-rose-500/20 animate-[fadeInUp_0.3s_ease-out]">
+                <div className="w-10 h-10 rounded-full bg-rose-500/10 flex items-center justify-center shrink-0">
+                  <AlertCircle size={20} />
+                </div>
+                <div className="flex flex-col gap-1">
+                  <h4 className="text-[14px] font-black uppercase tracking-widest leading-none">Multiple Sites Detected</h4>
+                  <p className="text-[12px] opacity-80 font-medium">Consumption is only possible within a single site. Please ensure all selected items are from the same location before proceeding.</p>
+                </div>
               </div>
-              
-              {/* Center: Date Picker */}
-              <div className="w-full sm:w-[300px]">
-                <FriendlyDateTimePicker
-                  value={consumptionDate}
-                  onChange={setConsumptionDate}
-                />
-              </div>
+            ) : (
+              <div className="flex flex-col gap-4 sm:gap-3">
+                <div className="flex flex-col sm:flex-row sm:items-center gap-4">
+                  {/* Left: Consumption Logic */}
+                  <div className="w-full sm:flex-1 min-w-0">
+                    <ConsumptionUnitSelect
+                      siteId={currentItems[0]?.siteId}
+                      value={consumptionUnit}
+                      onChange={setConsumptionUnit}
+                      error={error?.includes('consumption unit')}
+                      openUpwards={true}
+                    />
+                  </div>
+                  
+                  {/* Center: Date Picker */}
+                  <div className="w-full sm:w-[300px]">
+                    <FriendlyDateTimePicker
+                      value={consumptionDate}
+                      onChange={setConsumptionDate}
+                    />
+                  </div>
 
-              {/* Right: Submit Button */}
-              <button
-                onClick={handleConsume}
-                disabled={isLoading}
-                className="w-full sm:w-auto min-w-[210px] px-8 h-[48px] bg-primary-text text-card text-[10px] font-black rounded-xl hover:scale-[1.01] active:scale-[0.99] transition-all flex items-center justify-center gap-2.5 shadow-md disabled:opacity-50 disabled:scale-100  tracking-widest shrink-0 cursor-pointer"
-              >
-                {isLoading ? (
-                  <Loader2 size={18} className="animate-spin" />
-                ) : (
-                  <>
-                    <Send size={14} />
-                    Consume Stock
-                  </>
+                  {/* Right: Submit Button */}
+                  <button
+                    onClick={handleConsume}
+                    disabled={isLoading || currentItems.length === 0}
+                    className="w-full sm:w-auto min-w-[210px] px-8 h-[48px] bg-primary-text text-card text-[10px] font-black rounded-xl hover:scale-[1.01] active:scale-[0.99] transition-all flex items-center justify-center gap-2.5 shadow-md disabled:opacity-50 disabled:scale-100  tracking-widest shrink-0 cursor-pointer"
+                  >
+                    {isLoading ? (
+                      <Loader2 size={18} className="animate-spin" />
+                    ) : (
+                      <>
+                        <Send size={14} />
+                        Consume Stock
+                      </>
+                    )}
+                  </button>
+                </div>
+
+                {/* Error Message Row */}
+                {error && (
+                  <div className="flex items-center gap-2 text-red-500 text-[12px] font-bold bg-red-500/10 p-3 rounded-xl border border-red-500/20 max-w-fit animate-[fadeIn_0.2s_ease-out]">
+                    <AlertCircle size={14} />
+                    {error}
+                  </div>
                 )}
-              </button>
-            </div>
-
-            {/* Error Message Row */}
-            {error && (
-              <div className="flex items-center gap-2 text-red-500 text-[12px] font-bold bg-red-500/10 p-3 rounded-xl border border-red-500/20 max-w-fit animate-[fadeIn_0.2s_ease-out]">
-                <AlertCircle size={14} />
-                {error}
               </div>
             )}
           </div>

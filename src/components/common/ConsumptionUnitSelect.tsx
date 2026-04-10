@@ -13,43 +13,57 @@ interface ConsumptionUnitSelectProps {
   siteId: number
   value: ConsumptionUnit | null
   onChange: (unit: ConsumptionUnit | null) => void
+  initialCuId?: number | null
   label?: string
   className?: string
   error?: boolean
   openUpwards?: boolean
 }
 
-export function ConsumptionUnitSelect({ siteId, value, onChange, label, className = '', error, openUpwards }: ConsumptionUnitSelectProps) {
+export function ConsumptionUnitSelect({ 
+  siteId, 
+  value, 
+  onChange, 
+  initialCuId = null,
+  label, 
+  className = '', 
+  error, 
+  openUpwards 
+}: ConsumptionUnitSelectProps) {
   const hasLoadedRecentFor = useRef<number | null>(null)
 
   useEffect(() => {
-    const loadRecent = async () => {
+    const handleInitialSelection = async () => {
       // Only auto-load if we have a siteId and haven't loaded for this site yet
       if (!siteId || hasLoadedRecentFor.current === siteId || value) return
       
       try {
-        const recentRes = await InventoryService.fetchRecentConsumptionId(siteId)
-        const recentId = recentRes.data
+        let targetId = initialCuId
 
-        if (recentId) {
+        if (!targetId) {
+          const recentRes = await InventoryService.fetchRecentConsumptionId(siteId)
+          targetId = recentRes.data
+        }
+
+        if (targetId) {
           // Fetch all units to find the matching one to auto-select
           const unitsRes = await InventoryService.fetchConsumptionUnits(siteId)
           const units = unitsRes.data?.content || []
-          const found = units.find((u: ConsumptionUnit) => u.id === recentId)
+          const found = units.find((u: ConsumptionUnit) => u.id === Number(targetId))
           if (found) {
             onChange(found)
           }
         }
       } catch (err) {
-        console.error('Failed to fetch recent consumption:', err)
+        console.error('Failed to resolve consumption unit:', err)
       } finally {
         // Mark as loaded even on error to prevent infinite loops
         hasLoadedRecentFor.current = siteId
       }
     }
 
-    loadRecent()
-  }, [siteId, onChange, value])
+    handleInitialSelection()
+  }, [siteId, onChange, value, initialCuId])
 
   return (
     <div className={`flex flex-col gap-1.5 ${className}`}>

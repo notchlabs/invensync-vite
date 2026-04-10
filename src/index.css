@@ -9,17 +9,18 @@
   --color-header: var(--bg-header);
   --color-card: var(--bg-card);
   --color-surface: var(--bg-surface);
-  
+  --color-secondary: var(--bg-secondary);
+
   --color-primary-text: var(--text-primary);
   --color-secondary-text: var(--text-secondary);
   --color-muted-text: var(--text-muted);
-  
+
   --color-border-main: var(--border-main);
-  
+
   --color-accent: var(--accent-primary);
   --color-accent-fg: var(--accent-foreground);
   --color-accent-border: var(--accent-border);
-  
+
   --color-btn-primary: var(--btn-primary-bg);
   --color-btn-primary-fg: var(--btn-primary-text);
 
@@ -38,17 +39,18 @@
   --bg-header: #f4f4f5;
   --bg-card: #ffffff;
   --bg-surface: #f9fafb;
+  --bg-secondary: rgba(0, 0, 0, 0.03);
   --text-primary: #000000;
   --text-secondary: #737373;
   --text-muted: #a3a3a3;
   --border-main: #e5e5e5;
-  
+
   --table-head-bg: #f9f9fb;
 
   /* Accent: Used for checkboxes ONLY in light mode (Soft gray - anything but dark) */
   --accent-primary: #e4e4e7;
   --accent-foreground: #18181b;
-  --accent-border: #d4d4d8; 
+  --accent-border: #d4d4d8;
 
   /* Selection Bar: Light even in light mode (anything but dark) */
   --selection-bg: #ffffff;
@@ -57,7 +59,7 @@
   /* Button Primary: White in light */
   --btn-primary-bg: #ffffff;
   --btn-primary-text: #18181b;
-  
+
   --shadow-sm: 0 1px 2px 0 rgba(0, 0, 0, 0.05);
   --shadow-md: 0 4px 6px -1px rgba(0, 0, 0, 0.1), 0 2px 4px -1px rgba(0, 0, 0, 0.06);
 }
@@ -68,21 +70,23 @@
   --bg-header: #18181b;
   --bg-card: #18181b;
   --bg-surface: #1e1e21;
+  --bg-secondary: rgba(255, 255, 255, 0.05);
   --text-primary: #fafafa;
   --text-secondary: #a1a1aa;
   --text-muted: #52525b;
   --border-main: #27272a;
-  
+
   --table-head-bg: #121214;
-  
-  --accent-primary: #3f3f46; /* Deeper Gray (Zinc 600) */
+
+  --accent-primary: #3f3f46;
+  /* Deeper Gray (Zinc 600) */
   --accent-foreground: #fafafa;
   --accent-border: #3f3f46;
-  
+
   /* Selection Bar in Dark: Now matching accent for a cohesive deeper look */
   --selection-bg: #3f3f46;
   --selection-text: #fafafa;
-  
+
   /* Buttons in dark mode: Deep charcoal */
   --btn-primary-bg: #1e1e21;
   --btn-primary-text: #fafafa;
@@ -92,7 +96,9 @@
 }
 
 /* Base */
-html { scroll-behavior: smooth; }
+html {
+  scroll-behavior: smooth;
+}
 
 body {
   font-family: var(--font-body);
@@ -109,24 +115,63 @@ body {
   text-align: left;
 }
 
-h1, h2, h3, h4, h5, h6 {
+h1,
+h2,
+h3,
+h4,
+h5,
+h6 {
   font-family: var(--font-display);
 }
 
-::-webkit-scrollbar { width: 6px; }
-::-webkit-scrollbar-track { background: var(--bg-app); transition: background-color 0.3s ease; }
-::-webkit-scrollbar-thumb { background: var(--border-main); border-radius: 3px; transition: background-color 0.3s ease; }
+::-webkit-scrollbar {
+  width: 6px;
+}
+
+::-webkit-scrollbar-track {
+  background: var(--bg-app);
+  transition: background-color 0.3s ease;
+}
+
+::-webkit-scrollbar-thumb {
+  background: var(--border-main);
+  border-radius: 3px;
+  transition: background-color 0.3s ease;
+}
 
 /* Keyframes */
 @keyframes fadeInUp {
-  from { opacity: 0; transform: translateY(20px); }
-  to { opacity: 1; transform: translateY(0); }
+  from {
+    opacity: 0;
+    transform: translateY(20px);
+  }
+
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
 }
+
 @keyframes fadeInDown {
-  from { opacity: 0; transform: translateY(-12px); }
-  to { opacity: 1; transform: translateY(0); }
+  from {
+    opacity: 0;
+    transform: translateY(-12px);
+  }
+
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
 }
+
 @keyframes pulse-dot {
-  0%, 100% { box-shadow: 0 0 0 0 rgba(0,0,0,0.1); }
-  50% { box-shadow: 0 0 0 5px rgba(0,0,0,0); }
+
+  0%,
+  100% {
+    box-shadow: 0 0 0 0 rgba(0, 0, 0, 0.1);
+  }
+
+  50% {
+    box-shadow: 0 0 0 5px rgba(0, 0, 0, 0);
+  }
 }
