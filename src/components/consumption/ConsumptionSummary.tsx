@@ -1,4 +1,4 @@
-import React from 'react';
+
 import { ReportCard } from './ReportCard';
 import type { Shift } from '../../services/consumptionService';
 

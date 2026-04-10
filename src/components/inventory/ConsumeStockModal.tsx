@@ -41,7 +41,6 @@ export function ConsumeStockModal({ isOpen, onClose, items, onSuccess }: Consume
   // Validation: Multi-site check
   const fromSites = Array.from(new Set(currentItems.map(item => item.siteId)))
   const isMultiSite = fromSites.length > 1
-  const fromSiteName = currentItems.length > 0 ? currentItems[0].site : ''
 
   const removeProduct = (productId: number, siteId: number) => {
     setCurrentItems(prev => prev.filter(i => !(i.productId === productId && i.siteId === siteId)))
