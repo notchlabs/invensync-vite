@@ -191,35 +191,51 @@ export default function DailyConsumptionPage() {
   };
 
   const getDayReportAggregations = () => {
-    let wbcSale = 0;
-    let wStoreSale = 0;
-    let totalSale = 0;
-    let billedMop = 0;
-    let nonBilled = 0;
-    let upiTotal = 0;
-    let cashTotal = 0;
-    let loyaltyTotal = 0;
+    const aggr = {
+      wbcSale: 0,
+      wStoreSale: 0,
+      totalSale: 0,
+      billedMop: 0,
+      nonBilled: 0,
+      upiTotal: 0,
+      cashTotal: 0,
+      loyaltyTotal: 0,
+    };
 
-    items.forEach(item => {
-      const vNames = item.vendorNames?.toLowerCase() || '';
-      if (vNames.includes('wild bean cafe')) {
-        wbcSale += item.amountIncTax;
-      } else {
-        wStoreSale += item.amountIncTax;
-      }
-      
-      totalSale += item.amountIncTax;
-      
-      const itemBilled = item.cash + item.upi + item.loyalty;
-      billedMop += itemBilled;
-      nonBilled += item.noBill;
-      
-      upiTotal += item.upi;
-      cashTotal += item.cash;
-      loyaltyTotal += item.loyalty;
+    // 1. Sum up all finalized shifts returned by the API
+    shifts.forEach(shift => {
+      aggr.wbcSale += shift.wbcSale || 0;
+      aggr.wStoreSale += shift.wstoreSale || 0;
+      aggr.totalSale += shift.totalSale || 0;
+      aggr.billedMop += shift.billedAmount || 0;
+      aggr.nonBilled += shift.nonBilledAmount || 0;
+      aggr.upiTotal += shift.upiAndCardAmount || 0;
+      aggr.cashTotal += shift.cashAmount || 0;
+      aggr.loyaltyTotal += shift.loyalty || 0;
     });
 
-    return { wbcSale, wStoreSale, totalSale, billedMop, nonBilled, upiTotal, cashTotal, loyaltyTotal };
+    // 2. If the current viewing unit is not finalized yet, its data is only in 'items'
+    // We add it to the aggregation to show a real-time "Day Projection"
+    const isCurrentCuFinalized = shifts.some(s => s.consumptionUnitId === selectedCu?.id);
+    
+    if (!isCurrentCuFinalized && items.length > 0) {
+      items.forEach(item => {
+        const vNames = item.vendorNames?.toLowerCase() || '';
+        if (vNames.includes('wild bean')) {
+          aggr.wbcSale += item.amountIncTax;
+        } else {
+          aggr.wStoreSale += item.amountIncTax;
+        }
+        aggr.totalSale += item.amountIncTax;
+        aggr.billedMop += (item.cash + item.upi + item.loyalty);
+        aggr.nonBilled += item.noBill || 0;
+        aggr.upiTotal += item.upi || 0;
+        aggr.cashTotal += item.cash || 0;
+        aggr.loyaltyTotal += item.loyalty || 0;
+      });
+    }
+
+    return aggr;
   };
 
   const handleSave = async (concludeShift: boolean) => {

@@ -31,7 +31,7 @@ export const ConsumedItemsList = ({
   const [isExpanded, setIsExpanded] = useState(true);
 
   return (
-    <div className="bg-card border border-border-main rounded-xl shadow-sm overflow-hidden mt-4">
+    <div className="bg-card border border-border-main rounded-xl shadow-sm overflow-hidden">
       {/* Header */}
       <button 
         onClick={() => setIsExpanded(!isExpanded)}
@@ -68,29 +68,43 @@ export const ConsumedItemsList = ({
                     transition={{ duration: 0.2 }}
                   >
                     {Array.from({ length: 5 }).map((_, idx) => (
-                      <div key={idx} className="flex flex-col lg:flex-row items-center gap-4 lg:gap-6 p-4">
-                        <div className="flex items-center gap-4 flex-1 w-full lg:w-auto">
-                          <Skeleton width={32} height={32} borderRadius={8} />
-                          <Skeleton width={40} height={40} borderRadius={6} />
-                          <div className="flex flex-col flex-1 gap-1">
-                            <Skeleton width="60%" height={16} />
-                            <Skeleton width="40%" height={12} />
-                            <Skeleton width="30%" height={10} />
+                      <div key={idx} className="flex flex-col lg:grid lg:grid-cols-[100px_1fr_120px_420px] lg:items-center gap-4 lg:gap-6 p-4 border-b border-border-main/50 last:border-0">
+                        {/* Mobile Skeleton Top Row */}
+                        <div className="flex lg:hidden items-start justify-between w-full">
+                          <Skeleton width={80} height={80} borderRadius={12} />
+                          <Skeleton width={40} height={40} borderRadius={12} />
+                        </div>
+
+                        {/* Column 1: Desktop Skeleton Left */}
+                        <div className="hidden lg:flex items-center gap-4">
+                          <div className="w-8 flex justify-center">
+                            <Skeleton width={16} height={16} />
+                          </div>
+                          <div className="w-10 h-10 flex-shrink-0">
+                            <Skeleton width={40} height={40} borderRadius={6} />
                           </div>
                         </div>
-                        <div className="flex items-center gap-4 lg:gap-6 w-full lg:w-auto">
-                          <div className="flex flex-col gap-1 items-end min-w-[70px]">
-                            <Skeleton width={50} height={12} />
-                            <Skeleton width={70} height={20} borderRadius={20} />
-                          </div>
-                          <div className="flex items-start gap-3">
-                            {[1, 2, 3, 4].map(i => (
-                              <div key={i} className="flex flex-col gap-1.5 w-[80px]">
-                                <Skeleton width={30} height={10} />
-                                <Skeleton width="100%" height={32} borderRadius={6} />
-                              </div>
-                            ))}
-                          </div>
+
+                        {/* Column 2: Details */}
+                        <div className="flex flex-col flex-1 pl-0 lg:pl-1 gap-1.5 overflow-hidden">
+                          <Skeleton width="60%" height={16} />
+                          <Skeleton width="40%" height={12} />
+                        </div>
+
+                        {/* Column 3: Stats */}
+                        <div className="flex items-center gap-3 lg:flex-col lg:items-end lg:gap-1 min-w-[70px]">
+                          <Skeleton width={50} height={14} />
+                          <Skeleton width={80} height={24} borderRadius={20} />
+                        </div>
+
+                        {/* Column 4: Inputs */}
+                        <div className="grid grid-cols-4 gap-2.5 lg:gap-3 w-full">
+                          {[1, 2, 3, 4].map(i => (
+                            <div key={i} className="flex flex-col gap-1.5 flex-1">
+                              <Skeleton width={30} height={10} />
+                              <Skeleton width="100%" height={40} borderRadius={12} className="lg:!h-8 lg:!rounded-md" />
+                            </div>
+                          ))}
                         </div>
                       </div>
                     ))}

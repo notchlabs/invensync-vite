@@ -22,19 +22,19 @@ export const ConsumptionFilters = ({
   initialCuId,
 }: ConsumptionFiltersProps) => {
   return (
-    <div className="bg-card border border-border-main p-4 rounded-xl shadow-sm flex flex-col sm:flex-row gap-4 items-start sm:items-center">
-      <div className="relative flex-1 min-w-0">
+    <div className="bg-card border border-border-main p-4 rounded-xl shadow-sm flex flex-col sm:flex-row gap-4 items-stretch sm:items-center">
+      <div className="relative flex-1 min-w-0 w-full sm:w-auto">
         <input 
           type="date"
           value={selectedDate}
           onChange={(e) => setSelectedDate(e.target.value)}
-          className="w-full h-10 p-5 bg-surface border border-border-main rounded-lg text-[14px] text-primary-text outline-none focus:ring-2 focus:ring-btn-primary/20 appearance-none"
+          className="w-full h-10 px-4 bg-surface border border-border-main rounded-lg text-[14px] text-primary-text outline-none focus:ring-2 focus:ring-btn-primary/20 appearance-none"
         />
       </div>
       <SiteFilterSingle 
         value={selectedSite} 
         onChange={setSelectedSite} 
-        className="flex-1 min-w-0"
+        className="flex-1 min-w-0 w-full sm:w-auto"
       />
       {selectedSite && (
         <ConsumptionUnitSelect
@@ -42,7 +42,7 @@ export const ConsumptionFilters = ({
           value={selectedCu}
           onChange={setSelectedCu}
           initialCuId={initialCuId}
-          className="flex-1 min-w-0"
+          className="flex-1 min-w-0 w-full sm:w-auto"
         />
       )}
     </div>

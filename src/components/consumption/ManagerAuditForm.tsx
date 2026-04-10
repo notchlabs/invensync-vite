@@ -72,9 +72,11 @@ export const ManagerAuditForm = ({
             />
             <div className="flex items-center justify-between mt-1 text-[12px]">
               <span className="text-muted-text">System Billed: ₹ {dayAggr.billedMop.toFixed(2)}</span>
-              <span className={`font-bold ${Math.abs(mopReading - dayAggr.billedMop) > 0 ? 'text-red-500' : 'text-primary-text'}`}>
-                Difference: ₹ {(mopReading - dayAggr.billedMop).toFixed(2)}
-              </span>
+              {mopReading > 0 && (
+                <span className={`font-bold ${Math.abs(mopReading - dayAggr.billedMop) > 0 ? 'text-red-500' : 'text-primary-text'}`}>
+                  Difference: ₹ {(mopReading - dayAggr.billedMop).toFixed(2)}
+                </span>
+              )}
             </div>
           </div>
         </div>
@@ -99,9 +101,11 @@ export const ManagerAuditForm = ({
             />
             <div className="flex items-center justify-between mt-1 text-[12px]">
               <span className="text-muted-text">System POS Sale: ₹ {dayAggr.upiTotal.toFixed(2)}</span>
-              <span className={`font-bold ${Math.abs(posReading - dayAggr.upiTotal) > 0 ? 'text-red-500' : 'text-primary-text'}`}>
-                Difference: ₹ {(posReading - dayAggr.upiTotal).toFixed(2)}
-              </span>
+              {posReading > 0 && (
+                <span className={`font-bold ${Math.abs(posReading - dayAggr.upiTotal) > 0 ? 'text-red-500' : 'text-primary-text'}`}>
+                  Difference: ₹ {(posReading - dayAggr.upiTotal).toFixed(2)}
+                </span>
+              )}
             </div>
           </div>
         </div>
@@ -123,9 +127,11 @@ export const ManagerAuditForm = ({
             />
             <div className="flex items-center justify-between mt-1 text-[12px]">
               <span className="text-muted-text">System Cash: ₹ {dayAggr.cashTotal.toFixed(2)}</span>
-              <span className={`font-bold ${Math.abs(cashCollected - dayAggr.cashTotal) > 0 ? 'text-red-500' : 'text-primary-text'}`}>
-                Difference: ₹ {(cashCollected - dayAggr.cashTotal).toFixed(2)}
-              </span>
+              {cashCollected > 0 && (
+                <span className={`font-bold ${Math.abs(cashCollected - dayAggr.cashTotal) > 0 ? 'text-red-500' : 'text-primary-text'}`}>
+                  Difference: ₹ {(cashCollected - dayAggr.cashTotal).toFixed(2)}
+                </span>
+              )}
             </div>
           </div>
         </div>
@@ -143,9 +149,11 @@ export const ManagerAuditForm = ({
             />
             <div className="flex items-center justify-between mt-1 text-[12px]">
               <span className="text-muted-text">System UPI/Card: ₹ {dayAggr.upiTotal.toFixed(2)}</span>
-              <span className={`font-bold ${Math.abs(upiCollected - dayAggr.upiTotal) > 0 ? 'text-red-500' : 'text-primary-text'}`}>
-                Difference: ₹ {(upiCollected - dayAggr.upiTotal).toFixed(2)}
-              </span>
+              {upiCollected > 0 && (
+                <span className={`font-bold ${Math.abs(upiCollected - dayAggr.upiTotal) > 0 ? 'text-red-500' : 'text-primary-text'}`}>
+                  Difference: ₹ {(upiCollected - dayAggr.upiTotal).toFixed(2)}
+                </span>
+              )}
             </div>
           </div>
         </div>

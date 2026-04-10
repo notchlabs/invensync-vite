@@ -82,7 +82,7 @@ export function ConsumptionUnitSelect({
         openUpwards={openUpwards}
         renderValue={(item) => (
           <div className="flex flex-col text-left">
-            <span className="text-[13px] font-bold text-primary-text leading-tight">{item.label}</span>
+            <span className="text-[13px] font-bold text-primary-text leading-tight">{item.dsrNo}</span>
             {item.description && (
               <span className="text-[11px] text-muted-text font-medium italic line-clamp-1 mt-0.5">{item.description}</span>
             )}
@@ -90,7 +90,7 @@ export function ConsumptionUnitSelect({
         )}
         renderLabel={(item) => (
           <div className="flex flex-col gap-0.5">
-            <span className="text-[13px] font-bold text-primary-text">{item.label}</span>
+            <span className="text-[13px] font-bold text-primary-text">{item.dsrNo}</span>
             {item.description && (
               <span className="text-[11px] text-muted-text italic line-clamp-1">{item.description}</span>
             )}
