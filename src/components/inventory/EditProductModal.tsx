@@ -2,6 +2,7 @@ import { useState, useEffect, useRef } from 'react'
 import { X, Upload, Package, Edit3, ShieldCheck, Tag, Loader2 } from 'lucide-react'
 import { HsnSelect } from '../common/HsnSelect'
 import { InventoryService } from '../../services/inventoryService'
+import { VALIDATION_LIMITS } from '../../config/validation'
 import type { InventoryItem } from '../../types/inventory'
 
 interface EditProductModalProps {
@@ -163,16 +164,16 @@ export function EditProductModal({ isOpen, onClose, item, onSuccess }: EditProdu
 
             {/* Product Name */}
             <div className="flex-1 flex flex-col gap-1.5">
-              <label className="text-[12px] font-bold text-primary-text uppercase tracking-widest flex justify-between items-center pr-1">
+              <label className="text-[12px] font-bold text-primary-text  tracking-widest flex justify-between items-center pr-1">
                 Product Name
                 <span className="text-[10px] text-muted-text lowercase font-medium tracking-normal bg-surface px-2 py-0.5 rounded-full border border-border-main/50">
-                  {formData.name.length}<span className="opacity-40 mx-0.5">/</span>500
+                  {formData.name.length}<span className="opacity-40 mx-0.5">/</span>{VALIDATION_LIMITS.INVENTORY.PRODUCT_NAME_MAX_LENGTH}
                 </span>
               </label>
               <textarea
                 value={formData.name}
-                onChange={e => setFormData({ ...formData, name: e.target.value })}
-                maxLength={500}
+                onChange={e => setFormData({ ...formData, name: e.target.value.slice(0, VALIDATION_LIMITS.INVENTORY.PRODUCT_NAME_MAX_LENGTH) })}
+                maxLength={VALIDATION_LIMITS.INVENTORY.PRODUCT_NAME_MAX_LENGTH}
                 className="w-full h-[120px] px-4 py-3 bg-surface border border-border-main rounded-2xl text-[13px] font-medium text-primary-text focus:outline-none focus:ring-2 focus:ring-accent/10 focus:border-secondary-text transition-all resize-none shadow-sm placeholder:text-muted-text/50"
                 placeholder="Enter product name..."
               />
@@ -182,22 +183,22 @@ export function EditProductModal({ isOpen, onClose, item, onSuccess }: EditProdu
           <div className="grid grid-cols-2 gap-4">
             {/* Unit */}
             <div className="flex flex-col gap-1.5">
-              <label className="text-[12px] font-black text-primary-text uppercase tracking-wider flex justify-between">
+              <label className="text-[12px] font-black text-primary-text  tracking-wider flex justify-between">
                 Unit
-                <span className="text-[10px] text-muted-text lowercase font-medium">{formData.unit.length}/50</span>
+                <span className="text-[10px] text-muted-text lowercase font-medium">{formData.unit.length}/{VALIDATION_LIMITS.INVENTORY.PRODUCT_UNIT_MAX_LENGTH}</span>
               </label>
               <input
                 type="text"
                 value={formData.unit}
-                onChange={e => setFormData({ ...formData, unit: e.target.value })}
-                maxLength={50}
+                onChange={e => setFormData({ ...formData, unit: e.target.value.slice(0, VALIDATION_LIMITS.INVENTORY.PRODUCT_UNIT_MAX_LENGTH) })}
+                maxLength={VALIDATION_LIMITS.INVENTORY.PRODUCT_UNIT_MAX_LENGTH}
                 className="w-full h-[42px] px-3.5 bg-surface border border-border-main rounded-lg text-[13px] font-medium text-primary-text focus:outline-none focus:ring-2 focus:ring-accent/10 focus:border-secondary-text transition-all"
               />
             </div>
 
             {/* HSN Code Search */}
             <div className="flex flex-col gap-1.5">
-              <label className="text-[12px] font-black text-primary-text uppercase tracking-wider">HSN Code</label>
+              <label className="text-[12px] font-black text-primary-text  tracking-wider">HSN Code</label>
               <HsnSelect
                 value={{ code: formData.hsnCode, name: formData.hsnName }}
                 onChange={hsn => setFormData({
@@ -213,7 +214,7 @@ export function EditProductModal({ isOpen, onClose, item, onSuccess }: EditProdu
 
           {/* HSN Name / Description */}
           <div className="flex flex-col gap-1.5">
-            <label className="text-[12px] font-black text-primary-text uppercase tracking-wider flex items-center justify-between">
+            <label className="text-[12px] font-black text-primary-text  tracking-wider flex items-center justify-between">
               HSN Description
               <span className="text-[10px] px-1.5 py-0.5 bg-accent/10 text-accent rounded opacity-0 group-hover:opacity-100">Auto-filled</span>
             </label>
@@ -231,7 +232,7 @@ export function EditProductModal({ isOpen, onClose, item, onSuccess }: EditProdu
           {/* Tax Rates */}
           <div className="grid grid-cols-2 gap-4 mb-2">
             <div className="flex flex-col gap-1.5">
-              <label className="text-[12px] font-black text-primary-text uppercase tracking-wider">CGST (%)</label>
+              <label className="text-[12px] font-black text-primary-text  tracking-wider">CGST (%)</label>
               <div className="relative">
                 <input
                   type="number"
@@ -243,7 +244,7 @@ export function EditProductModal({ isOpen, onClose, item, onSuccess }: EditProdu
               </div>
             </div>
             <div className="flex flex-col gap-1.5">
-              <label className="text-[12px] font-black text-primary-text uppercase tracking-wider">SGST (%)</label>
+              <label className="text-[12px] font-black text-primary-text  tracking-wider">SGST (%)</label>
               <div className="relative">
                 <input
                   type="number"

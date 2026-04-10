@@ -85,4 +85,39 @@ export class InventoryService {
     formData.append('file', file);
     return ApiService.post('/attachments/upload', formData);
   }
+
+  /**
+   * Fetch consumption units for a specific site
+   */
+  static async fetchConsumptionUnits(siteId: number, searchTerm: string = ''): Promise<ApiResponse<any>> {
+    return ApiService.post('/list/consumption-units?page=0&size=100', { siteId, searchTerm });
+  }
+
+  /**
+   * Fetch the most recent consumption unit ID for a site
+   */
+  static async fetchRecentConsumptionId(siteId: number): Promise<ApiResponse<number>> {
+    return ApiService.get(`/consumption/recent-consumptions?siteId=${siteId}`);
+  }
+
+  /**
+   * Submit stock consumption
+   */
+  static async consumeStock(payload: any): Promise<ApiResponse<any>> {
+    return ApiService.post('/inbound/storage/consume-stock', payload);
+  }
+
+  /**
+   * Search for product suggestions and images in the cache
+   */
+  static async searchProductCache(query: string): Promise<ApiResponse<any>> {
+    return ApiService.get(`/product-cache/search?query=${encodeURIComponent(query)}`);
+  }
+
+  /**
+   * Create a composite product (BOQ)
+   */
+  static async createCompositeProduct(payload: any): Promise<ApiResponse<any>> {
+    return ApiService.post('/product-boq', payload);
+  }
 }

@@ -120,7 +120,7 @@ export function InfiniteScrollTable<T>({
               <div className="w-12 flex items-center justify-center border-r border-selection-bar-fg/10">
                 <button
                   onClick={() => onToggleSelectAll?.(false)}
-                  className="w-5 h-5 rounded border border-selection-bar-fg/20 bg-selection-bar-fg/10 flex items-center justify-center hover:bg-selection-bar-fg/20 transition-colors"
+                  className="w-5 h-5 rounded border border-selection-bar-fg/20 bg-selection-bar-fg/10 flex items-center justify-center hover:bg-selection-bar-fg/20 transition-colors cursor-pointer"
                   title="Deselect All"
                 >
                   <X size={12} className="text-selection-bar-fg" strokeWidth={3} />
@@ -138,7 +138,7 @@ export function InfiniteScrollTable<T>({
                   <button
                     key={idx}
                     onClick={() => action.onClick(selectedKeys)}
-                    className="flex items-center gap-2 text-[13px] font-medium text-selection-bar-fg/90 hover:text-selection-bar-fg transition-colors group shrink-0"
+                    className="flex items-center gap-2 text-[13px] font-medium text-selection-bar-fg/90 hover:text-selection-bar-fg transition-colors group shrink-0 cursor-pointer"
                     title={action.label}
                   >
                     <Icon size={16} className="text-selection-bar-fg/60 group-hover:text-selection-bar-fg" />

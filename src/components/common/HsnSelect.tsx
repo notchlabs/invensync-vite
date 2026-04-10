@@ -16,9 +16,11 @@ interface HsnSelectProps {
   onChange: (data: { code: string; name: string; cgst: number; sgst: number }) => void
   disabled?: boolean
   className?: string
+  alignDropdown?: 'left' | 'right'
+  dropdownWidth?: string
 }
 
-export function HsnSelect({ value, onChange, disabled, className }: HsnSelectProps) {
+export function HsnSelect({ value, onChange, disabled, className, alignDropdown, dropdownWidth }: HsnSelectProps) {
   
   const parseDate = (dateStr: string) => {
     if (!dateStr) return new Date(0)
@@ -54,7 +56,7 @@ export function HsnSelect({ value, onChange, disabled, className }: HsnSelectPro
 
   return (
     <SearchableSingleSelect<HsnResult>
-      placeholder="Search HSN Code..."
+      placeholder="HSN Code..."
       fetchData={async (query) => {
         if (!query || query.length < 2) return []
         const res = await InventoryService.searchHsn(query)
@@ -66,20 +68,18 @@ export function HsnSelect({ value, onChange, disabled, className }: HsnSelectPro
       onChange={handleSelect}
       disabled={disabled}
       className={className}
+      alignDropdown={alignDropdown}
+      dropdownWidth={dropdownWidth}
       renderLabel={(item) => (
-        <div className="flex flex-col gap-0.5">
-          <div className="flex items-center justify-between">
-            <span className="text-[13px] font-bold text-primary-text">{item.hsnCode}</span>
-            <span className="text-[10px] px-1.5 py-0.5 bg-accent/10 text-accent rounded uppercase font-black tracking-widest">HSN</span>
+        <div className="flex flex-col gap-0.5 py-0.5">
+          <div className="text-[12px] sm:text-[13px] font-black text-primary-text  tracking-tight line-clamp-1 leading-snug">
+            {item.taxDetails[0]?.description || item.chapterName || 'No Name Found'}
           </div>
-          <div className="text-[11px] text-muted-text line-clamp-1 italic">
-            {item.taxDetails[0]?.description || item.chapterName || 'No description available'}
+          <div className="flex items-center gap-2 text-[10px] sm:text-[11px] text-muted-text font-bold  tracking-wider">
+            <span className="text-primary-text/60">{item.hsnCode}</span>
+            <div className="w-1 h-1 rounded-full bg-border-main" />
+            <span className="text-emerald-500">{item.taxDetails[0]?.rateOfTax || 0}% TAX</span>
           </div>
-          {item.taxDetails[0] && (
-            <div className="text-[10px] font-bold text-emerald-500 mt-1">
-              Rate: {item.taxDetails[0].rateOfTax}%
-            </div>
-          )}
         </div>
       )}
     />

@@ -10,7 +10,11 @@ import { PageHeader } from '../../components/common/PageHeader'
 import { InventoryService } from '../../services/inventoryService'
 import { InventoryDetailModal } from '../../components/inventory/InventoryDetailModal'
 import { EditProductModal } from '../../components/inventory/EditProductModal'
+import { ConsumeStockModal } from '../../components/inventory/ConsumeStockModal'
+import { CreateCompositeModal } from '../../components/inventory/CreateCompositeModal'
+import { TransferStockModal } from '../../components/inventory/TransferStockModal'
 import type { Site, Product, Vendor, InventoryItem, InventoryFetchPayload } from '../../types/inventory'
+import { ShoppingBag } from 'lucide-react'
 
 const LineChartIcon = () => (
   <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
@@ -44,6 +48,18 @@ export default function InventoryPage() {
   // Edit Modal State
   const [isEditOpen, setIsEditOpen] = useState(false)
   const [editItem, setEditItem] = useState<InventoryItem | null>(null)
+
+  // Consume Modal State
+  const [isConsumeOpen, setIsConsumeOpen] = useState(false)
+  const [consumeItems, setConsumeItems] = useState<InventoryItem[]>([])
+
+  // Composite Modal State
+  const [isCompositeOpen, setIsCompositeOpen] = useState(false)
+  const [compositeItems, setCompositeItems] = useState<InventoryItem[]>([])
+
+  // Transfer Modal State
+  const [isTransferOpen, setIsTransferOpen] = useState(false)
+  const [transferItems, setTransferItems] = useState<InventoryItem[]>([])
 
   const getItemKey = (item: InventoryItem) => `${item.productId}-${item.siteId}`
 
@@ -169,6 +185,24 @@ export default function InventoryPage() {
     setIsEditOpen(true)
   }, [])
 
+  const handleConsumeAction = useCallback((keys: Set<string | number>) => {
+    const selected = tableData.filter(item => keys.has(getItemKey(item)))
+    setConsumeItems(selected)
+    setIsConsumeOpen(true)
+  }, [tableData])
+
+  const handleCompositeAction = useCallback((keys: Set<string | number>) => {
+    const selected = tableData.filter(item => keys.has(getItemKey(item)))
+    setCompositeItems(selected)
+    setIsCompositeOpen(true)
+  }, [tableData])
+
+  const handleTransferAction = useCallback((keys: Set<string | number>) => {
+    const selected = tableData.filter(item => keys.has(getItemKey(item)))
+    setTransferItems(selected)
+    setIsTransferOpen(true)
+  }, [tableData])
+
   const hasActiveFilters = search.length > 0 || selectedSites.length > 0 || selectedProducts.length > 0 || selectedVendors.length > 0
 
   const toggleSelect = (key: string | number) => {
@@ -235,18 +269,18 @@ export default function InventoryPage() {
   const selectionActions = [
     {
       label: 'Consume',
-      icon: PackageMinus,
-      onClick: (keys: Set<string | number>) => console.log('Consume', keys)
+      icon: ShoppingBag,
+      onClick: handleConsumeAction
     },
     {
-      label: 'Add Composite',
+      label: 'Create Final Product',
       icon: LayoutGrid,
-      onClick: (keys: Set<string | number>) => console.log('Add Composite', keys)
+      onClick: handleCompositeAction
     },
     {
       label: 'Transfer',
       icon: ArrowRightLeft,
-      onClick: (keys: Set<string | number>) => console.log('Transfer', keys)
+      onClick: handleTransferAction
     }
   ]
 
@@ -349,6 +383,42 @@ export default function InventoryPage() {
           setTableData([])
           pageRef.current = 0
           loadData(true)
+        }}
+      />
+
+      <ConsumeStockModal
+        isOpen={isConsumeOpen}
+        onClose={() => setIsConsumeOpen(false)}
+        items={consumeItems}
+        onSuccess={() => {
+          setTableData([])
+          pageRef.current = 0
+          loadData(true)
+          setSelectedKeys(new Set())
+        }}
+      />
+
+      <CreateCompositeModal
+        isOpen={isCompositeOpen}
+        onClose={() => setIsCompositeOpen(false)}
+        rawItems={compositeItems}
+        onSuccess={() => {
+          setTableData([])
+          pageRef.current = 0
+          loadData(true)
+          setSelectedKeys(new Set())
+        }}
+      />
+
+      <TransferStockModal
+        isOpen={isTransferOpen}
+        onClose={() => setIsTransferOpen(false)}
+        items={transferItems}
+        onSuccess={() => {
+          setTableData([])
+          pageRef.current = 0
+          loadData(true)
+          setSelectedKeys(new Set())
         }}
       />
     </div>

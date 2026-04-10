@@ -12,6 +12,10 @@ interface SearchableSingleSelectProps<T> {
   disabled?: boolean
   className?: string
   displayValue?: (item: T) => string
+  renderValue?: (item: T) => React.ReactNode
+  openUpwards?: boolean
+  alignDropdown?: 'left' | 'right'
+  dropdownWidth?: string
 }
 
 export function SearchableSingleSelect<T>({
@@ -24,7 +28,11 @@ export function SearchableSingleSelect<T>({
   onInputChange,
   disabled = false,
   className = '',
-  displayValue
+  displayValue,
+  renderValue,
+  openUpwards = false,
+  alignDropdown = 'left',
+  dropdownWidth = 'w-full'
 }: SearchableSingleSelectProps<T>) {
   const [isOpen, setIsOpen] = useState(false)
   const [search, setSearch] = useState('')
@@ -80,11 +88,13 @@ export function SearchableSingleSelect<T>({
     <div className={`relative ${className}`} ref={containerRef}>
       <div 
         onClick={() => !disabled && setIsOpen(!isOpen)}
-        className={`w-full min-h-[42px] px-3.5 bg-surface border border-border-main rounded-lg text-[13px] font-medium flex items-center justify-between cursor-pointer transition-all ${disabled ? 'opacity-50 cursor-not-allowed' : 'hover:border-secondary-text'} ${isOpen ? 'ring-2 ring-accent/5 border-secondary-text' : ''}`}
+        className={`w-full min-h-[48px] px-4 bg-surface border border-border-main rounded-xl text-[13px] font-bold flex items-center justify-between cursor-pointer transition-all ${disabled ? 'opacity-50 cursor-not-allowed' : 'hover:border-secondary-text shadow-sm'} ${isOpen ? 'ring-2 ring-accent/5 border-secondary-text' : ''}`}
       >
-        <div className="flex-1 truncate py-2">
+        <div className="flex-1 truncate py-1">
           {value ? (
-            <span className="text-primary-text">{displayValue ? displayValue(value) : String(keyExtractor(value))}</span>
+            renderValue ? renderValue(value) : (
+              <span className="text-primary-text">{displayValue ? displayValue(value) : String(keyExtractor(value))}</span>
+            )
           ) : (
             <span className="text-muted-text">{placeholder}</span>
           )}
@@ -103,7 +113,7 @@ export function SearchableSingleSelect<T>({
       </div>
 
       {isOpen && (
-        <div className="absolute top-[calc(100%+6px)] left-0 w-full bg-card border border-border-main shadow-lg rounded-xl overflow-hidden z-[110] animate-[fadeInUp_0.15s_ease-out_both] flex flex-col max-h-[250px]">
+        <div className={`absolute ${openUpwards ? 'bottom-[calc(100%+6px)]' : 'top-[calc(100%+6px)]'} ${alignDropdown === 'right' ? 'right-0' : 'left-0'} ${dropdownWidth} min-w-full bg-card border border-border-main shadow-2xl rounded-xl overflow-hidden z-[110] animate-[${openUpwards ? 'fadeInDown' : 'fadeInUp'}_0.15s_ease-out_both] flex flex-col max-h-[350px]`}>
           <div className="p-2 border-b border-border-main/50 shrink-0">
             <div className="relative">
               <Search size={14} className="absolute left-2.5 top-1/2 -translate-y-1/2 text-muted-text" />
