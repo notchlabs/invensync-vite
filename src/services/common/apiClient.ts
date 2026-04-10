@@ -1,3 +1,4 @@
+import { InteractionRequiredAuthError, CacheLookupPolicy } from '@azure/msal-browser';
 import { msalInstance, loginRequest, protectedResources } from '../../config/msal';
 
 /**
@@ -35,33 +36,41 @@ export const authenticatedFetch = async (
 
   // 2. If it does, try to silently acquire a token
   if (requiredScopes) {
-    const account = msalInstance.getAllAccounts()[0]; // Assumes single-account scenario 
+    const account = msalInstance.getActiveAccount() ?? msalInstance.getAllAccounts()[0];
 
     if (account) {
       try {
         const response = await msalInstance.acquireTokenSilent({
-          ...loginRequest,
           scopes: requiredScopes,
-          account: account
+          account: account,
+          // Only use cache + refresh token. Do NOT fall back to hidden iframe.
+          // The iframe approach causes Chrome sandbox warnings and fails when
+          // the Azure AD session doesn't exist (AADSTS160021).
+          cacheLookupPolicy: CacheLookupPolicy.AccessTokenAndRefreshToken,
         });
         authToken = response.accessToken;
       } catch (error) {
-        console.warn("Silent token acquisition failed. Requesting interaction.", error);
-        // Fallback to interaction if silent fails (e.g. expired refresh token)
-        try {
-          const response = await msalInstance.acquireTokenPopup({
+        // If the error requires user interaction (expired session, consent needed, etc.)
+        // redirect to login instead of popup — popups are blocked when not triggered
+        // by a direct user click (e.g. from useEffect / API calls).
+        if (error instanceof InteractionRequiredAuthError) {
+          console.warn('Token requires interaction — redirecting to login');
+          await msalInstance.acquireTokenRedirect({
             ...loginRequest,
-            scopes: requiredScopes
+            scopes: requiredScopes,
+            account: account
           });
-          authToken = response.accessToken;
-        } catch (popupError) {
-          console.error("Popup authentication failed", popupError);
-          // If popup fails, throw or redirect to login.
-          throw new Error('Authentication required');
+          // acquireTokenRedirect navigates away — execution won't continue past here.
+          // When the user returns, handleRedirectPromise picks up the new tokens.
+          throw new Error('Redirecting to login for token renewal');
         }
+        console.error('Silent token acquisition failed with unexpected error', error);
+        throw new Error('Authentication required');
       }
     } else {
-      console.warn("No active account found. Proceeding without MSAL token for:", endpoint);
+      console.warn("No active account found. Redirecting to login.");
+      await msalInstance.loginRedirect(loginRequest);
+      throw new Error('Redirecting to login');
     }
   }
 
@@ -77,3 +86,4 @@ export const authenticatedFetch = async (
     headers,
   });
 };
+

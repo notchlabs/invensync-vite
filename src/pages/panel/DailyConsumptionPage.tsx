@@ -202,8 +202,12 @@ export default function DailyConsumptionPage() {
       loyaltyTotal: 0,
     };
 
-    // 1. Sum up all finalized shifts returned by the API
+    // 1. Sum up shifts from the API
     shifts.forEach(shift => {
+      // If we are currently editing this unit (not concluded), we skip its API total
+      // and use the live 'items' total below instead to ensure real-time accuracy.
+      if (!isConcluded && shift.consumptionUnitId === selectedCu?.id) return;
+
       aggr.wbcSale += shift.wbcSale || 0;
       aggr.wStoreSale += shift.wstoreSale || 0;
       aggr.totalSale += shift.totalSale || 0;
@@ -214,20 +218,18 @@ export default function DailyConsumptionPage() {
       aggr.loyaltyTotal += shift.loyalty || 0;
     });
 
-    // 2. If the current viewing unit is not finalized yet, its data is only in 'items'
-    // We add it to the aggregation to show a real-time "Day Projection"
-    const isCurrentCuFinalized = shifts.some(s => s.consumptionUnitId === selectedCu?.id);
-    
-    if (!isCurrentCuFinalized && items.length > 0) {
+    // 2. Add real-time totals from the current list of items if not concluded
+    if (!isConcluded && items.length > 0) {
       items.forEach(item => {
-        const vNames = item.vendorNames?.toLowerCase() || '';
-        if (vNames.includes('wild bean')) {
-          aggr.wbcSale += item.amountIncTax;
+         const sale = item.cash + item.upi + item.loyalty;
+        const isWbc = item.vendorIds === '-1';
+        if (isWbc) {
+          aggr.wbcSale += sale
         } else {
-          aggr.wStoreSale += item.amountIncTax;
+          aggr.wStoreSale += sale
         }
-        aggr.totalSale += item.amountIncTax;
-        aggr.billedMop += (item.cash + item.upi + item.loyalty);
+        aggr.totalSale += sale;
+        aggr.billedMop += sale - item.noBill;
         aggr.nonBilled += item.noBill || 0;
         aggr.upiTotal += item.upi || 0;
         aggr.cashTotal += item.cash || 0;
@@ -305,7 +307,7 @@ export default function DailyConsumptionPage() {
     }
   };
 
-  const dayAggr = useMemo(() => getDayReportAggregations(), [items]);
+  const dayAggr = useMemo(() => getDayReportAggregations(), [items, shifts, isConcluded, selectedCu]);
 
   return (
     <div className="w-full h-full overflow-y-auto overflow-x-hidden custom-scrollbar">

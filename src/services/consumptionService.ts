@@ -3,6 +3,7 @@ import type { ApiResponse } from '../types/api';
 
 export interface Shift {
   id: number;
+  consumptionUnitId: number;
   shiftType: string; // 'DAY' | 'NIGHT'
   startTime: string;
   endTime: string;
