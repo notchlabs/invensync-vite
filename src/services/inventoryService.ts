@@ -120,4 +120,25 @@ export class InventoryService {
   static async createCompositeProduct(payload: any): Promise<ApiResponse<any>> {
     return ApiService.post('/product-boq', payload);
   }
+
+  /**
+   * Generate a transfer invoice preview (PDF URL)
+   */
+  static async transferPreview(payload: any): Promise<ApiResponse<string>> {
+    return ApiService.post('/invoice/transfer-preview', payload);
+  }
+
+  /**
+   * Finalize a transfer with full accounting
+   */
+  static async generateTransferInvoice(payload: any): Promise<ApiResponse<string>> {
+    return ApiService.post('/inbound/storage/transfer', payload);
+  }
+
+  /**
+   * Perform a quick transfer (correction) without full accounting
+   */
+  static async quickTransfer(payload: any): Promise<ApiResponse<string>> {
+    return ApiService.post('/inbound/storage/quick-transfer', payload);
+  }
 }

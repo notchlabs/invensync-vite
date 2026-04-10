@@ -415,10 +415,12 @@ export default function InventoryPage() {
         onClose={() => setIsTransferOpen(false)}
         items={transferItems}
         onSuccess={() => {
-          setTableData([])
-          pageRef.current = 0
-          loadData(true)
+          const keysToRemove = new Set(transferItems.map(getItemKey))
+          setTableData(prev => prev.filter(item => !keysToRemove.has(getItemKey(item))))
+          setTotalElements(prev => Math.max(0, prev - transferItems.length))
           setSelectedKeys(new Set())
+          // Background reload to sync with server
+          loadData(true)
         }}
       />
     </div>
