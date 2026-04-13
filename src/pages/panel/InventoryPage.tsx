@@ -214,7 +214,7 @@ export default function InventoryPage() {
   }
 
   const toggleSelectAll = (selectAll: boolean) => {
-    if (selectAll) setSelectedKeys(new Set(tableData.map(getItemKey)))
+    if (selectAll) setSelectedKeys(new Set(tableData.slice(0, 150).map(getItemKey)))
     else setSelectedKeys(new Set())
   }
 

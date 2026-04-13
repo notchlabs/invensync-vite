@@ -10,6 +10,7 @@ import AuthGuard from './guards/AuthGuard'
 import AppLayout from './layouts/AppLayout'
 import DailyConsumptionPage from './pages/panel/DailyConsumptionPage'
 import AddStockPage from './pages/panel/AddStockPage'
+import BillsPage from './pages/panel/BillsPage'
 
 function App() {
   return (
@@ -50,6 +51,7 @@ function App() {
             <Route path="/app/panel/inventory" element={<InventoryPage />} />
             <Route path="/app/panel/inventory/consumption" element={<DailyConsumptionPage />} />
             <Route path="/app/panel/add-stock" element={<AddStockPage />} />
+            <Route path="/app/panel/bills" element={<BillsPage />} />
             {/* Add more protected routes here */}
           </Route>
         </Route>

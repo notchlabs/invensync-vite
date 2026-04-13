@@ -40,18 +40,21 @@ const AppLayout = () => {
   const { theme, toggleTheme } = useTheme()
   
   const currentNav = NAV_ITEMS.find(item => location.pathname.startsWith(item.path)) || NAV_ITEMS[0]
-  const CurrentIcon = currentNav.icon
 
   return (
     <div className="h-screen overflow-hidden bg-app flex font-sans transition-colors duration-300">
       {/* Sidebar - Hidden on mobile, visible on lg */}
       <aside 
-        className={`${isCollapsed ? 'w-[80px]' : 'w-[280px]'} bg-sidebar border-r border-border-main hidden lg:flex flex-col sticky top-0 h-screen overflow-y-auto transition-all duration-300 ease-in-out`}
+        className={`${isCollapsed ? 'w-[80px]' : 'w-[240px]'} bg-sidebar border-r border-border-main hidden lg:flex flex-col sticky top-0 h-screen overflow-y-auto transition-all duration-300 ease-in-out`}
       >
         {/* Logo Area */}
         <div className={`p-6 border-b border-border-main/50 flex flex-col gap-1 transition-all ${isCollapsed ? 'items-center' : ''}`}>
           <div className="flex items-center gap-2.5 font-display text-[20px] font-bold text-primary-text tracking-tight">
-            <img src="/android-chrome-192x192.png" alt="InvenSync" className="w-7 h-7 rounded-lg object-contain" />
+            <img 
+              src={theme === 'dark' ? "/android-chrome-192x192.png" : "/inven_sync_dark.png"} 
+              alt="InvenSync" 
+              className="w-7 h-7 rounded-lg object-contain" 
+            />
             {!isCollapsed && <span>InvenSync</span>}
           </div>
           {!isCollapsed && <p className="text-[12px] text-secondary-text font-medium whitespace-nowrap">Smart inventory. Smarter Projects.</p>}

@@ -3,6 +3,7 @@ import { X, Calendar, CheckCircle2, AlertCircle, Trash2, Package, LayoutGrid, Ch
 import { toast } from 'react-hot-toast'
 import { SiteFilterSingle } from '../filters/SiteFilterSingle'
 import { InventoryService } from '../../services/inventoryService'
+import { CustomCheckbox } from '../common/CustomCheckbox'
 import type { InventoryItem, Site } from '../../types/inventory'
 
 interface TransferStockModalProps {
@@ -244,7 +245,7 @@ export function TransferStockModal({ isOpen, onClose, items, onSuccess }: Transf
                     <tr className="bg-table-head border-b border-border-main/50">
                       <th className="px-4 py-3 text-left w-[35%]">
                         <div className="flex items-center gap-2">
-                          <input type="checkbox" checked={true} readOnly className="rounded border-border-main" />
+                          <CustomCheckbox checked={true} readOnly />
                           <span className="text-[13px] font-bold text-primary-text tracking-tight">Product</span>
                         </div>
                       </th>
@@ -259,7 +260,7 @@ export function TransferStockModal({ isOpen, onClose, items, onSuccess }: Transf
                       <tr key={`${item.productId}-${item.siteId}`} className="group hover:bg-surface/50 transition-colors border-b border-border-main/30 last:border-0 relative">
                         <td className="px-4 py-4">
                           <div className="flex items-center gap-3 overflow-hidden">
-                            <input type="checkbox" checked={true} readOnly className="rounded border-border-main shrink-0" />
+                            <CustomCheckbox checked={true} readOnly className="shrink-0" />
                             <div className="w-10 h-10 rounded-lg border border-border-main bg-white p-1 flex items-center justify-center shrink-0 shadow-sm">
                               {item.imageUrl ? (
                                 <img src={item.imageUrl} alt="" className="w-full h-full object-contain rounded-md" />

@@ -1,12 +1,14 @@
-import React, { useState, useEffect } from 'react';
+import { useState, useEffect } from 'react';
 import { ChevronRight, FileText } from 'lucide-react';
 import Skeleton from 'react-loading-skeleton';
 import { StockUploadService, type UploadBatch } from '../../services/stockUploadService';
+import { BillViewModal } from './BillViewModal';
 
 export const RecentlyUploadedBills = () => {
   const [filter, setFilter] = useState<'Today' | 'Yesterday'>('Today');
   const [batches, setBatches] = useState<UploadBatch[]>([]);
   const [isLoading, setIsLoading] = useState(false);
+  const [viewBatch, setViewBatch] = useState<UploadBatch | null>(null);
   
   // Pagination
   const [page, setPage] = useState(0);
@@ -105,11 +107,9 @@ export const RecentlyUploadedBills = () => {
           ))
         ) : batches.length > 0 ? (
           batches.map((batch) => (
-            <a
+            <div
               key={batch.id}
-              href={batch.billUrl}
-              target="_blank"
-              rel="noreferrer"
+              onClick={() => setViewBatch(batch)}
               className="flex justify-between items-center p-3.5 border border-border-main rounded-xl hover:border-btn-primary/30 transition-colors group cursor-pointer bg-surface/30"
             >
               <div className="flex flex-col min-w-0 pr-3">
@@ -131,7 +131,7 @@ export const RecentlyUploadedBills = () => {
                 </div>
                 <ChevronRight size={16} className="text-muted-text group-hover:text-primary-text transition-colors" />
               </div>
-            </a>
+            </div>
           ))
         ) : (
           <div className="flex-1 flex flex-col items-center justify-center p-8 text-center border border-dashed border-border-main rounded-xl bg-surface/50">
@@ -160,6 +160,14 @@ export const RecentlyUploadedBills = () => {
             Next
           </button>
         </div>
+      )}
+
+      {viewBatch && (
+        <BillViewModal
+          isOpen={!!viewBatch}
+          onClose={() => setViewBatch(null)}
+          batch={viewBatch}
+        />
       )}
     </div>
   );

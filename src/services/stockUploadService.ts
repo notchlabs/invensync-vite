@@ -39,6 +39,67 @@ export interface UploadBatch {
   billUrl: string;
 }
 
+export interface BatchDetail {
+  id: number;
+  supplierId: number;
+  supplierName: string;
+  billUrl: string;
+  billDate: string;
+  refNumber: string;
+  uniqueId: string;
+  totalAmount: number;
+  totalAmountIncTax: number;
+  totalItems: number;
+  createdAt: string;
+  createdBy: string;
+  siteTransferred: string[];
+  uploadDays: number;
+}
+
+export interface BatchDetailsPayload {
+  searchKey: string | null;
+  vendor: number[];
+  startDate: string | null;
+  endDate: string | null;
+  createdStartDate: string | null;
+  createdEndDate: string | null;
+  site: number[];
+}
+
+export interface BatchInvoiceDetail {
+  vendor: {
+    name: string;
+    gst: string;
+    email: string | null;
+    phone: string;
+    address: string;
+  };
+  totalWithoutTax: number;
+  tax: number;
+  totalWithTax: number;
+  totalIncAll: number | null;
+  extraCharges: any;
+  products: {
+    hsnCode: number;
+    tax: number;
+    hsnName: string;
+    unit: string;
+    price: number;
+    inboundId: number;
+    cgstInPerc: number;
+    sgstInPerc: number;
+    quantity: number;
+    totalIncludingTax: number;
+    totalWithoutTax: number;
+    productUrl: string;
+    name: string;
+  }[];
+  supportingDocs: string[];
+  invoiceNumber: string;
+  billDate: string;
+  billUrl: string;
+}
+
 export class StockUploadService {
   /**
    * Extract data from a product invoice via AI
@@ -102,5 +163,33 @@ export class StockUploadService {
    */
   static async fetchInbounds(batchId: string | number): Promise<ApiResponse<any[]>> {
     return ApiService.get(`/inbound/fetch?batchId=${batchId}`);
+  }
+
+  /**
+   * Delete a pending batch
+   */
+  static async deleteBatch(batchId: string | number): Promise<ApiResponse<any>> {
+    return ApiService.delete(`/batch/delete/${batchId}`);
+  }
+
+  /**
+   * Submit inbound material to a specific site
+   */
+  static async inboundMaterial(payload: any[]): Promise<ApiResponse<any>> {
+    return ApiService.post('/inbound/storage/inbound', payload);
+  }
+
+  /**
+   * Fetch detailed batch information with filters
+   */
+  static async fetchBatchDetails(page: number, size: number, payload: BatchDetailsPayload): Promise<ApiResponse<PaginatedResponse<BatchDetail>>> {
+    return ApiService.post(`/list/batch-details?page=${page}&size=${size}`, payload);
+  }
+
+  /**
+   * Fetch a single batch by ID with full details
+   */
+  static async fetchBatchById(id: number | string): Promise<ApiResponse<BatchInvoiceDetail>> {
+    return ApiService.get(`/batch/${id}`);
   }
 }

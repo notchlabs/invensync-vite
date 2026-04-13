@@ -4,6 +4,7 @@ import * as pdfjsLib from 'pdfjs-dist';
 import { StockUploadService } from '../../services/stockUploadService';
 import { ConfirmStockModal } from './ConfirmStockModal';
 import { InboundModal } from './InboundModal';
+import toast from 'react-hot-toast';
 
 // Initialize PDF.js worker
 pdfjsLib.GlobalWorkerOptions.workerSrc = `//cdnjs.cloudflare.com/ajax/libs/pdf.js/${pdfjsLib.version}/pdf.worker.min.mjs`;
@@ -324,9 +325,18 @@ export const UploadArea = ({
                 </span>
               </div>
             </div>
-            <button className="w-7 h-7 flex items-center justify-center bg-yellow-500/20 hover:bg-yellow-500/30 text-yellow-600 dark:text-yellow-500 rounded-full transition-colors" onClick={(e) => {
+            <button className="w-7 h-7 flex items-center justify-center bg-yellow-500/20 hover:bg-yellow-500/30 text-yellow-600 dark:text-yellow-500 rounded-full transition-colors" onClick={async (e) => {
               e.stopPropagation();
-              setPendingBatches([]); // Temporarily dismiss
+              const batchesToDelete = [...pendingBatches];
+              setPendingBatches([]); // Optimistic dismiss
+              for (const batch of batchesToDelete) {
+                try {
+                  await StockUploadService.deleteBatch(batch.id);
+                } catch (err) {
+                  console.error('Failed to delete batch', batch.id, err);
+                }
+              }
+              toast.success(`${batchesToDelete.length} pending batch${batchesToDelete.length > 1 ? 'es' : ''} deleted`);
             }}>
               <X size={14} strokeWidth={3} />
             </button>
@@ -375,9 +385,9 @@ export const UploadArea = ({
       {queue.length > 0 && (
         <div className="flex flex-col gap-4">
           <div className="flex items-center gap-2 text-[12px] font-bold">
-            <span className="px-3 py-1 rounded-full bg-blue-100 text-blue-700">↻ Uploading ({processingCount})</span>
-            <span className="px-3 py-1 rounded-full bg-emerald-100 text-emerald-700">✓ Success ({successCount})</span>
-            <span className="px-3 py-1 rounded-full bg-red-100 text-red-700">✕ Failed ({failedCount})</span>
+            <span className="px-3 py-1 rounded-full bg-blue-500/10 text-blue-500">↻ Uploading ({processingCount})</span>
+            <span className="px-3 py-1 rounded-full bg-emerald-500/10 text-emerald-500">✓ Success ({successCount})</span>
+            <span className="px-3 py-1 rounded-full bg-red-500/10 text-red-500">✕ Failed ({failedCount})</span>
           </div>
 
           <div className="flex flex-col gap-3">

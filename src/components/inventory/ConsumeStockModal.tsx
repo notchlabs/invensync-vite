@@ -3,6 +3,7 @@ import { X, Package, Loader2, Minus, Plus, AlertCircle, ShoppingBag, Send, Trash
 import { InventoryService } from '../../services/inventoryService'
 import { ConsumptionUnitSelect } from '../common/ConsumptionUnitSelect'
 import { FriendlyDateTimePicker } from '../common/FriendlyDateTimePicker'
+import { CustomCheckbox } from '../common/CustomCheckbox'
 import type { InventoryItem } from '../../types/inventory'
 
 interface ConsumeStockModalProps {
@@ -192,7 +193,7 @@ export function ConsumeStockModal({ isOpen, onClose, items, onSuccess }: Consume
                 <tr className="bg-table-head">
                   <th className="px-5 py-3 w-[5%] text-center">
                     <div className="flex items-center justify-center">
-                      <input type="checkbox" checked={true} readOnly className="rounded border-border-main" />
+                      <CustomCheckbox checked={true} readOnly />
                     </div>
                   </th>
                   <th className="px-5 py-3 w-[45%] text-[13px] font-bold text-primary-text tracking-tight">Product</th>
@@ -219,7 +220,7 @@ export function ConsumeStockModal({ isOpen, onClose, items, onSuccess }: Consume
                     return (
                       <tr key={key} className="group hover:bg-surface/50 transition-colors relative">
                         <td className="px-5 py-4 text-center align-middle">
-                          <input type="checkbox" checked={true} readOnly className="rounded border-border-main" />
+                          <CustomCheckbox checked={true} readOnly className="mx-auto" />
                         </td>
                         <td className="px-5 py-4 align-top">
                           <div className="flex items-center gap-3 overflow-hidden">
