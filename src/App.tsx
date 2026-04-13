@@ -9,6 +9,7 @@ import InventoryPage from './pages/panel/InventoryPage'
 import AuthGuard from './guards/AuthGuard'
 import AppLayout from './layouts/AppLayout'
 import DailyConsumptionPage from './pages/panel/DailyConsumptionPage'
+import AddStockPage from './pages/panel/AddStockPage'
 
 function App() {
   return (
@@ -48,6 +49,7 @@ function App() {
           <Route element={<AppLayout />}>
             <Route path="/app/panel/inventory" element={<InventoryPage />} />
             <Route path="/app/panel/inventory/consumption" element={<DailyConsumptionPage />} />
+            <Route path="/app/panel/add-stock" element={<AddStockPage />} />
             {/* Add more protected routes here */}
           </Route>
         </Route>

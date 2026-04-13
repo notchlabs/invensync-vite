@@ -18,7 +18,6 @@ interface ManagerAuditFormProps {
     upiTotal: number;
     cashTotal: number;
   };
-  handleFileUpload: (e: React.ChangeEvent<HTMLInputElement>, isPos: boolean) => void;
   handleSave: (concludeShift: boolean) => void;
   handleSaveAudit: () => void;
 }
@@ -35,7 +34,6 @@ export const ManagerAuditForm = ({
   upiCollected,
   setUpiCollected,
   dayAggr,
-  handleFileUpload,
   handleSave,
   handleSaveAudit,
 }: ManagerAuditFormProps) => {
@@ -56,19 +54,15 @@ export const ManagerAuditForm = ({
           <div className="flex flex-col gap-1.5">
             <label className="text-[12px] font-bold text-primary-text flex justify-between">
               MOP Machine Reading (Billed)
-              <label className="text-btn-primary hover:text-btn-primary/80 cursor-pointer flex items-center gap-1">
-                <Upload size={12} />
-                <span>Extract Receipt</span>
-                <input type="file" className="hidden" accept="image/*" onChange={(e) => handleFileUpload(e, false)} disabled={isConcluded} />
-              </label>
             </label>
             <span className="text-[11px] text-muted-text mb-1 italic">Total billed amount shown on MOP machine</span>
             <input 
               type="number"
+              min="0"
               disabled={isConcluded}
               value={mopReading || ''}
               onChange={(e) => setMopReading(Number(e.target.value))}
-              className="w-full h-[42px] px-3 bg-transparent border border-dashed border-neutral-300 dark:border-neutral-700 rounded-lg text-[16px] font-bold text-primary-text outline-none focus:border-solid focus:border-btn-primary focus:ring-2 focus:ring-btn-primary/20 disabled:bg-secondary transition-all font-mono"
+              className="w-full h-[42px] px-3 bg-transparent border border-dashed border-neutral-300 dark:border-neutral-700 rounded-lg text-[16px] font-bold text-primary-text outline-none focus:border-solid focus:border-primary-text focus:ring-4 focus:ring-primary-text/5 disabled:bg-secondary transition-all font-mono"
             />
             <div className="flex items-center justify-between mt-1 text-[12px]">
               <span className="text-muted-text">System Billed: ₹ {dayAggr.billedMop.toFixed(2)}</span>
@@ -85,19 +79,15 @@ export const ManagerAuditForm = ({
           <div className="flex flex-col gap-1.5">
             <label className="text-[12px] font-bold text-primary-text flex justify-between">
               POS Machine Reading
-              <label className="text-btn-primary hover:text-btn-primary/80 cursor-pointer flex items-center gap-1">
-                <Upload size={12} />
-                <span>Extract Receipt</span>
-                <input type="file" className="hidden" accept="image/*" onChange={(e) => handleFileUpload(e, true)} disabled={isConcluded} />
-              </label>
             </label>
             <span className="text-[11px] text-muted-text mb-1 italic">Total sales amount shown on POS system</span>
             <input 
               type="number"
+              min="0"
               disabled={isConcluded}
               value={posReading || ''}
               onChange={(e) => setPosReading(Number(e.target.value))}
-              className="w-full h-[42px] px-3 bg-transparent border border-dashed border-neutral-300 dark:border-neutral-700 rounded-lg text-[16px] font-bold text-primary-text outline-none focus:border-solid focus:border-btn-primary focus:ring-2 focus:ring-btn-primary/20 disabled:bg-secondary transition-all font-mono"
+              className="w-full h-[42px] px-3 bg-transparent border border-dashed border-neutral-300 dark:border-neutral-700 rounded-lg text-[16px] font-bold text-primary-text outline-none focus:border-solid focus:border-primary-text focus:ring-4 focus:ring-primary-text/5 disabled:bg-secondary transition-all font-mono"
             />
             <div className="flex items-center justify-between mt-1 text-[12px]">
               <span className="text-muted-text">System POS Sale: ₹ {dayAggr.upiTotal.toFixed(2)}</span>
@@ -120,10 +110,11 @@ export const ManagerAuditForm = ({
             <span className="text-[11px] text-muted-text mb-1 italic">Physical cash counted at end of day</span>
             <input 
               type="number"
+              min="0"
               disabled={isConcluded}
               value={cashCollected || ''}
               onChange={(e) => setCashCollected(Number(e.target.value))}
-              className="w-full h-[42px] px-3 bg-transparent border border-border-main rounded-lg text-[16px] font-bold text-primary-text outline-none focus:border-btn-primary focus:ring-2 focus:ring-btn-primary/20 disabled:bg-secondary transition-all font-mono shadow-sm"
+              className="w-full h-[42px] px-3 bg-transparent border border-border-main rounded-lg text-[16px] font-bold text-primary-text outline-none focus:border-primary-text focus:ring-4 focus:ring-primary-text/5 disabled:bg-secondary transition-all font-mono shadow-sm"
             />
             <div className="flex items-center justify-between mt-1 text-[12px]">
               <span className="text-muted-text">System Cash: ₹ {dayAggr.cashTotal.toFixed(2)}</span>
@@ -142,10 +133,11 @@ export const ManagerAuditForm = ({
             <span className="text-[11px] text-muted-text mb-1 italic">Settlement amount from UPI / Card reports</span>
             <input 
               type="number"
+              min="0"
               disabled={isConcluded}
               value={upiCollected || ''}
               onChange={(e) => setUpiCollected(Number(e.target.value))}
-              className="w-full h-[42px] px-3 bg-transparent border border-border-main rounded-lg text-[16px] font-bold text-primary-text outline-none focus:border-btn-primary focus:ring-2 focus:ring-btn-primary/20 disabled:bg-secondary transition-all font-mono shadow-sm"
+              className="w-full h-[42px] px-3 bg-transparent border border-border-main rounded-lg text-[16px] font-bold text-primary-text outline-none focus:border-primary-text focus:ring-4 focus:ring-primary-text/5 disabled:bg-secondary transition-all font-mono shadow-sm"
             />
             <div className="flex items-center justify-between mt-1 text-[12px]">
               <span className="text-muted-text">System UPI/Card: ₹ {dayAggr.upiTotal.toFixed(2)}</span>

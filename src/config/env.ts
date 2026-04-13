@@ -14,6 +14,8 @@ export const ENV = {
   MICROSOFT_CLIENT_ID: import.meta.env.VITE_MICROSOFT_CLIENT_ID || '',
   MICROSOFT_AUTHORITY_URI: import.meta.env.VITE_MICROSOFT_AUTHORITY_URI || '',
   MICROSOFT_REDIRECT_URI: import.meta.env.VITE_MICROSOFT_REDIRECT_URI || '',
+  DEFAULT_SITE_ID: import.meta.env.VITE_DEFAULT_SITE_ID || '29',
+  DEFAULT_CUSTOMER_ID: import.meta.env.VITE_DEFAULT_CUSTOMER_ID || '28',
 }
 
 // Map out backend API endpoint paths here to keep network calls clean

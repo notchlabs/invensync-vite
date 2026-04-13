@@ -306,11 +306,7 @@ export default function InventoryPage() {
             className="flex-1 sm:flex-none flex items-center justify-center gap-1.5 px-4 py-2 bg-btn-primary hover:opacity-90 text-btn-primary-fg text-[13px] font-semibold rounded-lg border border-border-main/50 transition-all shadow-sm tracking-wide"
           >
             <LineChartIcon />
-            Consumption
-          </button>
-          <button className="flex-1 sm:flex-none flex items-center justify-center gap-1.5 px-4 py-2 bg-btn-primary hover:opacity-90 text-btn-primary-fg text-[13px] font-semibold rounded-lg border border-border-main/50 transition-all shadow-sm tracking-wide">
-            <PackagePlus size={14} strokeWidth={2.5} />
-            Prepare Product
+            View Consumption
           </button>
         </div>
       </div>

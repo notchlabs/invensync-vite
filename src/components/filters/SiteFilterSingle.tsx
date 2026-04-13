@@ -8,6 +8,7 @@ interface SiteFilterSingleProps {
   placeholder?: string
   className?: string
   alignDropdown?: 'left' | 'right'
+  openUpwards?: boolean
 }
 
 export function SiteFilterSingle({ 
@@ -15,7 +16,8 @@ export function SiteFilterSingle({
   onChange, 
   placeholder = "Select Destination Site", 
   className = "",
-  alignDropdown = "left"
+  alignDropdown = "left",
+  openUpwards = false
 }: SiteFilterSingleProps) {
   
   const handleFetch = async (query: string) => {
@@ -32,6 +34,7 @@ export function SiteFilterSingle({
       onChange={onChange}
       className={className}
       alignDropdown={alignDropdown}
+      openUpwards={openUpwards}
       displayValue={(site) => site.name}
       renderLabel={(site) => (
         <div className="flex flex-col gap-0.5 py-0.5">

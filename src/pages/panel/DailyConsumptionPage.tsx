@@ -8,19 +8,21 @@ import { ConsumptionService, type BucketItem, type ExistingSales, type Shift } f
 import type { Site } from '../../types/inventory';
 import { InventoryService } from '../../services/inventoryService';
 
-// Sub-components
+import { ENV } from '../../config/env';
+
 import { ConsumptionFilters } from '../../components/consumption/ConsumptionFilters';
 import { ConsumedItemsList } from '../../components/consumption/ConsumedItemsList';
 import { ConsumptionSummary } from '../../components/consumption/ConsumptionSummary';
 import { ManagerAuditForm } from '../../components/consumption/ManagerAuditForm';
+import { EndShiftModal } from '../../components/consumption/EndShiftModal';
 
 export default function DailyConsumptionPage() {
   const [searchParams, setSearchParams] = useSearchParams();
 
-  // URL state
-  const siteIdParam = searchParams.get('site');
+  // URL state with defaults from ENV
+  const siteIdParam = searchParams.get('site') || ENV.DEFAULT_SITE_ID;
   const dateParam = searchParams.get('date');
-  const cuIdParam = searchParams.get('cuId');
+  const cuIdParam = searchParams.get('cuId') || ENV.DEFAULT_CUSTOMER_ID;
 
   // Local component state resolving URL IDs
   const [selectedSite, setSelectedSite] = useState<Site | null>(null);
@@ -43,6 +45,10 @@ export default function DailyConsumptionPage() {
   const [posReading, setPosReading] = useState<number>(0);
   const [cashCollected, setCashCollected] = useState<number>(0);
   const [upiCollected, setUpiCollected] = useState<number>(0);
+
+  // Modal State
+  const [isEndShiftModalOpen, setIsEndShiftModalOpen] = useState(false);
+  const [isSaving, setIsSaving] = useState(false);
 
   // Computed state
   const isConcluded = salesRecord !== null;
@@ -240,7 +246,7 @@ export default function DailyConsumptionPage() {
     return aggr;
   };
 
-  const handleSave = async (concludeShift: boolean) => {
+  const handleSave = async (concludeShift: boolean, readings?: { mop: number; pos: number }) => {
     if (!selectedSite || !selectedCu || !selectedDate) {
       toast.error('Missing site or consumption unit Context');
       return;
@@ -264,19 +270,18 @@ export default function DailyConsumptionPage() {
       }))
     };
 
-    const loader = toast.loading('Saving sales data...');
+    setIsSaving(true);
+    const loader = toast.loading(concludeShift ? 'Ending shift...' : 'Saving sales data...');
     try {
       if (concludeShift) {
         await ConsumptionService.endShift(payload);
         
-        if (salesRecord) {
-          await ConsumptionService.saveSalesAudit(salesRecord.id, {
-            recordedBilledAmountByManager: mopReading,
-            recordedPosAmountByManager: posReading,
-            cashCollectedByManager: cashCollected,
-            upiCollectedByManager: upiCollected
-          });
+        // If readings were passed from the modal, we update them in state
+        if (readings) {
+          setMopReading(readings.mop);
+          setPosReading(readings.pos);
         }
+
         toast.success('Shift ended successfully', { id: loader });
         window.location.reload();
       } else {
@@ -285,7 +290,14 @@ export default function DailyConsumptionPage() {
       }
     } catch (err) {
       toast.error('Failed to save', { id: loader });
+    } finally {
+      setIsSaving(false);
     }
+  };
+
+  const handleConfirmEndShift = async (mop: number, pos: number) => {
+    setIsEndShiftModalOpen(false);
+    await handleSave(true, { mop, pos });
   };
 
   const handleSaveAudit = async () => {
@@ -358,40 +370,48 @@ export default function DailyConsumptionPage() {
           isLoading={isLoadingContext}
         />
 
-        <ManagerAuditForm 
-          isConcluded={isConcluded}
-          salesRecord={salesRecord}
-          mopReading={mopReading}
-          setMopReading={setMopReading}
-          posReading={posReading}
-          setPosReading={setPosReading}
-          cashCollected={cashCollected}
-          setCashCollected={setCashCollected}
-          upiCollected={upiCollected}
-          setUpiCollected={setUpiCollected}
-          dayAggr={dayAggr}
-          handleFileUpload={handleFileUpload}
-          handleSave={handleSave}
-          handleSaveAudit={handleSaveAudit}
-        />
+        {isConcluded && (
+          <ManagerAuditForm 
+            isConcluded={isConcluded}
+            salesRecord={salesRecord}
+            mopReading={mopReading}
+            setMopReading={setMopReading}
+            posReading={posReading}
+            setPosReading={setPosReading}
+            cashCollected={cashCollected}
+            setCashCollected={setCashCollected}
+            upiCollected={upiCollected}
+            setUpiCollected={setUpiCollected}
+            dayAggr={dayAggr}
+            handleSave={handleSave}
+            handleSaveAudit={handleSaveAudit}
+          />
+        )}
 
-        <div className="flex justify-end gap-3 pb-8">
+        <div className="flex flex-col sm:flex-row sm:justify-end gap-3 pb-8 px-1 sm:px-0">
           <button 
-            disabled={isConcluded}
-            onClick={() => handleSave(true)}
-            className="px-8 py-2.5 bg-red-600 text-white text-[14px] font-bold rounded-lg hover:bg-red-700 transition-all shadow-sm disabled:opacity-50"
+            disabled={isConcluded || isSaving}
+            onClick={() => setIsEndShiftModalOpen(true)}
+            className="w-full sm:w-auto px-8 py-3 bg-red-600 text-white text-[14px] font-bold rounded-lg hover:bg-red-700 transition-all shadow-sm disabled:opacity-50"
           >
             End Shift
           </button>
           <button 
-            disabled={isConcluded}
+            disabled={isConcluded || isSaving}
             onClick={() => handleSave(false)}
-            className="px-8 py-2.5 bg-neutral-900 dark:bg-neutral-100 text-white dark:text-neutral-900 text-[14px] font-bold rounded-lg hover:opacity-90 transition-all shadow-sm disabled:opacity-50"
+            className="w-full sm:w-auto px-8 py-3 bg-neutral-900 dark:bg-neutral-100 text-white dark:text-neutral-900 text-[14px] font-bold rounded-lg hover:opacity-90 transition-all shadow-sm disabled:opacity-50"
           >
             Save
           </button>
         </div>
       </div>
+
+      <EndShiftModal 
+        isOpen={isEndShiftModalOpen}
+        onClose={() => setIsEndShiftModalOpen(false)}
+        onConfirm={handleConfirmEndShift}
+        isLoading={isSaving}
+      />
     </div>
   );
 }

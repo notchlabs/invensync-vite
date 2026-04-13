@@ -242,65 +242,79 @@ export function TransferStockModal({ isOpen, onClose, items, onSuccess }: Transf
                 <table className="w-full border-collapse table-fixed min-w-[700px]">
                   <thead>
                     <tr className="bg-table-head border-b border-border-main/50">
-                      <th className="px-4 py-3 text-left w-[40%]">
+                      <th className="px-4 py-3 text-left w-[35%]">
                         <div className="flex items-center gap-2">
                           <input type="checkbox" checked={true} readOnly className="rounded border-border-main" />
-                          <span className="text-[11px] font-black text-muted-text  tracking-widest">Product</span>
+                          <span className="text-[13px] font-bold text-primary-text tracking-tight">Product</span>
                         </div>
                       </th>
-                      <th className="px-4 py-3 text-left w-[25%] text-[11px] font-black text-muted-text  tracking-widest">From</th>
-                      <th className="px-4 py-3 text-center w-[25%] text-[11px] font-black text-muted-text  tracking-widest">Transfer Qty</th>
-                      <th className="px-4 py-3 text-right w-[10%] tracking-widest"></th>
+                      <th className="px-4 py-3 text-left w-[20%] text-[13px] font-bold text-primary-text tracking-tight">Vendor</th>
+                      <th className="px-4 py-3 text-left w-[15%] text-[13px] font-bold text-primary-text tracking-tight">From</th>
+                      <th className="px-4 py-3 text-center w-[20%] text-[13px] font-bold text-primary-text tracking-tight">Qty</th>
+                      <th className="px-4 py-3 text-center w-[10%] text-[13px] font-bold text-primary-text tracking-tight">Unit</th>
                     </tr>
                   </thead>
                   <tbody>
                     {localItems.map((item) => (
-                      <tr key={`${item.productId}-${item.siteId}`} className="group hover:bg-surface/50 transition-colors border-b border-border-main/30 last:border-0">
+                      <tr key={`${item.productId}-${item.siteId}`} className="group hover:bg-surface/50 transition-colors border-b border-border-main/30 last:border-0 relative">
                         <td className="px-4 py-4">
                           <div className="flex items-center gap-3 overflow-hidden">
                             <input type="checkbox" checked={true} readOnly className="rounded border-border-main shrink-0" />
-                            <div className="w-10 h-10 rounded-lg border border-border-main bg-surface p-1.5 flex items-center justify-center shrink-0">
+                            <div className="w-10 h-10 rounded-lg border border-border-main bg-white p-1 flex items-center justify-center shrink-0 shadow-sm">
                               {item.imageUrl ? (
-                                <img src={item.imageUrl} alt="" className="w-full h-full object-contain" />
+                                <img src={item.imageUrl} alt="" className="w-full h-full object-contain rounded-md" />
                               ) : (
                                 <Package className="text-muted-text/30" size={16} />
                               )}
                             </div>
-                            <div className="flex flex-col min-w-0">
-                              <span className="text-[13px] font-black text-primary-text  tracking-tight truncate leading-tight">
+                            <div className="flex flex-col min-w-0 pr-2">
+                              <span className="text-[13px] font-bold text-primary-text tracking-tight truncate leading-tight">
                                 {item.productName}
                               </span>
-                              <span className="text-[10px] text-muted-text font-bold  truncate opacity-60">
+                              <span className="text-[11px] text-muted-text font-medium truncate mt-0.5">
                                 {item.vendorNames || 'Generic'}
                               </span>
                             </div>
                           </div>
                         </td>
                         <td className="px-4 py-4 truncate">
-                          <span className={`text-[12px] font-black  tracking-tight ${isMultiSite ? 'text-rose-400' : 'text-primary-text'}`}>
+                          <span className="text-[13px] font-medium text-muted-text tracking-tight">
+                            {item.vendorNames || 'Generic'}
+                          </span>
+                        </td>
+                        <td className="px-4 py-4 truncate">
+                          <span className={`text-[13px] font-bold tracking-tight ${isMultiSite ? 'text-rose-500' : 'text-primary-text'}`}>
                             {item.site}
                           </span>
                         </td>
                         <td className="px-4 py-4">
-                          <div className="flex items-center justify-center gap-3">
+                          <div className="flex items-center justify-center gap-2">
                             <input 
                               type="number"
                               value={item.transferQty}
                               onChange={(e) => handleQtyChange(item.productId, item.siteId, e.target.value)}
-                              className="w-16 h-9 text-center bg-card border border-border-main rounded-xl text-[13px] font-black text-primary-text outline-none focus:border-secondary-text shadow-sm shrink-0"
+                              className="w-16 h-8 text-center bg-card border border-border-main rounded-md text-[13px] font-bold text-primary-text outline-none focus:border-secondary-text shadow-sm shrink-0"
                             />
-                            <span className="text-[11px] text-muted-text font-bold  tracking-tight truncate">
-                              / {item.quantity} {item.unit}
+                            <span className="text-[12px] text-muted-text font-medium tracking-tight whitespace-nowrap">
+                              / {item.quantity.toFixed(2)}
                             </span>
                           </div>
                         </td>
-                        <td className="px-4 py-4 pr-6 text-right">
-                          <button 
-                            onClick={() => removeItem(item.productId, item.siteId)}
-                            className="p-2 text-muted-text/40 hover:text-red-500 hover:bg-red-50 rounded-lg transition-all"
-                          >
-                            <Trash2 size={16} />
-                          </button>
+                        <td className="px-4 py-4 text-center">
+                          <div className="flex items-center justify-center gap-3">
+                            <span className="text-[13px] font-bold text-primary-text tracking-tight">
+                              {item.unit || 'Ea'}
+                            </span>
+                            
+                            {/* Hidden Trash icon that appears on row hover */}
+                            <button 
+                              onClick={() => removeItem(item.productId, item.siteId)}
+                              className="absolute right-4 p-1.5 text-muted-text/40 hover:text-red-500 hover:bg-red-50 rounded-md transition-all opacity-0 group-hover:opacity-100 bg-surface shadow-sm translate-x-2 group-hover:translate-x-0"
+                              title="Remove item"
+                            >
+                              <Trash2 size={14} />
+                            </button>
+                          </div>
                         </td>
                       </tr>
                     ))}
@@ -393,7 +407,7 @@ export function TransferStockModal({ isOpen, onClose, items, onSuccess }: Transf
                 <div className="flex flex-col gap-5 p-5 bg-header/20 border border-border-main border-dashed rounded-2xl">
                   {/* Destination Site */}
                   <div className="flex flex-col gap-2">
-                    <label className="text-[11px] font-black text-muted-text  tracking-widest ml-1">Destination Site</label>
+                    <label className="text-[11px] font-black tracking-widest ml-1">Destination Site</label>
                     <SiteFilterSingle 
                       value={destinationSite}
                       onChange={setDestinationSite}
@@ -403,7 +417,7 @@ export function TransferStockModal({ isOpen, onClose, items, onSuccess }: Transf
 
                   {/* Bill Date */}
                   <div className="flex flex-col gap-2">
-                    <label className="text-[11px] font-black text-muted-text  tracking-widest ml-1">Bill Date</label>
+                    <label className="text-[11px] font-black tracking-widest ml-1">Bill Date</label>
                     <div className="relative group/date">
                       <style>{`
                         input[type="date"]::-webkit-calendar-picker-indicator {

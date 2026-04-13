@@ -35,7 +35,7 @@ export const ConsumedItemsList = ({
       {/* Header */}
       <button 
         onClick={() => setIsExpanded(!isExpanded)}
-        className="w-full flex items-center justify-between p-4 hover:bg-black/[0.02] dark:hover:bg-white/[0.02] transition-colors"
+        className="w-full flex items-center justify-between p-4 hover:bg-black/[0.02] dark:hover:bg-white/[0.02] transition-colors cursor-pointer"
       >
         <div className="flex items-center gap-2">
           <span className="text-[15px] font-bold text-primary-text font-display">Consumed Items</span>
@@ -137,10 +137,15 @@ export const ConsumedItemsList = ({
                             <span className="text-[15px] font-bold text-primary-text">Context not selected</span>
                             <span className="text-[13px] text-muted-text">Please select a Site and Consumption Unit to view items</span>
                           </>
+                        ) : searchQuery.trim() ? (
+                          <>
+                            <span className="text-[15px] font-bold text-primary-text">No matching items</span>
+                            <span className="text-[13px] text-muted-text">No items match your search "{searchQuery}"</span>
+                          </>
                         ) : (
                           <>
-                            <span className="text-[15px] font-bold text-primary-text">No items found</span>
-                            <span className="text-[13px] text-muted-text">Try adjusting your filters or search query</span>
+                            <span className="text-[15px] font-bold text-primary-text">No items consumed</span>
+                            <span className="text-[13px] text-muted-text">No items have been consumed yet for the selected date.</span>
                           </>
                         )}
                       </div>

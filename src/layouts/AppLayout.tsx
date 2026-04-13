@@ -1,5 +1,5 @@
 import { useState } from 'react'
-import { NavLink, Outlet, useLocation } from 'react-router-dom'
+import { NavLink, Outlet, useLocation, Link } from 'react-router-dom'
 import { useMsal } from '@azure/msal-react'
 import { useTheme } from '../context/ThemeContext'
 import { 
@@ -100,7 +100,26 @@ const AppLayout = () => {
             >
               <PanelLeft size={18} />
             </button>
-            <h1 className="text-[15px] font-bold tracking-tight">{currentNav.label}</h1>
+            <div className="flex items-center gap-2 text-[15px] font-bold tracking-tight">
+              {location.pathname === currentNav.path ? (
+                <h1 className="text-primary-text m-0 p-0">{currentNav.label}</h1>
+              ) : (
+                <>
+                  <Link to={currentNav.path} className="text-blue-600 dark:text-blue-500 hover:underline transition-all">
+                    {currentNav.label}
+                  </Link>
+                  <span className="text-muted-text/40 font-normal">/</span>
+                  <h1 className="text-primary-text m-0 p-0 lowercase">
+                    {location.pathname
+                      .slice(currentNav.path.length)
+                      .split('/')
+                      .filter(Boolean)
+                      .map(p => p.replace(/-/g, ' '))
+                      .join(' / ')}
+                  </h1>
+                </>
+              )}
+            </div>
           </div>
           
           <div className="flex items-center gap-3">

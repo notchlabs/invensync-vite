@@ -115,7 +115,7 @@ export function InfiniteScrollTable<T>({
       <div className="flex-1 w-full bg-card border border-border-main rounded-2xl overflow-hidden shadow-md flex flex-col min-h-0 relative">
         {/* Selection Bar Overlay */}
         {selectedKeys.size > 0 && (
-          <div className="absolute top-0 left-0 right-0 z-20 h-[52px] bg-selection-bar text-selection-bar-fg flex items-center justify-between animate-in slide-in-from-top duration-200 shadow-md">
+          <div className="absolute top-0 left-0 right-0 z-20 h-[52px] bg-selection-bar text-selection-bar-fg flex items-center justify-between animate-in slide-in-from-top duration-200">
             <div className="flex items-center h-full shrink-0">
               <div className="w-12 flex items-center justify-center border-r border-selection-bar-fg/10">
                 <button
