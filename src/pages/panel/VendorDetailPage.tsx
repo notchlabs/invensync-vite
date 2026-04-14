@@ -22,7 +22,7 @@ const toUploadBatch = (b: BatchDetail): UploadBatch => ({
   supplierName: b.supplierName,
   refNo: b.refNumber,
   totalPrice: b.totalAmount,
-  state: null,
+  state: "COMPLETED",
   siteNames: b.siteTransferred?.join(', ') || '',
   createdAt: b.createdAt,
   billUrl: b.billUrl,
@@ -92,7 +92,7 @@ export default function VendorDetailPage() {
       setBills(prev => reset ? items : [...prev, ...items])
       setTotalElements(res.data.totalElements || 0)
       pageRef.current += 1
-      setHasMore(res.data.isLast !== undefined ? !res.data.isLast : items.length === 12)
+      setHasMore(res.data.last !== undefined ? !res.data.last : items.length === 12)
     } catch (e) {
       console.error(e)
     } finally {

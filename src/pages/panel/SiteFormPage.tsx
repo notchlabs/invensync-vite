@@ -202,7 +202,7 @@ export default function SiteFormPage() {
   }, [])
 
   const applyPlace = useCallback((place: GooglePlace, lat: number, lng: number) => {
-    const extracted = extractAddressComponents(place.address_components || [])
+    const extracted = extractAddressComponents(place.address_components || [], place.formatted_address ?? '')
     setAddress({
       fullAddress: place.formatted_address || '',
       city: extracted.city || '',
@@ -240,7 +240,7 @@ export default function SiteFormPage() {
 
     // Reverse geocode on drag
     marker.addListener('dragend', () => {
-      const pos = marker.position
+      const pos = marker.position as { lat: number | (() => number); lng: number | (() => number) }
       const lat = typeof pos.lat === 'function' ? pos.lat() : pos.lat
       const lng = typeof pos.lng === 'function' ? pos.lng() : pos.lng
       const geocoder = new g.maps.Geocoder()
@@ -516,7 +516,7 @@ export default function SiteFormPage() {
         <button
           onClick={handleSave}
           disabled={isSaving}
-          className="flex items-center gap-2 px-5 py-2.5 bg-neutral-900 dark:bg-neutral-100 text-white dark:text-neutral-900 text-[13px] font-bold rounded-xl hover:opacity-90 transition-opacity shrink-0 disabled:opacity-50 cursor-pointer disabled:cursor-not-allowed"
+          className="flex items-center gap-2 px-5 py-2.5 bg-primary-text text-card text-[13px] font-bold rounded-xl hover:opacity-90 transition-opacity shrink-0 disabled:opacity-50 cursor-pointer disabled:cursor-not-allowed"
         >
           <Save size={14} />
           {isSaving ? 'Saving...' : 'Save Changes'}

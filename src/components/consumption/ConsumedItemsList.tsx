@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import { useState } from 'react';
 import { Search, ChevronDown, ChevronRight } from 'lucide-react';
 import { ConsumedItemRow } from './ConsumedItemRow';
 import type { BucketItem } from '../../services/consumptionService';

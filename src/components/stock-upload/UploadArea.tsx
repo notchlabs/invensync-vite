@@ -187,7 +187,7 @@ export const UploadArea = ({
     try {
       const res = await StockUploadService.extractInvoice(item.file);
       if (res.data) {
-        setQueue(prev => prev.map(q => q.id === id ? { ...q, status: 'SUCCESS', extractedData: res.data } : q));
+        setQueue(prev => prev.map(q => q.id === id ? { ...q, status: 'SUCCESS', extractedData: res.data ?? undefined } : q));
       } else {
         setQueue(prev => prev.map(q => q.id === id ? { 
           ...q, 
@@ -220,7 +220,7 @@ export const UploadArea = ({
       try {
         const res = await StockUploadService.extractInvoice(item.file);
         if (res.data) {
-          setQueue(prev => prev.map(q => q.id === item.id ? { ...q, status: 'SUCCESS', extractedData: res.data } : q));
+          setQueue(prev => prev.map(q => q.id === item.id ? { ...q, status: 'SUCCESS', extractedData: res.data ?? undefined } : q));
         } else {
           setQueue(prev => prev.map(q => q.id === item.id ? { 
             ...q, 

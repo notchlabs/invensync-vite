@@ -1,11 +1,11 @@
 import { useState, useRef, useEffect } from 'react'
 import { Outlet, useLocation, Link, useSearchParams } from 'react-router-dom'
 import { useMsal } from '@azure/msal-react'
-import { useTheme } from '../context/ThemeContext'
 import { Menu, PanelLeft, Sun, Moon, MoreVertical, LogOut } from 'lucide-react'
 import { AppSidebar } from '../components/layout/AppSidebar'
 import { NAV_ITEMS } from '../config/navigation'
 import toast from 'react-hot-toast'
+import { useTheme } from '../context/ThemeContext'
 
 /* ── Account dropdown ────────────────────────────────────── */
 function AccountMenu() {

@@ -48,7 +48,7 @@ export default function SiteDetailPage() {
     supplierName: bill.supplierName,
     refNo: bill.refNumber,
     totalPrice: bill.totalAmount,
-    state: null,
+    state: "COMPLETED",
     siteNames: bill.siteTransferred?.join(', ') || '',
     createdAt: bill.createdAt,
     billUrl: bill.billUrl,
