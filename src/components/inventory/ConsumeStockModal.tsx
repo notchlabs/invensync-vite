@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react'
+import { useState } from 'react'
 import { X, Package, Loader2, AlertCircle, ShoppingBag, Send, Trash2 } from 'lucide-react'
 import { toast } from 'react-hot-toast'
 import { InventoryService } from '../../services/inventoryService'
