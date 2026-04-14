@@ -132,7 +132,7 @@ export default function BillsPage() {
       setTotalElements(res.data.totalElements || 0)
       
       pageRef.current += 1
-      setHasMore(res.data.isLast !== undefined ? !res.data.isLast : items.length === 12)
+      setHasMore(res.data.last !== undefined ? !res.data.last : items.length === 12)
     } catch (e) {
       console.error(e)
     } finally {

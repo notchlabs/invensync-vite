@@ -157,7 +157,7 @@ export function PLStatementDialog({ row, onClose }: Readonly<{ row: ProfitLossMo
 
             {/* Finalize section — hidden for current month */}
             {!isCurrentMonth && (
-              finalized ? (
+              (row.finalized || finalized) ? (
                 <div className="flex items-center justify-center gap-2 py-3 rounded-xl bg-emerald-50 dark:bg-emerald-500/10 text-emerald-600 dark:text-emerald-400">
                   <CheckCircle2 size={15} />
                   <span className="text-[13px] font-black">{row.monthLabel} finalized</span>

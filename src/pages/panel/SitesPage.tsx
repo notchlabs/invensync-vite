@@ -184,36 +184,30 @@ export default function SitesPage() {
             return (
               <div
                 key={site.id}
-                className="relative bg-card border border-border-main rounded-2xl p-5 shadow-sm flex flex-col gap-3 hover:shadow-md transition-shadow"
+                onClick={() => navigate(`/app/panel/sites/detail?id=${site.id}&name=${encodeURIComponent(site.name)}`)}
+                className="bg-card border border-border-main rounded-2xl p-5 shadow-sm flex flex-col gap-3 hover:shadow-md transition-shadow cursor-pointer group"
               >
-                {/* Stretched card click target */}
-                <button
-                  onClick={() => navigate(`/app/panel/sites/detail?id=${site.id}&name=${encodeURIComponent(site.name)}`)}
-                  className="absolute inset-0 rounded-2xl focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent cursor-pointer"
-                  aria-label={`View details for ${site.name}`}
-                />
-
                 {/* Header */}
-                <div className="relative z-10 flex items-start justify-between">
+                <div className="flex items-start justify-between">
                   <h3 className="text-[15px] font-bold text-primary-text leading-snug">
                     {site.name}
                   </h3>
                   <button
                     onClick={e => { e.stopPropagation(); navigate(`/app/panel/sites/edit?name=${encodeURIComponent(site.name)}`) }}
-                    className="p-1.5 hover:bg-surface rounded-lg transition-colors text-muted-text hover:text-secondary-text ml-2 shrink-0"
+                    className="p-1.5 hover:bg-surface rounded-lg transition-colors text-muted-text hover:text-secondary-text ml-2 shrink-0 relative z-10"
                   >
                     <Pencil size={13} />
                   </button>
                 </div>
-
+  
                 {/* Location */}
-                <div className="relative z-10 flex items-center gap-1.5 text-[12px] font-semibold text-secondary-text">
+                <div className="flex items-center gap-1.5 text-[12px] font-semibold text-secondary-text">
                   <MapPin size={13} className="shrink-0 text-muted-text" />
                   <span>{site.city}, {site.state}</span>
                 </div>
-
+  
                 {/* Date Range */}
-                <div className="relative z-10 flex items-center gap-1.5 text-[12px] font-semibold text-secondary-text">
+                <div className="flex items-center gap-1.5 text-[12px] font-semibold text-secondary-text">
                   <Calendar size={13} className="shrink-0 text-muted-text" />
                   <span>
                     {startDateStr}
@@ -221,18 +215,18 @@ export default function SitesPage() {
                     {endDateStr || ''}
                   </span>
                 </div>
-
+  
                 {/* Manager */}
-                <div className="relative z-10 flex items-center gap-1.5 text-[12px] font-semibold text-secondary-text">
+                <div className="flex items-center gap-1.5 text-[12px] font-semibold text-secondary-text">
                   <User size={13} className="shrink-0 text-muted-text" />
                   <span>{site.managerName || '–'}</span>
                 </div>
-
+  
                 {/* Divider */}
-                <div className="relative z-10 border-t border-border-main/50 mt-auto" />
-
+                <div className="border-t border-border-main/50 mt-auto" />
+  
                 {/* Footer */}
-                <div className="relative z-10 flex items-center justify-between">
+                <div className="flex items-center justify-between">
                   <span className={`text-[11px] font-bold px-2.5 py-1 rounded-full ${badge.className}`}>
                     {badge.label}
                   </span>

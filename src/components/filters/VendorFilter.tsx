@@ -1,4 +1,4 @@
-import { useState } from 'react'
+
 import { InfiniteScrollMultiSelect } from '../common/InfiniteScrollMultiSelect'
 import { InventoryService } from '../../services/inventoryService'
 import type { Vendor } from '../../types/inventory'

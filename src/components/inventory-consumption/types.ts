@@ -1,6 +1,6 @@
 export interface ItemSettings {
   amount: string; // editable string so user can type freely
-  paymentMode: "UPI" | "Cash";
+  paymentMode: "UPI" | "Cash" | "Loyalty";
   noBill: boolean;
   loyalty: boolean;
 }

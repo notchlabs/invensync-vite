@@ -2,6 +2,20 @@ import type { ApiResponse } from '../types/api';
 import type { Vendor, Product, Site, PaginatedData, InventoryItem, InventoryFetchPayload } from '../types/inventory';
 import { ApiService } from './common/apiService';
 
+export interface PurchaseRecord {
+  unit: string;
+  price: number;
+  cgstInPerc: number;
+  sgstInPerc: number;
+  supplierName: string;
+  billUrl: string | null;
+  refNo: string;
+  availableQuantity: number;
+  consumedQuantity: number;
+  purchasedQty: number;
+  purchasedDate: string;
+}
+
 export interface SiteDistribution {
   totalSites: number;
   availableQty: number;
@@ -183,6 +197,13 @@ export class InventoryService {
    */
   static async quickTransfer(payload: any): Promise<ApiResponse<string>> {
     return ApiService.post('/inbound/storage/quick-transfer', payload);
+  }
+
+  /**
+   * Fetch all purchase history for a product (across all sites)
+   */
+  static async fetchProductPurchaseHistory(productId: number): Promise<ApiResponse<PurchaseRecord[]>> {
+    return ApiService.get(`/inbound/storage?productId=${productId}`);
   }
 
   /**

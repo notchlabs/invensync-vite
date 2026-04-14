@@ -388,22 +388,24 @@ export default function DailyConsumptionPage() {
           />
         )}
 
-        <div className="flex flex-col sm:flex-row sm:justify-end gap-3 pb-8 px-1 sm:px-0">
-          <button 
-            disabled={isConcluded || isSaving}
-            onClick={() => setIsEndShiftModalOpen(true)}
-            className="w-full sm:w-auto px-8 py-3 bg-red-600 text-white text-[14px] font-bold rounded-lg hover:bg-red-700 transition-all shadow-sm disabled:opacity-50"
-          >
-            End Shift
-          </button>
-          <button 
-            disabled={isConcluded || isSaving}
-            onClick={() => handleSave(false)}
-            className="w-full sm:w-auto px-8 py-3 bg-neutral-900 dark:bg-neutral-100 text-white dark:text-neutral-900 text-[14px] font-bold rounded-lg hover:opacity-90 transition-all shadow-sm disabled:opacity-50"
-          >
-            Save
-          </button>
-        </div>
+        {!isConcluded && (
+          <div className="flex flex-col sm:flex-row sm:justify-end gap-3 pb-8 px-1 sm:px-0">
+            <button 
+              disabled={isSaving}
+              onClick={() => setIsEndShiftModalOpen(true)}
+              className="w-full sm:w-auto px-8 py-3 bg-red-600 text-white text-[14px] font-bold rounded-lg hover:bg-red-700 transition-all shadow-sm disabled:opacity-50"
+            >
+              End Shift
+            </button>
+            <button 
+              disabled={isSaving}
+              onClick={() => handleSave(false)}
+              className="w-full sm:w-auto px-8 py-3 bg-neutral-900 dark:bg-neutral-100 text-white dark:text-neutral-900 text-[14px] font-bold rounded-lg hover:opacity-90 transition-all shadow-sm disabled:opacity-50"
+            >
+              Save
+            </button>
+          </div>
+        )}
       </div>
 
       <EndShiftModal 

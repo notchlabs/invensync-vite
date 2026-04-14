@@ -50,13 +50,19 @@ export function ConfirmConsumptionModal({
     }, 0)
   
     return (
-      <div className="fixed inset-0 z-[130] flex items-center justify-center p-4 bg-black/60 backdrop-blur-sm">
+      <motion.div 
+        initial={{ opacity: 0 }}
+        animate={{ opacity: 1 }}
+        exit={{ opacity: 0 }}
+        transition={{ duration: 0.2 }}
+        className="fixed inset-0 z-[130] flex items-end sm:items-center justify-center p-4 sm:p-0 bg-black/60 backdrop-blur-sm"
+      >
         <motion.div
-          initial={{ opacity: 0, scale: 0.96, y: 12 }}
+          initial={{ opacity: 0, scale: 0.95, y: 100 }}
           animate={{ opacity: 1, scale: 1, y: 0 }}
-          exit={{ opacity: 0, scale: 0.96, y: 12 }}
-          transition={{ duration: 0.2 }}
-          className="bg-card w-full max-w-[560px] rounded-3xl shadow-2xl flex flex-col max-h-[90vh]"
+          exit={{ opacity: 0, scale: 0.95, y: 100 }}
+          transition={{ type: "spring", stiffness: 350, damping: 30 }}
+          className="bg-card w-full max-w-[560px] rounded-xl shadow-[0_20px_50px_rgb(0,0,0,0.3)] flex flex-col max-h-[90vh] overflow-hidden"
         >
           {/* Header */}
           <div className="flex items-center justify-between px-6 pt-6 pb-4 shrink-0">
@@ -96,41 +102,52 @@ export function ConfirmConsumptionModal({
                   </div>
   
                   {/* Row 2: amount + payment mode + checkboxes */}
-                  <div className="flex items-center gap-2 flex-wrap">
+                  <div className="flex flex-col sm:flex-row items-stretch sm:items-center gap-2 mt-1">
                     {/* Amount input */}
                     <input
                       type="number"
                       value={cfg.amount}
                       onChange={e => updateSetting(entry.productId, 'amount', e.target.value)}
-                      className="w-24 h-10 px-3 bg-card border border-border-main rounded-xl text-[14px] font-bold text-primary-text outline-none focus:border-secondary-text focus:ring-2 focus:ring-accent/5 transition-all"
+                      className="w-full sm:w-24 h-10 px-3 bg-card border border-border-main rounded-xl text-[14px] font-bold text-primary-text outline-none focus:border-secondary-text focus:ring-2 focus:ring-accent/5 transition-all text-center sm:text-left"
+                      placeholder="Amount"
                     />
   
-                    {/* UPI */}
-                    <button
-                      onClick={() => updateSetting(entry.productId, 'paymentMode', 'UPI')}
-                      className={`h-10 px-4 rounded-xl text-[13px] font-black transition-all cursor-pointer ${
-                        cfg.paymentMode === 'UPI'
-                          ? 'bg-primary-text text-card'
-                          : 'bg-card border border-border-main text-primary-text hover:bg-surface'
-                      }`}
-                    >
-                      UPI
-                    </button>
-  
-                    {/* Cash */}
-                    <button
-                      onClick={() => updateSetting(entry.productId, 'paymentMode', 'Cash')}
-                      className={`h-10 px-4 rounded-xl text-[13px] font-black transition-all cursor-pointer ${
-                        cfg.paymentMode === 'Cash'
-                          ? 'bg-primary-text text-card'
-                          : 'bg-card border border-border-main text-primary-text hover:bg-surface'
-                      }`}
-                    >
-                      Cash
-                    </button>
-  
+                    {/* Payment Toggles */}
+                    <div className="flex items-center gap-2 flex-1">
+                      <button
+                        onClick={() => updateSetting(entry.productId, 'paymentMode', 'UPI')}
+                        className={`flex-1 h-10 rounded-xl text-[13px] font-black transition-all cursor-pointer ${
+                          cfg.paymentMode === 'UPI'
+                            ? 'bg-primary-text text-card'
+                            : 'bg-card border border-border-main text-primary-text hover:bg-surface'
+                        }`}
+                      >
+                        UPI
+                      </button>
+                      <button
+                        onClick={() => updateSetting(entry.productId, 'paymentMode', 'Cash')}
+                        className={`flex-1 h-10 rounded-xl text-[13px] font-black transition-all cursor-pointer ${
+                          cfg.paymentMode === 'Cash'
+                            ? 'bg-primary-text text-card'
+                            : 'bg-card border border-border-main text-primary-text hover:bg-surface'
+                        }`}
+                      >
+                        Cash
+                      </button>
+                      <button
+                        onClick={() => updateSetting(entry.productId, 'paymentMode', 'Loyalty')}
+                        className={`flex-1 h-10 rounded-xl text-[13px] font-black transition-all cursor-pointer ${
+                          cfg.paymentMode === 'Loyalty'
+                            ? 'bg-primary-text text-card'
+                            : 'bg-card border border-border-main text-primary-text hover:bg-surface'
+                        }`}
+                      >
+                        Loyalty
+                      </button>
+                    </div>
+
                     {/* No Bill */}
-                    <label className="flex items-center gap-1.5 cursor-pointer select-none">
+                    <label className="flex items-center justify-start sm:justify-center gap-2 pt-1 sm:pt-0 pb-1 sm:pb-0 shrink-0 cursor-pointer select-none pl-1 sm:pl-0">
                       <input
                         type="checkbox"
                         checked={cfg.noBill}
@@ -138,17 +155,6 @@ export function ConfirmConsumptionModal({
                         className="w-4 h-4 rounded border-border-main cursor-pointer accent-primary-text"
                       />
                       <span className="text-[13px] font-medium text-primary-text">No Bill</span>
-                    </label>
-  
-                    {/* Loyalty */}
-                    <label className="flex items-center gap-1.5 cursor-pointer select-none">
-                      <input
-                        type="checkbox"
-                        checked={cfg.loyalty}
-                        onChange={e => updateSetting(entry.productId, 'loyalty', e.target.checked)}
-                        className="w-4 h-4 rounded border-border-main cursor-pointer accent-primary-text"
-                      />
-                      <span className="text-[13px] font-medium text-primary-text">loyalty</span>
                     </label>
                   </div>
                 </div>
@@ -183,11 +189,11 @@ export function ConfirmConsumptionModal({
               onClick={() => onConfirm(settings)}
               className="py-3.5 rounded-2xl bg-primary-text text-card text-[14px] font-black hover:opacity-90 transition-opacity cursor-pointer"
             >
-              Confirm Consumption
+              Confirm
             </button>
           </div>
         </motion.div>
-      </div>
+      </motion.div>
     )
   }
   

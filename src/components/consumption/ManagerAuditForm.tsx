@@ -1,5 +1,5 @@
-
 import { ShieldCheck } from 'lucide-react';
+import { useMsal } from '@azure/msal-react';
 import type { ExistingSales } from '../../services/consumptionService';
 
 interface ManagerAuditFormProps {
@@ -37,10 +37,19 @@ export const ManagerAuditForm = ({
   handleSave,
   handleSaveAudit,
 }: ManagerAuditFormProps) => {
+  const { accounts } = useMsal();
+  
+  // Role check: Only show if ADMIN2 or MANAGER2
+  const claims = accounts[0]?.idTokenClaims ?? {};
+  const tokenRoles = Array.isArray(claims['roles']) ? claims['roles'] : [];
+  const canAudit = tokenRoles.some(r => ['ADMIN', 'MANAGER'].includes(String(r)));
+
+  if (!canAudit) return null;
+
   return (
     <div className="bg-card border border-border-main rounded-xl p-5 md:p-7 shadow-sm mt-4 flex flex-col gap-6 relative overflow-hidden">
       <div className="flex items-center gap-2 border-b border-border-main pb-4">
-        <div className="w-8 h-8 rounded-lg bg-neutral-100 dark:bg-neutral-800 border border-border-main flex items-center justify-center">
+        <div className="w-8 h-8 rounded-lg border border-border-main flex items-center justify-center">
           <ShieldCheck size={16} className="text-primary-text" />
         </div>
         <h3 className="text-[16px] font-bold text-primary-text font-display">Manager Audit</h3>
@@ -59,7 +68,7 @@ export const ManagerAuditForm = ({
             <input 
               type="number"
               min="0"
-              disabled={isConcluded}
+              disabled={!!salesRecord?.recordedBilledAmountByManager && salesRecord.recordedBilledAmountByManager > 0}
               value={mopReading || ''}
               onChange={(e) => setMopReading(Number(e.target.value))}
               className="w-full h-[42px] px-3 bg-transparent border border-dashed border-neutral-300 dark:border-neutral-700 rounded-lg text-[16px] font-bold text-primary-text outline-none focus:border-solid focus:border-primary-text focus:ring-4 focus:ring-primary-text/5 disabled:bg-secondary transition-all font-mono"
@@ -84,7 +93,7 @@ export const ManagerAuditForm = ({
             <input 
               type="number"
               min="0"
-              disabled={isConcluded}
+              disabled={!!salesRecord?.recordedPosAmountByManager && salesRecord.recordedPosAmountByManager > 0}
               value={posReading || ''}
               onChange={(e) => setPosReading(Number(e.target.value))}
               className="w-full h-[42px] px-3 bg-transparent border border-dashed border-neutral-300 dark:border-neutral-700 rounded-lg text-[16px] font-bold text-primary-text outline-none focus:border-solid focus:border-primary-text focus:ring-4 focus:ring-primary-text/5 disabled:bg-secondary transition-all font-mono"
@@ -111,7 +120,7 @@ export const ManagerAuditForm = ({
             <input 
               type="number"
               min="0"
-              disabled={isConcluded}
+              disabled={!!salesRecord?.cashCollectedByManager && salesRecord.cashCollectedByManager > 0}
               value={cashCollected || ''}
               onChange={(e) => setCashCollected(Number(e.target.value))}
               className="w-full h-[42px] px-3 bg-transparent border border-border-main rounded-lg text-[16px] font-bold text-primary-text outline-none focus:border-primary-text focus:ring-4 focus:ring-primary-text/5 disabled:bg-secondary transition-all font-mono shadow-sm"
@@ -134,7 +143,7 @@ export const ManagerAuditForm = ({
             <input 
               type="number"
               min="0"
-              disabled={isConcluded}
+              disabled={!!salesRecord?.upiCollectedByManager && salesRecord.upiCollectedByManager > 0}
               value={upiCollected || ''}
               onChange={(e) => setUpiCollected(Number(e.target.value))}
               className="w-full h-[42px] px-3 bg-transparent border border-border-main rounded-lg text-[16px] font-bold text-primary-text outline-none focus:border-primary-text focus:ring-4 focus:ring-primary-text/5 disabled:bg-secondary transition-all font-mono shadow-sm"
@@ -161,7 +170,7 @@ export const ManagerAuditForm = ({
             Save Audit
           </button>
         )}
-        {salesRecord && isConcluded && (
+        {salesRecord && isConcluded && !(salesRecord.recordedBilledAmountByManager > 0 && salesRecord.cashCollectedByManager > 0) && (
           <button 
             onClick={handleSaveAudit}
             className="px-6 py-2.5 bg-neutral-900 dark:bg-neutral-100 text-white dark:text-neutral-900 text-[13px] font-bold rounded-lg hover:opacity-90 transition-all"

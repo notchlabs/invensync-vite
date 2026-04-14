@@ -86,11 +86,25 @@ export function InfiniteScrollTable<T>({
 }: InfiniteScrollTableProps<T>) {
   const observerTarget = useRef<HTMLTableRowElement>(null)
 
+  // Keep refs in sync so the observer closure always reads the latest values
+  // without needing to be recreated on every change (which causes spurious fires).
+  const hasMoreRef     = useRef(hasMore)
+  const isLoadingRef   = useRef(isLoading)
+  const onLoadMoreRef  = useRef(onLoadMore)
+
+  useEffect(() => { hasMoreRef.current    = hasMore   }, [hasMore])
+  useEffect(() => { isLoadingRef.current  = isLoading }, [isLoading])
+  useEffect(() => { onLoadMoreRef.current = onLoadMore }, [onLoadMore])
+
+  // Observer is created once on mount and never recreated.
+  // Recreating it on dep changes was the bug: when hasMore flipped false→true
+  // after a filter reset, the newly-attached observer would fire immediately
+  // (sentinel already in viewport) and trigger an extra page load.
   useEffect(() => {
     const observer = new IntersectionObserver(
       entries => {
-        if (entries[0].isIntersecting && hasMore && !isLoading) {
-          onLoadMore()
+        if (entries[0].isIntersecting && hasMoreRef.current && !isLoadingRef.current) {
+          onLoadMoreRef.current()
         }
       },
       { threshold: 1.0, rootMargin: '0px 0px 100px 0px' }
@@ -101,7 +115,7 @@ export function InfiniteScrollTable<T>({
     }
 
     return () => observer.disconnect()
-  }, [hasMore, isLoading, onLoadMore])
+  }, []) // intentionally empty — refs handle freshness
 
   const allSelected = data.length > 0 && data.every((row, index) => selectedKeys.has(keyExtractor(row, index)))
 

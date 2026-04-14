@@ -118,4 +118,26 @@ export class ConsumptionService {
   static async saveSalesAudit(salesId: number, payload: { recordedBilledAmountByManager: number; recordedPosAmountByManager: number; cashCollectedByManager: number; upiCollectedByManager: number }): Promise<ApiResponse<any>> {
     return ApiService.post(`/sales/${salesId}/audit`, payload);
   }
+
+  /**
+   * Consume real-time stock
+   */
+  static async consumeStock(payload: {
+    consumptionUnitId: number;
+    consumptionDate: string;
+    saveDetails: boolean;
+    records: {
+      sourceSiteId: number;
+      productId: number;
+      productName: string;
+      quantity: number;
+      amountIncTax: number;
+      upi: number;
+      cash: number;
+      noBill: boolean;
+      loyalty: boolean;
+    }[]
+  }): Promise<ApiResponse<any>> {
+    return ApiService.post('/inbound/storage/consume-stock', payload);
+  }
 }

@@ -4,6 +4,7 @@ import { AnimatePresence, motion } from 'framer-motion'
 import toast from 'react-hot-toast'
 import Skeleton from 'react-loading-skeleton'
 import { InventoryService, type PreparationProduct } from '../../services/inventoryService'
+import { ConsumptionService } from '../../services/consumptionService'
 import type { InventoryItem } from '../../types/inventory'
 import { ENV } from '../../config/env'
 import type { CartEntry, ItemSettings } from '../../components/inventory-consumption/types'
@@ -138,10 +139,50 @@ export default function ConsumptionPage() {
     setCart(prev => { const next = new Map(prev); next.delete(productId); return next })
   }
 
-  const handleConfirm = (_settings: Map<number, ItemSettings>) => {
-    toast.success('Consumption recorded successfully!')
-    setCart(new Map())
-    setShowModal(false)
+  const handleConfirm = async (settings: Map<number, ItemSettings>) => {
+    try {
+      const now = new Date()
+      const formattedDate = `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, '0')}-${String(now.getDate()).padStart(2, '0')}T${String(now.getHours()).padStart(2, '0')}:${String(now.getMinutes()).padStart(2, '0')}`
+
+      const records = Array.from(cart.values()).map(e => {
+        const s = settings.get(e.productId)
+        const amount = parseFloat(s?.amount || '0')
+        return {
+          sourceSiteId: SITE_ID,
+          productId: e.productId,
+          productName: e.productName,
+          quantity: e.qty,
+          amountIncTax: amount,
+          upi: s?.paymentMode === 'UPI' ? amount : 0,
+          cash: s?.paymentMode === 'Cash' ? amount : 0,
+          noBill: s?.noBill ?? false,
+          loyalty: s?.paymentMode === 'Loyalty'
+        }
+      })
+
+      const payload = {
+        consumptionUnitId: Number(ENV.DEFAULT_CONSUMPTION_UNIT_ID),
+        consumptionDate: formattedDate,
+        saveDetails: true,
+        records
+      }
+
+      await ConsumptionService.consumeStock(payload)
+
+      toast.success('Stock consumed successfully!')
+      setCart(new Map())
+      setShowModal(false)
+      
+      // Optionally refresh current view based on tab
+      if (tab === 'inventory') {
+        loadInventory(true)
+      } else {
+        loadPrep('')
+      }
+    } catch (error) {
+      console.error('Failed to consume stock', error)
+      toast.error('Failed to consume stock. Please try again.')
+    }
   }
 
   const cartEntries = Array.from(cart.values())
@@ -222,25 +263,64 @@ export default function ConsumptionPage() {
                 <p className="text-[13px] font-bold text-muted-text">No inventory found</p>
               </div>
             ) : (
-              <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3">
-                {invItems.map(item => {
-                  const cartEntry = cart.get(item.productId)
-                  return (
-                    <ProductCard
-                      key={`${item.productId}-${item.siteId}`}
-                      productId={item.productId}
-                      productName={item.productName}
-                      vendorName={item.vendorNames}
-                      price={item.mrp}
-                      unit={item.unit}
-                      imageUrl={item.imageUrl}
-                      cartQty={cartEntry?.qty ?? 0}
-                      onAdd={() => addToCart({ productId: item.productId, productName: item.productName, unit: item.unit, price: item.mrp, imageUrl: item.imageUrl, source: 'inventory' })}
-                      onRemove={() => removeFromCart(item.productId)}
-                    />
-                  )
-                })}
-              </div>
+              <>
+                {/* IN STOCK */}
+                <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3">
+                  {invItems.filter(i => i.quantity > 0).map(item => {
+                    const cartEntry = cart.get(item.productId)
+                    return (
+                      <ProductCard
+                        key={`${item.productId}-${item.siteId}`}
+                        productId={item.productId}
+                        productName={item.productName}
+                        vendorName={item.vendorNames}
+                        price={item.mrp}
+                        unit={item.unit}
+                        imageUrl={item.imageUrl}
+                        cartQty={cartEntry?.qty ?? 0}
+                        onAdd={() => addToCart({ productId: item.productId, productName: item.productName, unit: item.unit, price: item.mrp, imageUrl: item.imageUrl, source: 'inventory' })}
+                        onRemove={() => removeFromCart(item.productId)}
+                        isOutOfStock={false}
+                      />
+                    )
+                  })}
+                </div>
+
+                {/* OUT OF STOCK SEPARATOR & GRID */}
+                {invItems.some(i => i.quantity <= 0) && (
+                  <>
+                    <div className="flex items-center gap-4 my-8 max-w-[800px] mx-auto opacity-80">
+                      <hr className="flex-1 border-border-main" />
+                      <div className="px-4 py-1.5 rounded-full border border-rose-500/20 bg-rose-500/5 text-rose-600 text-[11px] font-black tracking-wide flex items-center gap-1.5 shrink-0 shadow-sm">
+                        <span className="w-1.5 h-1.5 rounded-full bg-rose-500" />
+                        Out of Stock • {invItems.filter(i => i.quantity <= 0).length} items
+                      </div>
+                      <hr className="flex-1 border-border-main" />
+                    </div>
+
+                    <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3">
+                      {invItems.filter(i => i.quantity <= 0).map(item => {
+                        const cartEntry = cart.get(item.productId)
+                        return (
+                          <ProductCard
+                            key={`${item.productId}-${item.siteId}`}
+                            productId={item.productId}
+                            productName={item.productName}
+                            vendorName={item.vendorNames}
+                            price={item.mrp}
+                            unit={item.unit}
+                            imageUrl={item.imageUrl}
+                            cartQty={cartEntry?.qty ?? 0}
+                            onAdd={() => addToCart({ productId: item.productId, productName: item.productName, unit: item.unit, price: item.mrp, imageUrl: item.imageUrl, source: 'inventory' })}
+                            onRemove={() => removeFromCart(item.productId)}
+                            isOutOfStock={true}
+                          />
+                        )
+                      })}
+                    </div>
+                  </>
+                )}
+              </>
             )}
             <div ref={invSentinel} className="h-4" />
             {invLoading && invItems.length > 0 && (

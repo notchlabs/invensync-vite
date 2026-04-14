@@ -1,5 +1,6 @@
 import { ApiService } from './common/apiService';
 import type { ApiResponse } from '../types/api';
+import type { PaginatedData } from '../types/inventory';
 
 export interface StatItem {
   amount: number;
@@ -24,6 +25,7 @@ export interface ProfitLossMonth {
   toleranceValue: number;
   amount: number;
   profit: boolean;
+  finalized: boolean;
 }
 
 export interface MonthlyExpensesData {
@@ -58,4 +60,41 @@ export class ReportService {
   static async finalizeMonth(siteId: number, year: number, month: number): Promise<ApiResponse<ProfitLossMonth>> {
     return ApiService.post(`/report/profit-loss-overview/finalize?siteId=${siteId}&year=${year}&month=${month}`, {});
   }
+
+  static async fetchConsumptionReport(
+    page: number,
+    size: number,
+    payload: ConsumptionReportPayload,
+  ): Promise<ApiResponse<PaginatedData<ConsumptionReportItem>>> {
+    return ApiService.post(`/list/consumption-report?page=${page}&size=${size}`, payload);
+  }
+}
+
+export type StockStatus = 'ALL' | 'SAFE' | 'ORDER_SOON' | 'CRITICAL'
+
+export interface ConsumptionReportPayload {
+  searchTerm: string
+  stockStatus: StockStatus
+  sortBy: string
+  sortDir: 'ASC' | 'DESC'
+  vendorIds?: number[]
+}
+
+export interface ConsumptionReportItem {
+  productId: number
+  productName: string
+  supplierName: string | null
+  imageUrl: string | null
+  unit: string
+  consumptionRate: number
+  stock: number
+  daysLeft: number | null
+  stockStatus: string
+}
+
+export interface ConsumptionReportSummary {
+  productsShown: number
+  avgDaily: number
+  belowReorder: number
+  critical: number
 }

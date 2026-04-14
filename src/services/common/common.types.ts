@@ -5,8 +5,8 @@ export interface PaginatedResponse<T> {
     totalPages: number;
     totalElements: number;
 
-    isFirst: boolean;
-    isLast: boolean;
+    first: boolean;
+    last: boolean;
     hasNext: boolean;
     hasPrevious: boolean;
     nextPage: number;

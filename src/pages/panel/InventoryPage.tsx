@@ -1,5 +1,6 @@
 import { useState, useCallback, useEffect, useRef } from "react";
 import { useSearchParams, useNavigate } from "react-router-dom";
+import { useMsal } from "@azure/msal-react";
 import {
   LayoutGrid,
   ArrowRightLeft,
@@ -51,6 +52,11 @@ export default function InventoryPage() {
   const [searchParams, setSearchParams] = useSearchParams();
   const navigate = useNavigate();
   const SITE_ID = Number(ENV.DEFAULT_SITE_ID)
+  const { accounts } = useMsal();
+  const claims = accounts[0]?.idTokenClaims ?? {};
+  const tokenRoles: string[] = Array.isArray(claims['roles']) ? (claims['roles'] as string[]) : [];
+  const canSeeFinancials = tokenRoles.some(r => ['ADMIN', 'MANAGER'].includes(r));
+
   // States
   const [selectedSites, setSelectedSites] = useState<Site[]>([]);
   const [selectedProducts, setSelectedProducts] = useState<Product[]>([]);
@@ -180,6 +186,7 @@ export default function InventoryPage() {
           site: selectedSites.map((s) => s.id),
           product: selectedProducts.map((p) => p.id),
           vendor: selectedVendors.map((v) => v.id),
+          showZeroStock: false,
           searchByProductName:
             searchType === "Product Name" && search.length >= 3 ? search : null,
           searchByBillNo:
@@ -331,6 +338,12 @@ export default function InventoryPage() {
         unit: "unit",
         computedTax: (row) => (row.mrp ? row.mrp - row.price : 0),
       },
+      render: !canSeeFinancials ? () => (
+        <div className="flex flex-col items-end opacity-40 select-none">
+          <div className="text-[13px] font-bold">₹ ••••</div>
+          <span className="text-[10px] mt-0.5">+ ₹ •• tax</span>
+        </div>
+      ) : undefined,
     },
     {
       header: "Net Amount",
@@ -342,6 +355,12 @@ export default function InventoryPage() {
         value: "totalExcludingTax",
         computedTax: (row) => row.totalIncludingTax - row.totalExcludingTax,
       },
+      render: !canSeeFinancials ? () => (
+        <div className="flex flex-col items-end opacity-40 select-none">
+          <div className="text-[13px] font-bold">₹ ••••</div>
+          <span className="text-[10px] mt-0.5">+ ₹ •• tax</span>
+        </div>
+      ) : undefined,
     },
   ];
 

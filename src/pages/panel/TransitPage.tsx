@@ -4,12 +4,20 @@ import { Search, RotateCw, Download, FileSpreadsheet, ReceiptText } from 'lucide
 import { InfiniteScrollTable, type Column } from '../../components/common/InfiniteScrollTable'
 import { PageHeader } from '../../components/common/PageHeader'
 import { SiteFilter } from '../../components/filters/SiteFilter'
-import { DateRangePicker } from '../../components/common/DateRangePicker'
+import { AdvancedDateRangePicker } from '../../components/common/AdvancedDateRangePicker'
 import { TransferService, type TransferRecord } from '../../services/transferService'
 import { TransitDetailModal } from '../../components/transit/TransitDetailModal'
 import type { Site } from '../../types/inventory'
+import type { DateRange } from 'react-day-picker'
+import { format, parseISO } from 'date-fns'
 
 // ── helpers ───────────────────────────────────────────────────────────────────
+
+function parseDate(val: string | null): Date | undefined {
+  if (!val) return undefined
+  const d = parseISO(val)
+  return isNaN(d.getTime()) ? undefined : d
+}
 
 const fmtCurrency = (n: number) =>
   new Intl.NumberFormat('en-IN', { style: 'currency', currency: 'INR', maximumFractionDigits: 0 })
@@ -28,9 +36,9 @@ async function exportToExcel(rows: TransferRecord[], filename = 'transfers.xlsx'
   const ws = wb.addWorksheet('Transfers')
 
   ws.columns = [
-    { header: 'Ref Number',    key: 'ref',    width: 22 },
-    { header: 'From Site (-)', key: 'from',   width: 30 },
-    { header: 'To Site (+)',   key: 'to',     width: 30 },
+    { header: 'Ref Number', key: 'ref', width: 22 },
+    { header: 'From Site (-)', key: 'from', width: 30 },
+    { header: 'To Site (+)', key: 'to', width: 30 },
     { header: 'Taxable Amount', key: 'amount', width: 18 },
   ]
 
@@ -43,9 +51,9 @@ async function exportToExcel(rows: TransferRecord[], filename = 'transfers.xlsx'
 
   rows.forEach((r, i) => {
     const row = ws.addRow({
-      ref:    r.refNumber,
-      from:   r.sourceSite,
-      to:     r.destinationSite,
+      ref: r.refNumber,
+      from: r.sourceSite,
+      to: r.destinationSite,
       amount: r.totalAmount,
     })
     row.height = 18
@@ -57,10 +65,10 @@ async function exportToExcel(rows: TransferRecord[], filename = 'transfers.xlsx'
   ws.eachRow(row => {
     row.eachCell(cell => {
       cell.border = {
-        top:    { style: 'thin', color: { argb: 'FFE5E7EB' } },
+        top: { style: 'thin', color: { argb: 'FFE5E7EB' } },
         bottom: { style: 'thin', color: { argb: 'FFE5E7EB' } },
-        left:   { style: 'thin', color: { argb: 'FFE5E7EB' } },
-        right:  { style: 'thin', color: { argb: 'FFE5E7EB' } },
+        left: { style: 'thin', color: { argb: 'FFE5E7EB' } },
+        right: { style: 'thin', color: { argb: 'FFE5E7EB' } },
       }
     })
   })
@@ -98,21 +106,24 @@ export default function TransitPage() {
   const [searchParams, setSearchParams] = useSearchParams()
 
   // Filters — lazy-initialised from URL
-  const [search, setSearch]       = useState(() => searchParams.get('search') ?? '')
-  const [fromDate, setFromDate]   = useState(() => searchParams.get('fromDate') ?? '')
-  const [toDate, setToDate]       = useState(() => searchParams.get('toDate') ?? '')
+  const [search, setSearch] = useState(() => searchParams.get('search') ?? '')
+  const [dateRange, setDateRange] = useState<DateRange | undefined>(() => {
+    const from = parseDate(searchParams.get('fromDate'))
+    const to = parseDate(searchParams.get('toDate'))
+    return from ? { from, to } : undefined
+  })
   const [fromSites, setFromSites] = useState<Site[]>(() => parseSites(searchParams.get('fromSites')))
-  const [toSites, setToSites]     = useState<Site[]>(() => parseSites(searchParams.get('toSites')))
+  const [toSites, setToSites] = useState<Site[]>(() => parseSites(searchParams.get('toSites')))
 
   // Table data
-  const [data, setData]               = useState<TransferRecord[]>([])
-  const [isLoading, setIsLoading]     = useState(false)
-  const [hasMore, setHasMore]         = useState(true)
+  const [data, setData] = useState<TransferRecord[]>([])
+  const [isLoading, setIsLoading] = useState(false)
+  const [hasMore, setHasMore] = useState(true)
   const [totalElements, setTotalElements] = useState(0)
 
   // Selection
   const [selectedKeys, setSelectedKeys] = useState<Set<number>>(new Set())
-  const [isExporting, setIsExporting]   = useState(false)
+  const [isExporting, setIsExporting] = useState(false)
 
   // Detail modal
   const [selectedTransfer, setSelectedTransfer] = useState<TransferRecord | null>(null)
@@ -121,7 +132,7 @@ export default function TransitPage() {
     searchParams.get('id') ? Number(searchParams.get('id')) : null
   )
 
-  const pageRef      = useRef(0)
+  const pageRef = useRef(0)
   const isLoadingRef = useRef(false)
 
   const loadData = useCallback(async (reset = false) => {
@@ -135,23 +146,23 @@ export default function TransitPage() {
       }
       const res = await TransferService.fetchTransfers(pageRef.current, 12, {
         search,
-        fromDate,
-        toDate,
+        fromDate: dateRange?.from ? format(dateRange.from, 'yyyy-MM-dd') : '',
+        toDate: dateRange?.to ? format(dateRange.to, 'yyyy-MM-dd') : '',
         fromSiteId: fromSites.length ? fromSites.map(s => s.id) : null,
-        toSiteId:   toSites.length   ? toSites.map(s => s.id)   : null,
+        toSiteId: toSites.length ? toSites.map(s => s.id) : null,
       })
       const items = res.data.content || []
       setData(prev => reset ? items : [...prev, ...items])
       setTotalElements(res.data.totalElements || 0)
       pageRef.current += 1
-      setHasMore(!res.data.isLast)
+      setHasMore(!res.data.last)
     } catch (e) {
       console.error(e)
     } finally {
       isLoadingRef.current = false
       setIsLoading(false)
     }
-  }, [search, fromDate, toDate, fromSites, toSites])
+  }, [search, dateRange, fromSites, toSites])
 
   useEffect(() => {
     const t = setTimeout(() => loadData(true), 350)
@@ -163,8 +174,8 @@ export default function TransitPage() {
     setSearchParams(prev => {
       const p = new URLSearchParams(prev)
       search ? p.set('search', search) : p.delete('search')
-      fromDate ? p.set('fromDate', fromDate) : p.delete('fromDate')
-      toDate ? p.set('toDate', toDate) : p.delete('toDate')
+      dateRange?.from ? p.set('fromDate', format(dateRange.from, 'yyyy-MM-dd')) : p.delete('fromDate')
+      dateRange?.to ? p.set('toDate', format(dateRange.to, 'yyyy-MM-dd')) : p.delete('toDate')
       fromSites.length
         ? p.set('fromSites', JSON.stringify(fromSites.map(s => ({ id: s.id, name: s.name, city: s.city, state: s.state }))))
         : p.delete('fromSites')
@@ -173,7 +184,7 @@ export default function TransitPage() {
         : p.delete('toSites')
       return p
     }, { replace: true })
-  }, [search, fromDate, toDate, fromSites, toSites, setSearchParams])
+  }, [search, dateRange, fromSites, toSites, setSearchParams])
 
   // Auto-open modal when the pending id from URL is found in loaded data
   useEffect(() => {
@@ -186,7 +197,7 @@ export default function TransitPage() {
   }, [data, isLoading])
 
   // Reset selection on filter change
-  useEffect(() => { setSelectedKeys(new Set()) }, [search, fromDate, toDate, fromSites, toSites])
+  useEffect(() => { setSelectedKeys(new Set()) }, [search, dateRange, fromSites, toSites])
 
   const handleToggleSelect = (key: string | number) => {
     setSelectedKeys(prev => {
@@ -226,13 +237,12 @@ export default function TransitPage() {
 
   const handleClearFilters = () => {
     setSearch('')
-    setFromDate('')
-    setToDate('')
+    setDateRange(undefined)
     setFromSites([])
     setToSites([])
   }
 
-  const hasFilters = search || fromDate || toDate || fromSites.length > 0 || toSites.length > 0
+  const hasFilters = search || dateRange?.from || fromSites.length > 0 || toSites.length > 0
 
   const columns: Column<TransferRecord>[] = [
     {
@@ -374,12 +384,10 @@ export default function TransitPage() {
 
         {/* Date range */}
         <div className="min-w-[220px]">
-          <p className="text-[10px] font-black text-muted-text uppercase tracking-widest mb-1">Bill Date</p>
-          <DateRangePicker
-            from={fromDate}
-            to={toDate}
-            onFromChange={setFromDate}
-            onToChange={setToDate}
+          <p className="text-[10px] font-black text-muted-text uppercase tracking-widest mb-1 pl-1">Bill Date</p>
+          <AdvancedDateRangePicker
+            selectedRange={dateRange}
+            onRangeChange={setDateRange}
             placeholder="Select range"
           />
         </div>
@@ -396,14 +404,14 @@ export default function TransitPage() {
           <SiteFilter selectedItems={toSites} onSelectionChange={setToSites} />
         </div>
 
-        {hasFilters && (
-          <button
-            onClick={handleClearFilters}
-            className="flex items-center gap-1.5 px-3 py-2 bg-rose-500/10 hover:bg-rose-500/20 text-rose-500 rounded-lg text-[11px] font-black uppercase tracking-widest transition-all h-[38px] mt-auto"
-          >
-            <RotateCw size={12} /> Clear
-          </button>
-        )}
+
+        <button
+          onClick={handleClearFilters}
+          className="flex items-center gap-1.5 px-3 py-2 bg-rose-500/10 hover:bg-rose-500/20 text-rose-500 rounded-lg text-[11px] font-black uppercase tracking-widest transition-all h-[38px] mt-auto"
+        >
+          <RotateCw size={12} /> Clear
+        </button>
+
       </div>
 
       {/* Table */}

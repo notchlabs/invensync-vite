@@ -1,20 +1,82 @@
-import { useState } from 'react'
+import { useState, useRef, useEffect } from 'react'
 import { Outlet, useLocation, Link, useSearchParams } from 'react-router-dom'
 import { useMsal } from '@azure/msal-react'
 import { useTheme } from '../context/ThemeContext'
-import { Menu, PanelLeft, Sun, Moon } from 'lucide-react'
+import { Menu, PanelLeft, Sun, Moon, MoreVertical, LogOut } from 'lucide-react'
 import { AppSidebar, NAV_ITEMS } from '../components/layout/AppSidebar'
+import toast from 'react-hot-toast'
+
+/* ── Account dropdown ────────────────────────────────────── */
+function AccountMenu() {
+  const { instance, accounts } = useMsal()
+  const [open, setOpen] = useState(false)
+  const menuRef = useRef<HTMLDivElement>(null)
+  const activeAccount = accounts[0]
+
+  useEffect(() => {
+    const handler = (e: MouseEvent) => {
+      if (menuRef.current && !menuRef.current.contains(e.target as Node)) {
+        setOpen(false)
+      }
+    }
+    document.addEventListener('mousedown', handler)
+    return () => document.removeEventListener('mousedown', handler)
+  }, [])
+
+  const handleLogout = async () => {
+    try {
+      await instance.logoutRedirect({ postLogoutRedirectUri: window.location.origin })
+    } catch (e: any) {
+      console.error('Logout failed:', e)
+      toast.error('Logout failed. Please try again.')
+    }
+  }
+
+  if (!activeAccount) return null
+  console.log('Active account:', activeAccount)
+  return (
+    <div className="relative" ref={menuRef}>
+      <button
+        onClick={() => setOpen(o => !o)}
+        className="flex items-center gap-2 px-2.5 py-1.5 bg-surface border border-border-main rounded-lg hover:bg-card transition-colors cursor-pointer"
+      >
+        <div className="w-6 h-6 bg-primary-text rounded-full flex items-center justify-center shrink-0">
+          <span className="text-[11px] font-bold text-card">
+            {activeAccount.name?.charAt(0)?.toUpperCase() ?? '?'}
+          </span>
+        </div>
+        <span className="text-[13px] font-medium text-secondary-text max-w-[110px] truncate hidden sm:block">
+          {activeAccount.name ?? activeAccount.username}
+        </span>
+        <MoreVertical size={14} className="text-muted-text ml-0.5" />
+      </button>
+
+      {open && (
+        <div className="absolute top-[calc(100%+6px)] right-0 bg-card border border-border-main shadow-md rounded-xl overflow-hidden z-50 min-w-[160px] animate-[fadeInDown_0.15s_ease-out_both]">
+          <div className="p-1.5">
+            <button
+              onClick={() => { setOpen(false); handleLogout() }}
+              className="w-full flex items-center gap-2.5 px-3 py-2 text-[13px] font-medium text-red-600 hover:bg-red-50 rounded-lg transition-colors cursor-pointer"
+            >
+              <LogOut size={14} />
+              Sign out
+            </button>
+          </div>
+        </div>
+      )}
+    </div>
+  )
+}
 
 const AppLayout = () => {
   const location = useLocation()
   const [searchParams] = useSearchParams()
-  const { accounts } = useMsal()
-  const activeAccount = accounts[0]
   const [isCollapsed, setIsCollapsed] = useState(false)
   const [isMobileOpen, setIsMobileOpen] = useState(false)
   const { theme, toggleTheme } = useTheme()
 
-  const currentNav = NAV_ITEMS.find(item => location.pathname.startsWith(item.path)) || NAV_ITEMS[0]
+  const currentNav = NAV_ITEMS.find(item => location.pathname.startsWith(item.path)) || 
+    (location.pathname.startsWith('/app/panel/consumption') ? NAV_ITEMS.find(i => i.label === 'Inventory') || NAV_ITEMS[0] : NAV_ITEMS[0])
 
   const getBreadcrumbLabel = () => {
     const name = searchParams.get('name') || ''
@@ -58,12 +120,17 @@ const AppLayout = () => {
         </>
       ) : 'consumption'
     }
-    return location.pathname
-      .slice(currentNav.path.length)
-      .split('/')
-      .filter(Boolean)
-      .map(p => p.replace(/-/g, ' '))
-      .join(' / ')
+    if (location.pathname.startsWith(currentNav.path)) {
+      return location.pathname
+        .slice(currentNav.path.length)
+        .split('/')
+        .filter(Boolean)
+        .map(p => p.replace(/-/g, ' '))
+        .join(' / ')
+    }
+    
+    // Fallback: extract last segment
+    return location.pathname.split('/').pop()?.replace(/-/g, ' ') || ''
   }
 
   return (
@@ -121,11 +188,7 @@ const AppLayout = () => {
               {theme === 'light' ? <Moon size={16} /> : <Sun size={16} />}
             </button>
 
-            {activeAccount && (
-              <div className="w-8 h-8 rounded-full bg-surface border border-border-main text-secondary-text flex items-center justify-center text-[12px] font-bold shadow-sm">
-                {activeAccount.name?.charAt(0)?.toUpperCase()}
-              </div>
-            )}
+            <AccountMenu />
           </div>
         </header>
 

@@ -1,5 +1,6 @@
 import { NavLink } from 'react-router-dom'
 import { AnimatePresence, motion } from 'framer-motion'
+import { useMsal } from '@azure/msal-react'
 import { useTheme } from '../../context/ThemeContext'
 import {
   LayoutDashboard,
@@ -15,17 +16,27 @@ import {
   X,
 } from 'lucide-react'
 
-export const NAV_ITEMS = [
-  { label: 'Dashboard',      icon: LayoutDashboard, path: '/app/panel/dashboard' },
-  { label: 'All Sites',      icon: Building2,       path: '/app/panel/sites' },
-  { label: 'Transit',        icon: Truck,           path: '/app/panel/transit' },
+interface NavItem {
+  label: string
+  icon: any
+  path: string
+  requiredRoles?: string[]
+}
+
+const ADMIN_ONLY = ['ADMIN']
+const ADMIN_OR_MANAGER = ['ADMIN', 'MANAGER']
+
+export const NAV_ITEMS: NavItem[] = [
+  { label: 'Dashboard',      icon: LayoutDashboard, path: '/app/panel/dashboard',        requiredRoles: ADMIN_ONLY },
+  { label: 'All Sites',      icon: Building2,       path: '/app/panel/sites',            requiredRoles: ADMIN_OR_MANAGER },
+  { label: 'Transit',        icon: Truck,           path: '/app/panel/transit',          requiredRoles: ADMIN_OR_MANAGER },
   { label: 'Inventory',      icon: Package,         path: '/app/panel/inventory' },
-  { label: 'Add Stock',      icon: PlusSquare,      path: '/app/panel/add-stock' },
-  { label: 'Bill Details',   icon: FileText,        path: '/app/panel/bills' },
-  { label: 'Vendors',        icon: Users,           path: '/app/panel/vendors' },
-  { label: 'Purchase Order', icon: Receipt,         path: '/app/panel/purchase-orders' },
-  { label: 'Products',       icon: Box,             path: '/app/panel/products' },
-  { label: 'Reports',        icon: BarChart,        path: '/app/panel/reports' },
+  { label: 'Add Stock',      icon: PlusSquare,      path: '/app/panel/add-stock',        requiredRoles: ADMIN_OR_MANAGER },
+  { label: 'Bill Details',   icon: FileText,        path: '/app/panel/bills',            requiredRoles: ADMIN_OR_MANAGER },
+  { label: 'Vendors',        icon: Users,           path: '/app/panel/vendors',          requiredRoles: ADMIN_OR_MANAGER },
+  { label: 'Purchase Order', icon: Receipt,         path: '/app/panel/purchase-orders',  requiredRoles: ADMIN_OR_MANAGER },
+  { label: 'Products',       icon: Box,             path: '/app/panel/products',         requiredRoles: ADMIN_OR_MANAGER },
+  { label: 'Reports',        icon: BarChart,        path: '/app/panel/reports',          requiredRoles: ADMIN_OR_MANAGER },
 ]
 
 interface AppSidebarProps {
@@ -46,6 +57,18 @@ function SidebarContent({
   onNavClick: () => void
   theme: string
 }>) {
+  const { accounts } = useMsal()
+  
+  // Get roles from claims
+  const claims = accounts[0]?.idTokenClaims ?? {}
+  const tokenRoles: string[] = Array.isArray(claims['roles']) ? (claims['roles'] as string[]) : []
+
+  // Filter visible items based on roles
+  const visibleItems = NAV_ITEMS.filter(item => {
+    if (!item.requiredRoles) return true
+    return item.requiredRoles.some(r => tokenRoles.includes(r))
+  })
+
   return (
     <>
       {/* Logo */}
@@ -74,7 +97,7 @@ function SidebarContent({
 
       {/* Navigation */}
       <nav className={`flex-1 py-3 flex flex-col gap-0.5 overflow-y-auto ${isCollapsed ? 'lg:px-2 px-3' : 'px-3'}`}>
-        {NAV_ITEMS.map((item) => {
+        {visibleItems.map((item) => {
           const Icon = item.icon
           return (
             <NavLink
