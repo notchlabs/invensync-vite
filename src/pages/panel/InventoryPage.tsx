@@ -480,62 +480,72 @@ export default function InventoryPage() {
         />
       </div>
 
-      <InventoryDetailModal
-        isOpen={isDetailOpen}
-        onClose={() => setIsDetailOpen(false)}
-        item={detailItem}
-      />
+      {isDetailOpen && (
+        <InventoryDetailModal
+          isOpen={isDetailOpen}
+          onClose={() => setIsDetailOpen(false)}
+          item={detailItem}
+        />
+      )}
 
-      <EditProductModal
-        isOpen={isEditOpen}
-        onClose={() => setIsEditOpen(false)}
-        item={editItem}
-        onSuccess={() => {
-          setTableData([]);
-          pageRef.current = 0;
-          loadData(true);
-        }}
-      />
+      {isEditOpen && (
+        <EditProductModal
+          isOpen={isEditOpen}
+          onClose={() => setIsEditOpen(false)}
+          item={editItem}
+          onSuccess={() => {
+            setTableData([]);
+            pageRef.current = 0;
+            loadData(true);
+          }}
+        />
+      )}
 
-      <ConsumeStockModal
-        isOpen={isConsumeOpen}
-        onClose={() => setIsConsumeOpen(false)}
-        items={consumeItems}
-        onSuccess={() => {
-          setTableData([]);
-          pageRef.current = 0;
-          loadData(true);
-          setSelectedKeys(new Set());
-        }}
-      />
+      {isConsumeOpen && (
+        <ConsumeStockModal
+          isOpen={isConsumeOpen}
+          onClose={() => setIsConsumeOpen(false)}
+          items={consumeItems}
+          onSuccess={() => {
+            setTableData([]);
+            pageRef.current = 0;
+            loadData(true);
+            setSelectedKeys(new Set());
+          }}
+        />
+      )}
 
-      <CreateCompositeModal
-        isOpen={isCompositeOpen}
-        onClose={() => setIsCompositeOpen(false)}
-        rawItems={compositeItems}
-        onSuccess={() => {
-          setTableData([]);
-          pageRef.current = 0;
-          loadData(true);
-          setSelectedKeys(new Set());
-        }}
-      />
+      {isCompositeOpen && (
+        <CreateCompositeModal
+          isOpen={isCompositeOpen}
+          onClose={() => setIsCompositeOpen(false)}
+          rawItems={compositeItems}
+          onSuccess={() => {
+            setTableData([]);
+            pageRef.current = 0;
+            loadData(true);
+            setSelectedKeys(new Set());
+          }}
+        />
+      )}
 
-      <TransferStockModal
-        isOpen={isTransferOpen}
-        onClose={() => setIsTransferOpen(false)}
-        items={transferItems}
-        onSuccess={() => {
-          const keysToRemove = new Set(transferItems.map(getItemKey));
-          setTableData((prev) =>
-            prev.filter((item) => !keysToRemove.has(getItemKey(item)))
-          );
-          setTotalElements((prev) => Math.max(0, prev - transferItems.length));
-          setSelectedKeys(new Set());
-          // Background reload to sync with server
-          loadData(true);
-        }}
-      />
+      {isTransferOpen && (
+        <TransferStockModal
+          isOpen={isTransferOpen}
+          onClose={() => setIsTransferOpen(false)}
+          items={transferItems}
+          onSuccess={() => {
+            const keysToRemove = new Set(transferItems.map(getItemKey));
+            setTableData((prev) =>
+              prev.filter((item) => !keysToRemove.has(getItemKey(item)))
+            );
+            setTotalElements((prev) => Math.max(0, prev - transferItems.length));
+            setSelectedKeys(new Set());
+            // Background reload to sync with server
+            loadData(true);
+          }}
+        />
+      )}
     </div>
   );
 }

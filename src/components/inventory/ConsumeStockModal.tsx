@@ -17,7 +17,13 @@ interface ConsumeStockModalProps {
 
 export function ConsumeStockModal({ isOpen, onClose, items, onSuccess }: ConsumeStockModalProps) {
   const [currentItems, setCurrentItems] = useState<InventoryItem[]>(items)
-  const [records, setRecords] = useState<Record<string, number>>({})
+  const [records, setRecords] = useState<Record<string, number>>(() => {
+    const initial: Record<string, number> = {}
+    items.forEach(item => {
+      initial[`${item.productId}-${item.siteId}`] = Math.min(1, item.quantity)
+    })
+    return initial
+  })
   const [consumptionUnit, setConsumptionUnit] = useState<ConsumptionUnit | null>(null)
   const [consumptionDate, setConsumptionDate] = useState(() => {
     const d = new Date();
@@ -30,19 +36,6 @@ export function ConsumeStockModal({ isOpen, onClose, items, onSuccess }: Consume
   const [error, setError] = useState<string | null>(null)
   const [isAllConsumed, setIsAllConsumed] = useState(false)
 
-  // Initialize records with default 1 value
-  useEffect(() => {
-    if (isOpen) {
-      setCurrentItems(items)
-      const initial: Record<string, number> = {}
-      items.forEach(item => {
-        initial[`${item.productId}-${item.siteId}`] = Math.min(1, item.quantity)
-      })
-      setRecords(initial)
-      setError(null)
-      setIsAllConsumed(false)
-    }
-  }, [isOpen, items])
 
   // Validation: Multi-site check
   const fromSites = Array.from(new Set(currentItems.map(item => item.siteId)))

@@ -25,7 +25,6 @@ export function EditProductModal({ isOpen, onClose, item, onSuccess }: EditProdu
   })
   const [isLoading, setIsLoading] = useState(false)
   const [isUploading, setIsUploading] = useState(false)
-  const [error, setError] = useState<string | null>(null)
   const fileInputRef = useRef<HTMLInputElement>(null)
 
   useEffect(() => {
@@ -39,7 +38,6 @@ export function EditProductModal({ isOpen, onClose, item, onSuccess }: EditProdu
         sgstInPerc: item.sgstInPerc || 0,
         imageUrl: item.imageUrl || ''
       })
-      setError(null)
     }
   }, [item, isOpen])
 
@@ -48,20 +46,17 @@ export function EditProductModal({ isOpen, onClose, item, onSuccess }: EditProdu
     if (!file) return
 
     setIsUploading(true)
-    setError(null)
     try {
       const res = await InventoryService.uploadAttachment(file)
       if (res.success && res.data?.docUrl) {
         setFormData(prev => ({ ...prev, imageUrl: res.data.docUrl }))
       } else {
         const msg = res.message || 'Image upload failed'
-        setError(msg)
         toast.error(msg)
       }
     } catch (err: unknown) {
       console.error('Image upload error:', err)
       const errorMsg = err instanceof Error ? err.message : 'Failed to upload image'
-      setError(errorMsg)
       toast.error(errorMsg)
     } finally {
       setIsUploading(false)
@@ -72,7 +67,6 @@ export function EditProductModal({ isOpen, onClose, item, onSuccess }: EditProdu
   const handleUpdate = async () => {
     if (!item) return
     setIsLoading(true)
-    setError(null)
 
     try {
       const payload = {
@@ -92,13 +86,11 @@ export function EditProductModal({ isOpen, onClose, item, onSuccess }: EditProdu
         onClose()
       } else {
         const msg = res.message || 'Failed to update product'
-        setError(msg)
         toast.error(msg)
       }
     } catch (err: unknown) {
       console.error('Update product error:', err)
       const errorMsg = err instanceof Error ? err.message : 'Something went wrong'
-      setError(errorMsg)
       toast.error(errorMsg)
     } finally {
       setIsLoading(false)
