@@ -1,15 +1,5 @@
 import { SearchableSingleSelect } from './SearchableSingleSelect'
-import { InventoryService } from '../../services/inventoryService'
-
-interface HsnResult {
-  hsnCode: string
-  taxDetails: Array<{
-    rateOfTax: string
-    effectiveDate: string
-    description: string
-  }>
-  chapterName?: string
-}
+import { InventoryService, type HsnItem } from '../../services/inventoryService'
 
 interface HsnSelectProps {
   value: { code: string; name: string } | null
@@ -22,40 +12,22 @@ interface HsnSelectProps {
 
 export function HsnSelect({ value, onChange, disabled, className, alignDropdown, dropdownWidth }: HsnSelectProps) {
   
-  const parseDate = (dateStr: string) => {
-    if (!dateStr) return new Date(0)
-    const [day, month, year] = dateStr.split('/').map(Number)
-    return new Date(year, month - 1, day)
-  }
-
-  const handleSelect = (hsn: HsnResult | null) => {
+  const handleSelect = (hsn: HsnItem | null) => {
     if (!hsn) return
 
-    // Find the most recent tax detail
-    const latestTax = [...hsn.taxDetails].sort((a, b) => 
-      parseDate(b.effectiveDate).getTime() - parseDate(a.effectiveDate).getTime()
-    )[0]
+    const latestTax = hsn.taxDetails?.[0]
+    const totalRate = parseFloat(latestTax?.rateOfTax || '0')
 
-    if (latestTax) {
-      const totalRate = parseFloat(latestTax.rateOfTax) || 0
-      onChange({
-        code: hsn.hsnCode,
-        name: latestTax.description,
-        cgst: totalRate / 2,
-        sgst: totalRate / 2
-      })
-    } else {
-      onChange({
-        code: hsn.hsnCode,
-        name: '',
-        cgst: 0,
-        sgst: 0
-      })
-    }
+    onChange({
+      code: hsn.hsnCode,
+      name: latestTax?.description || hsn.metaTitle,
+      cgst: totalRate / 2,
+      sgst: totalRate / 2
+    })
   }
 
   return (
-    <SearchableSingleSelect<HsnResult>
+    <SearchableSingleSelect<HsnItem>
       placeholder="HSN Code..."
       fetchData={async (query) => {
         if (!query || query.length < 2) return []
@@ -64,24 +36,29 @@ export function HsnSelect({ value, onChange, disabled, className, alignDropdown,
       }}
       keyExtractor={(item) => item.hsnCode}
       displayValue={(item) => item.hsnCode}
-      value={value ? { hsnCode: value.code } as any : null}
+      value={value ? ({ hsnCode: value.code, taxDetails: [] } as HsnItem) : null}
       onChange={handleSelect}
       disabled={disabled}
       className={className}
       alignDropdown={alignDropdown}
       dropdownWidth={dropdownWidth}
-      renderLabel={(item) => (
-        <div className="flex flex-col gap-0.5 py-0.5">
-          <div className="text-[12px] sm:text-[13px] font-black text-primary-text  tracking-tight line-clamp-1 leading-snug">
-            {item.taxDetails[0]?.description || item.chapterName || 'No Name Found'}
+      renderLabel={(item) => {
+        const tax = item.taxDetails?.[0]
+        const rate = parseFloat(tax?.rateOfTax || '0')
+        
+        return (
+          <div className="flex flex-col gap-0.5 py-0.5">
+            <div className="text-[12px] sm:text-[13px] font-black text-primary-text tracking-tight line-clamp-1 leading-snug">
+              {tax?.description || item.metaTitle || 'No Description'}
+            </div>
+            <div className="flex items-center gap-2 text-[10px] sm:text-[11px] text-muted-text font-bold tracking-wider">
+              <span className="text-primary-text/60">{item.hsnCode}</span>
+              <div className="w-1 h-1 rounded-full bg-border-main" />
+              <span className="text-emerald-500">{rate.toFixed(1)}% TAX</span>
+            </div>
           </div>
-          <div className="flex items-center gap-2 text-[10px] sm:text-[11px] text-muted-text font-bold  tracking-wider">
-            <span className="text-primary-text/60">{item.hsnCode}</span>
-            <div className="w-1 h-1 rounded-full bg-border-main" />
-            <span className="text-emerald-500">{item.taxDetails[0]?.rateOfTax || 0}% TAX</span>
-          </div>
-        </div>
-      )}
+        )
+      }}
     />
   )
 }

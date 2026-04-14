@@ -1,6 +1,6 @@
 import { useState, useEffect, useMemo } from 'react';
-import { FileText, RotateCcw, Trash2, Plus, Loader2 } from 'lucide-react';
-import { StockUploadService } from '../../services/stockUploadService';
+import { FileText, Trash2, Plus } from 'lucide-react';
+import { StockUploadService, type DuplicateInfo, type CreateBatchPayload } from '../../services/stockUploadService';
 import toast from 'react-hot-toast';
 import type { UploadQueueItem } from './UploadArea';
 import { ProductPickerCell } from './ProductPickerCell';
@@ -22,7 +22,7 @@ export function ConfirmStockModal({ isOpen, onClose, queue, onSuccess }: Confirm
   const [isVerifying, setIsVerifying] = useState(true);
   const [isReprocessing, setIsReprocessing] = useState(false);
   const [uniqueBills, setUniqueBills] = useState<UploadQueueItem[]>([]);
-  const [duplicateBills, setDuplicateBills] = useState<(UploadQueueItem & { duplicateInfo: any })[]>([]);
+  const [duplicateBills, setDuplicateBills] = useState<(UploadQueueItem & { duplicateInfo: DuplicateInfo })[]>([]);
   const [reprocessCounts, setReprocessCounts] = useState<Record<string, number>>({});
   
   const [selectedBillId, setSelectedBillId] = useState<string | null>(null);
@@ -40,7 +40,7 @@ export function ConfirmStockModal({ isOpen, onClose, queue, onSuccess }: Confirm
   const verifyBills = async (items: UploadQueueItem[]) => {
     setIsVerifying(true);
     const unique: UploadQueueItem[] = [];
-    const duplicate: (UploadQueueItem & { duplicateInfo: any })[] = [];
+    const duplicate: (UploadQueueItem & { duplicateInfo: DuplicateInfo })[] = [];
 
     for (const item of items) {
       if (item.extractedData) {
@@ -54,7 +54,7 @@ export function ConfirmStockModal({ isOpen, onClose, queue, onSuccess }: Confirm
           // Fetch product images + mark new vs existing
           if (item.extractedData.products && Array.isArray(item.extractedData.products)) {
             await Promise.all(
-              item.extractedData.products.map(async (p: any) => {
+              item.extractedData.products.map(async (p) => {
                 if (p.name) {
                   try {
                     const imgRes = await StockUploadService.searchProductCache(p.name);
@@ -100,7 +100,8 @@ export function ConfirmStockModal({ isOpen, onClose, queue, onSuccess }: Confirm
     try {
       const res = await StockUploadService.extractInvoice(selectedItem.file, true);
       if (res.data) {
-        const updateList = (list: any[]) => list.map(b => b.id === selectedItem.id ? { ...b, extractedData: res.data } : b);
+        const updateList = <T extends UploadQueueItem>(list: T[]): T[] => 
+          list.map(b => b.id === selectedItem.id ? { ...b, extractedData: res.data } : b);
         setUniqueBills(prev => updateList(prev));
         setDuplicateBills(prev => updateList(prev));
         setReprocessCounts(prev => ({ ...prev, [selectedItem.id]: count + 1 }));
@@ -111,7 +112,7 @@ export function ConfirmStockModal({ isOpen, onClose, queue, onSuccess }: Confirm
   };
 
   // ─── Editable Products ───
-  const [editableProducts, setEditableProducts] = useState<any[]>([]);
+  const [editableProducts, setEditableProducts] = useState<NonNullable<UploadQueueItem['extractedData']>['products']>([]);
   const [isSubmitting, setIsSubmitting] = useState(false);
 
   useEffect(() => {
@@ -127,7 +128,7 @@ export function ConfirmStockModal({ isOpen, onClose, queue, onSuccess }: Confirm
     return JSON.stringify(editableProducts) !== JSON.stringify(selectedItem.extractedData.products);
   }, [editableProducts, selectedItem]);
 
-  const handleProductChange = (index: number, field: string, value: any) => {
+  const handleProductChange = (index: number, field: string, value: string | number | null) => {
     setEditableProducts(prev => {
       const updated = [...prev];
       updated[index] = { ...updated[index], [field]: value };
@@ -141,7 +142,7 @@ export function ConfirmStockModal({ isOpen, onClose, queue, onSuccess }: Confirm
     }
   };
 
-  const handleProductUpdate = (index: number, fields: Record<string, any>) => {
+  const handleProductUpdate = (index: number, fields: Record<string, string | number | null>) => {
     setEditableProducts(prev => {
       const updated = [...prev];
       updated[index] = { ...updated[index], ...fields };
@@ -152,7 +153,18 @@ export function ConfirmStockModal({ isOpen, onClose, queue, onSuccess }: Confirm
   const handleAddProduct = () => {
     setEditableProducts(prev => [
       ...prev,
-      { name: '', quantity: 1, unit: 'EA', price: 0, cgstInPerc: 0, sgstInPerc: 0 }
+      { 
+        name: '', 
+        quantity: 1, 
+        unit: 'EA', 
+        price: 0, 
+        cgstInPerc: 0, 
+        sgstInPerc: 0, 
+        taxPerc: 0,
+        hsnCode: 0, 
+        hsnName: '',
+        discountPercentage: 0 
+      }
     ]);
   };
 
@@ -196,7 +208,7 @@ export function ConfirmStockModal({ isOpen, onClose, queue, onSuccess }: Confirm
 
       // Step 2: Build payload matching backend contract
       const data = selectedItem.extractedData;
-      const payload: any = {
+      const payload: CreateBatchPayload = {
         vendor: {
           name: data.vendor?.name || 'Unknown',
           gst: data.vendor?.gst || null,
@@ -226,7 +238,7 @@ export function ConfirmStockModal({ isOpen, onClose, queue, onSuccess }: Confirm
           const taxAmount = (price * taxPerc) / 100;
           const totalTaxLine = qty * taxAmount;
 
-          const product: any = {
+          const product: CreateBatchPayload['products'][number] = {
             name: p.name,
             quantity: qty,
             unit: p.unit || 'pcs',
@@ -252,22 +264,29 @@ export function ConfirmStockModal({ isOpen, onClose, queue, onSuccess }: Confirm
         billUrl: uploadedBillUrl,
       };
 
-      const res = await StockUploadService.createBatch(payload);
-      if (res.success) {
-        toast.success('Batch saved successfully', { id: loader });
-        onSuccess(selectedItem.id);
-      } else {
-        toast.error(res.message || 'Failed to save batch', { id: loader });
-      }
-    } catch (e: any) {
-      toast.error(e.message || 'Error occurred while saving', { id: loader });
-    } finally {
+      StockUploadService.createBatch(payload)
+        .then(res => {
+          if (res.success) {
+            toast.success('Batch saved successfully', { id: loader });
+            onSuccess(selectedItem.id);
+          } else {
+            toast.error(res.message || 'Failed to save batch', { id: loader });
+          }
+        })
+        .catch((e: Error) => {
+          toast.error(e.message || 'Error occurred while saving', { id: loader });
+        })
+        .finally(() => {
+          setIsSubmitting(false);
+        });
+    } catch (e: unknown) {
+      const err = e as { message?: string };
+      toast.error(err.message || 'Fatal error occurred', { id: loader });
       setIsSubmitting(false);
     }
   };
 
   const billedTotal = selectedItem?.extractedData?.billTotalIncludingTax || 0;
-  const newProductCount = editableProducts.filter(p => !p._cacheId).length;
 
   if (!isOpen) return null;
 
@@ -346,7 +365,7 @@ export function ConfirmStockModal({ isOpen, onClose, queue, onSuccess }: Confirm
                             </tr>
                           </thead>
                           <tbody className="divide-y divide-border-main/30">
-                            {editableProducts.map((p: any, i: number) => {
+                            {editableProducts.map((p, i) => {
                               const rawQty = p.quantity !== undefined ? p.quantity : '';
                               const rawPrice = p.price !== undefined ? p.price : '';
                               

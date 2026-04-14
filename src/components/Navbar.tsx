@@ -35,7 +35,7 @@ const Navbar = () => {
   const handleLogin = async () => {
     try {
       await instance.loginRedirect(loginRequest)
-    } catch (error: any) {
+    } catch (error: unknown) {
       console.error('Login failed:', error)
       toast.error('Login failed. Please try again.')
     }
@@ -46,7 +46,7 @@ const Navbar = () => {
       await instance.logoutRedirect({
         postLogoutRedirectUri: window.location.origin,
       })
-    } catch (error: any) {
+    } catch (error: unknown) {
       console.error('Logout failed:', error)
       toast.error('Logout failed. Please try again.')
     }

@@ -1,4 +1,4 @@
-import { Loader2, Building2, Box, RotateCw, LayoutGrid, ArrowRightLeft, X, Check } from 'lucide-react'
+import { Loader2, Building2, Box, RotateCw, X, Check } from 'lucide-react'
 import { useEffect, useRef } from 'react'
 
 // SVG icons natively integrated so we don't need to pass JSX
@@ -211,21 +211,21 @@ export function InfiniteScrollTable<T>({
                       content = col.render(row, index)
                     } else if (col.cellType && col.dataMap) {
                       const { title, subtitle, image, value, unit } = col.dataMap
-                      const r = row as any
+                      const r = row as unknown as Record<string, unknown>
 
                       if (col.cellType === 'product') {
                         content = (
                           <div className="flex gap-3">
                             <div className="w-10 h-10 bg-card border border-border-main rounded shrink-0 overflow-hidden flex items-center justify-center p-1">
                               {r[image as string] ? (
-                                <img src={r[image as string]} alt="" className="w-full h-full object-contain" />
+                                <img src={r[image as string] as string} alt="" className="w-full h-full object-contain" />
                               ) : (
                                 <Box className="text-muted-text w-full h-full p-1" />
                               )}
                             </div>
                             <div className="flex flex-col min-w-0">
                               <div className="flex items-center gap-2">
-                                <span className="text-[13px] font-bold text-primary-text truncate">{r[title as string]}</span>
+                                <span className="text-[13px] font-bold text-primary-text truncate">{r[title as string] as React.ReactNode}</span>
                                 {onEdit && (
                                   <EditPencilIcon 
                                     onClick={(e) => {
@@ -235,7 +235,7 @@ export function InfiniteScrollTable<T>({
                                   />
                                 )}
                               </div>
-                              <span className="text-[11px] text-secondary-text truncate mt-0.5">{r[subtitle as string] || 'No Vendor'}</span>
+                              <span className="text-[11px] text-secondary-text truncate mt-0.5">{r[subtitle as string] as React.ReactNode || 'No Vendor'}</span>
                             </div>
                           </div>
                         )
@@ -244,24 +244,24 @@ export function InfiniteScrollTable<T>({
                           <div className="flex flex-col">
                             <div className="flex items-center gap-1.5 text-[12px] font-bold text-primary-text">
                               <Building2 size={12} className="text-secondary-text" />
-                              <span className="truncate">{r[title as string]}</span>
+                              <span className="truncate">{r[title as string] as React.ReactNode}</span>
                             </div>
-                            <span className="text-[11px] text-secondary-text truncate mt-0.5">{r[subtitle as string]}</span>
+                            <span className="text-[11px] text-secondary-text truncate mt-0.5">{r[subtitle as string] as React.ReactNode}</span>
                           </div>
                         )
                       } else if (col.cellType === 'quantity') {
                         content = (
                           <div className="flex items-center justify-end gap-1.5 text-[13px] font-bold text-emerald-600">
                             <Box size={14} className="text-emerald-500" />
-                            <span>{r[value as string]}</span>
-                            <span className="text-[11px] text-emerald-500 font-medium">{r[unit as string]}</span>
+                            <span>{r[value as string] as React.ReactNode}</span>
+                            <span className="text-[11px] text-emerald-500 font-medium">{r[unit as string] as React.ReactNode}</span>
                           </div>
                         )
                       } else if (col.cellType === 'currency' || col.cellType === 'currency-net') {
-                        const taxAmt = col.dataMap.computedTax ? col.dataMap.computedTax(row) : (r[col.dataMap.taxValue as string] || 0);
-                        const baseVal = r[value as string];
-                        const displayVal = col.cellType === 'currency-net' ? (baseVal / 1000).toFixed(2) + ' K' : Number(baseVal).toFixed(2);
-                        const unitStr = r[unit as string] ? ` / ${r[unit as string]}` : '';
+                        const taxAmt = Number(col.dataMap.computedTax ? col.dataMap.computedTax(row) : (r[col.dataMap.taxValue as string] || 0));
+                        const baseVal = Number(r[value as string] || 0);
+                        const displayVal = col.cellType === 'currency-net' ? (baseVal / 1000).toFixed(2) + ' K' : baseVal.toFixed(2);
+                        const unitStr = r[unit as string] ? ` / ${r[unit as string] as React.ReactNode}` : '';
 
                         content = (
                           <div className="flex flex-col items-end">

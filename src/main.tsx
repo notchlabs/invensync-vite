@@ -34,8 +34,9 @@ msalInstance.initialize().then(async () => {
     if (response) {
       msalInstance.setActiveAccount(response.account);
     }
-  } catch (error: any) {
-    if (error?.errorCode === 'no_token_request_cache_error') {
+  } catch (error: unknown) {
+    const err = error as { errorCode?: string }
+    if (err?.errorCode === 'no_token_request_cache_error') {
       // Stale auth code from a previous attempt — clean URL silently
       console.warn('MSAL: Stale auth code removed');
     } else {

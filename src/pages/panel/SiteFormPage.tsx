@@ -46,9 +46,64 @@ const EMPTY_ADDRESS: AddressInfo = {
   lng: null,
 }
 
-function extractAddressComponents(components: any[], formattedAddress = ''): Partial<AddressInfo> {
+interface GoogleAddressComponent {
+  long_name: string;
+  types: string[];
+}
+
+interface GooglePlace {
+  address_components?: GoogleAddressComponent[];
+  formatted_address?: string;
+  geometry?: {
+    location?: {
+      lat: () => number;
+      lng: () => number;
+    };
+  };
+}
+
+interface GraphUser {
+  id: string;
+  displayName: string;
+  mail?: string;
+  mobilePhone?: string;
+}
+
+interface GoogleMapInstance {
+  setCenter: (pos: { lat: number; lng: number }) => void;
+  setZoom: (zoom: number) => void;
+}
+
+interface GoogleMarkerInstance {
+  position: unknown;
+  addListener: (event: string, handler: () => void) => void;
+}
+
+interface GoogleMapsNamespace {
+  maps: {
+    LatLng: new (lat: number, lng: number) => unknown;
+    Map: new (el: HTMLElement, options: unknown) => GoogleMapInstance;
+    marker: {
+      AdvancedMarkerElement: new (options: unknown) => GoogleMarkerInstance;
+    };
+    Geocoder: new () => {
+      geocode: (
+        request: { location: { lat: number; lng: number } },
+        callback: (results: GooglePlace[], status: string) => void
+      ) => void;
+    };
+    places: {
+      Autocomplete: new (el: HTMLInputElement, options: unknown) => {
+        addListener: (event: string, handler: () => void) => void;
+        getPlace: () => GooglePlace;
+      };
+    };
+  };
+}
+
+function extractAddressComponents(components: GoogleAddressComponent[], formattedAddress = ''): Partial<AddressInfo> {
   let city = '', state = '', country = '', zipCode = ''
-  components.forEach((c: any) => {
+  components.forEach(c => {
     if (c.types.includes('locality')) city = c.long_name
     if (c.types.includes('administrative_area_level_1')) state = c.long_name
     if (c.types.includes('country')) country = c.long_name
@@ -105,10 +160,10 @@ export default function SiteFormPage() {
   // Google Maps
   const mapsReady = useGoogleMaps()
   const mapContainerRef = useRef<HTMLDivElement>(null)
-  const mapRef = useRef<any>(null)
-  const markerRef = useRef<any>(null)
+  const mapRef = useRef<unknown>(null)
+  const markerRef = useRef<unknown>(null)
   const autocompleteRef = useRef<HTMLInputElement>(null)
-  const autocompleteInstanceRef = useRef<any>(null)
+  const autocompleteInstanceRef = useRef<unknown>(null)
   const didInitialCenter = useRef(false)
   const [placeSearch, setPlaceSearch] = useState('')
 
@@ -136,17 +191,17 @@ export default function SiteFormPage() {
   // ─── Map helpers ────────────────────────────────────────────────────────────
 
   const centerMapAt = useCallback((lat: number, lng: number, zoom = 15) => {
-    const g = (window as any).google
+    const g = (window as unknown as { google: GoogleMapsNamespace }).google
     if (mapRef.current) {
-      mapRef.current.setCenter({ lat, lng })
-      mapRef.current.setZoom(zoom)
+      (mapRef.current as GoogleMapInstance).setCenter({ lat, lng });
+      (mapRef.current as GoogleMapInstance).setZoom(zoom);
     }
     if (markerRef.current && g) {
-      markerRef.current.position = new g.maps.LatLng(lat, lng)
+      (markerRef.current as GoogleMarkerInstance).position = new g.maps.LatLng(lat, lng)
     }
   }, [])
 
-  const applyPlace = useCallback((place: any, lat: number, lng: number) => {
+  const applyPlace = useCallback((place: GooglePlace, lat: number, lng: number) => {
     const extracted = extractAddressComponents(place.address_components || [])
     setAddress({
       fullAddress: place.formatted_address || '',
@@ -164,7 +219,7 @@ export default function SiteFormPage() {
 
   useEffect(() => {
     if (!mapsReady || !mapContainerRef.current || mapRef.current) return
-    const g = (window as any).google
+    const g = (window as unknown as { google: GoogleMapsNamespace }).google
 
     const map = new g.maps.Map(mapContainerRef.current, {
       center: INDIA_CENTER,
@@ -189,7 +244,7 @@ export default function SiteFormPage() {
       const lat = typeof pos.lat === 'function' ? pos.lat() : pos.lat
       const lng = typeof pos.lng === 'function' ? pos.lng() : pos.lng
       const geocoder = new g.maps.Geocoder()
-      geocoder.geocode({ location: { lat, lng } }, (results: any, status: any) => {
+      geocoder.geocode({ location: { lat, lng } }, (results: GooglePlace[], status: string) => {
         if (status === 'OK' && results[0]) {
           applyPlace(results[0], lat, lng)
         }
@@ -247,7 +302,7 @@ export default function SiteFormPage() {
         // Match managerNames against Graph users to get full user objects
         if (s.managerNames?.length > 0) {
           try {
-            const graphData = await ApiService.get<{ value: any[] }>(
+            const graphData = await ApiService.get<{ value: GraphUser[] }>(
               'https://graph.microsoft.com/v1.0/users?$select=displayName,id,mail,mobilePhone&$top=100'
             )
             const matched: SelectedUser[] = (graphData.value || [])
@@ -267,9 +322,9 @@ export default function SiteFormPage() {
         // Map inventoryConsumers if the API returns full objects
         if (s.inventoryConsumers?.length > 0) {
           const mapped: SelectedUser[] = s.inventoryConsumers
-            .filter((c: any) => c.id)
-            .map((c: any) => ({
-              id: c.id,
+            .filter((c: { id?: string }) => c.id)
+            .map((c: { id?: string; name?: string; displayName?: string; email?: string; mail?: string; phone?: string; mobilePhone?: string }) => ({
+              id: c.id || '',
               name: c.name || c.displayName || '',
               email: c.email || c.mail || '',
               phone: c.phone || c.mobilePhone || '',
@@ -355,8 +410,9 @@ export default function SiteFormPage() {
 
       toast.success(isEdit ? 'Site updated successfully' : 'Site created successfully')
       navigate('/app/panel/sites')
-    } catch (e: any) {
-      toast.error(e?.message || 'Failed to save site')
+    } catch (e: unknown) {
+      const error = e as { message?: string };
+      toast.error(error.message || 'Failed to save site')
     } finally {
       setIsSaving(false)
     }

@@ -4,6 +4,8 @@ import { ConsumedItemRow } from './ConsumedItemRow';
 import type { BucketItem } from '../../services/consumptionService';
 import Skeleton from 'react-loading-skeleton';
 import { motion, AnimatePresence } from 'framer-motion';
+import type { Site } from '../../types/inventory';
+import { type ConsumptionUnit } from '../common/ConsumptionUnitSelect';
 
 interface ConsumedItemsListProps {
   items: BucketItem[];
@@ -13,8 +15,8 @@ interface ConsumedItemsListProps {
   isConcluded: boolean;
   updateItem: (index: number, field: keyof BucketItem, value: number) => void;
   handleRevertItem: (cuBillId: number) => void;
-  selectedSite?: any | null;
-  selectedCu?: any | null;
+  selectedSite?: Site | null;
+  selectedCu?: ConsumptionUnit | null;
 }
 
 export const ConsumedItemsList = ({

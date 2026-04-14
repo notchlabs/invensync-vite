@@ -2,11 +2,12 @@ import { useState, useEffect, useRef, useCallback } from 'react';
 import { ChevronDown, Check, Loader2, Search } from 'lucide-react';
 import { InventoryService } from '../../services/inventoryService';
 import type { Product } from '../../types/inventory';
+import type { UploadQueueItem } from './UploadArea';
 
 interface ProductPickerCellProps {
-  product: any;
+  product: NonNullable<UploadQueueItem['extractedData']>['products'][number];
   index: number;
-  onUpdate: (index: number, fields: Record<string, any>) => void;
+  onUpdate: (index: number, fields: Record<string, string | number | null>) => void;
 }
 
 export function ProductPickerCell({ product, index, onUpdate }: ProductPickerCellProps) {
@@ -90,7 +91,7 @@ export function ProductPickerCell({ product, index, onUpdate }: ProductPickerCel
       searchRef.current = '';
       loadItems(true);
     }
-  }, [isOpen]);
+  }, [isOpen, items.length, loadItems]);
 
   // Infinite scroll
   useEffect(() => {

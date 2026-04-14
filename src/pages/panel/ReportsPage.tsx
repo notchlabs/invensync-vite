@@ -144,9 +144,9 @@ export default function ReportsPage() {
         vendorIds: vendors.length ? vendors.map(v => v.id) : undefined,
       }
 
-      const res: any = await ReportService.fetchConsumptionReport(page, PAGE_SIZE, payload)
+      const res = await ReportService.fetchConsumptionReport(page, PAGE_SIZE, payload)
       
-      const payloadData = res.data?.data || {}
+      const payloadData = res.data.data
       const summaryData = res.data?.summary || null
       const content = payloadData?.content ?? []
 

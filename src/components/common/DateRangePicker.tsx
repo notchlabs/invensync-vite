@@ -14,7 +14,6 @@ export function DateRangePicker({
   to, 
   onFromChange, 
   onToChange, 
-  placeholder = "Select range",
   className = "" 
 }: DateRangePickerProps) {
   return (

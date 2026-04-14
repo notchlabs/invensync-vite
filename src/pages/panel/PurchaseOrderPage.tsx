@@ -8,7 +8,9 @@ import {
   type ExtractedProduct,
   type GeneratePOResponse,
   type POOrderItem,
+  type ExtractResponse,
 } from '../../services/purchaseOrderService'
+import type { ApiResponse } from '../../types/api'
 import { VendorFilter } from '../../components/filters/VendorFilter'
 import type { Vendor } from '../../types/inventory'
 import { FileChip } from '../../components/purchase-order/FileChip'
@@ -179,7 +181,7 @@ export default function PurchaseOrderPage() {
         if (failed > 0) toast.error(`${failed} file(s) failed to extract — continuing with the rest`)
 
         products = results
-          .filter((r): r is PromiseFulfilledResult<any> => r.status === 'fulfilled')
+          .filter((r): r is PromiseFulfilledResult<ApiResponse<ExtractResponse>> => r.status === 'fulfilled')
           .flatMap(r => r.value?.data?.products ?? [])
 
         setExtractedCount(products.length)
@@ -198,9 +200,10 @@ export default function PurchaseOrderPage() {
 
       setResult(res.data)
       setPhase('result')
-    } catch (e: any) {
+    } catch (e: unknown) {
       console.error(e)
-      toast.error(e?.message ?? 'Failed to generate purchase order')
+      const error = e as { message?: string }
+      toast.error(error.message ?? 'Failed to generate purchase order')
       setPhase('config')
     } finally {
       setBtnLabel('')

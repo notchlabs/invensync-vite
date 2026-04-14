@@ -42,14 +42,6 @@ export interface Site {
   updatedBy?: string;
 }
 
-export interface PaginatedData<T> {
-  content: T[];
-  last?: boolean;
-  totalPages?: number;
-  totalElements?: number;
-  size?: number;
-  number?: number;
-}
 
 export interface InventoryItem {
   productName: string;

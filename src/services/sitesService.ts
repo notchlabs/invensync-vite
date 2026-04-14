@@ -48,7 +48,7 @@ export interface SiteDetail {
   status: string;
   managerId: number | null;
   managerNames: string[];
-  inventoryConsumers: any[];
+  inventoryConsumers: UserPayload[];
 }
 
 export interface UserPayload {
@@ -139,7 +139,7 @@ export class SitesService {
     return ApiService.post('/site/update', payload);
   }
 
-  static async assignManagers(siteId: number, managers: UserPayload[]): Promise<ApiResponse<any>> {
+  static async assignManagers(siteId: number, managers: UserPayload[]): Promise<ApiResponse<null>> {
     return ApiService.post(`/site/${siteId}/assign-manager`, managers);
   }
 

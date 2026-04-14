@@ -8,7 +8,7 @@ export class ApiService {
   private static async request<T>(
     method: 'GET' | 'POST' | 'PUT' | 'PATCH' | 'DELETE',
     endpoint: string,
-    body?: any,
+    body?: unknown,
     options: RequestInit = {}
   ): Promise<T> {
     // Construct full URL if endpoint is relative
@@ -49,15 +49,15 @@ export class ApiService {
     return this.request<T>('GET', endpoint, undefined, options);
   }
 
-  static async post<T>(endpoint: string, body?: any, options?: RequestInit): Promise<T> {
+  static async post<T>(endpoint: string, body?: unknown, options?: RequestInit): Promise<T> {
     return this.request<T>('POST', endpoint, body, options);
   }
 
-  static async put<T>(endpoint: string, body?: any, options?: RequestInit): Promise<T> {
+  static async put<T>(endpoint: string, body?: unknown, options?: RequestInit): Promise<T> {
     return this.request<T>('PUT', endpoint, body, options);
   }
 
-  static async patch<T>(endpoint: string, body?: any, options?: RequestInit): Promise<T> {
+  static async patch<T>(endpoint: string, body?: unknown, options?: RequestInit): Promise<T> {
     return this.request<T>('PATCH', endpoint, body, options);
   }
 

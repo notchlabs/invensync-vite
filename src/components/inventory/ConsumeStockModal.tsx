@@ -1,9 +1,11 @@
-import React, { useState, useEffect } from 'react'
-import { X, Package, Loader2, Minus, Plus, AlertCircle, ShoppingBag, Send, Trash2 } from 'lucide-react'
+import { useState, useEffect } from 'react'
+import { X, Package, Loader2, AlertCircle, ShoppingBag, Send, Trash2 } from 'lucide-react'
+import { toast } from 'react-hot-toast'
 import { InventoryService } from '../../services/inventoryService'
 import { ConsumptionUnitSelect } from '../common/ConsumptionUnitSelect'
 import { FriendlyDateTimePicker } from '../common/FriendlyDateTimePicker'
 import { CustomCheckbox } from '../common/CustomCheckbox'
+import { type ConsumptionUnit } from '../common/ConsumptionUnitSelect'
 import type { InventoryItem } from '../../types/inventory'
 
 interface ConsumeStockModalProps {
@@ -16,10 +18,13 @@ interface ConsumeStockModalProps {
 export function ConsumeStockModal({ isOpen, onClose, items, onSuccess }: ConsumeStockModalProps) {
   const [currentItems, setCurrentItems] = useState<InventoryItem[]>(items)
   const [records, setRecords] = useState<Record<string, number>>({})
-  const [consumptionUnit, setConsumptionUnit] = useState<any>(null)
+  const [consumptionUnit, setConsumptionUnit] = useState<ConsumptionUnit | null>(null)
   const [consumptionDate, setConsumptionDate] = useState(() => {
-    const now = new Date()
-    return now.toISOString().slice(0, 16)
+    const d = new Date();
+    const pad = (n: number) => String(n).padStart(2, '0');
+    const datePart = `${d.getFullYear()}-${pad(d.getMonth() + 1)}-${pad(d.getDate())}`;
+    const timePart = `${pad(d.getHours())}:${pad(d.getMinutes())}`;
+    return `${datePart}T${timePart}`;
   })
   const [isLoading, setIsLoading] = useState(false)
   const [error, setError] = useState<string | null>(null)
@@ -46,22 +51,7 @@ export function ConsumeStockModal({ isOpen, onClose, items, onSuccess }: Consume
   const removeProduct = (productId: number, siteId: number) => {
     setCurrentItems(prev => prev.filter(i => !(i.productId === productId && i.siteId === siteId)))
   }
-
-  const removeSiteProducts = (siteId: number) => {
-    setCurrentItems(prev => prev.filter(i => i.siteId !== siteId))
-  }
-
-  const groupedItems = currentItems.reduce((acc, item) => {
-    if (!acc[item.siteId]) {
-      acc[item.siteId] = {
-        siteName: item.site,
-        items: []
-      }
-    }
-    acc[item.siteId].items.push(item)
-    return acc
-  }, {} as Record<number, { siteName: string, items: InventoryItem[] }>)
-
+  
   const handleQtyChange = (productId: number, siteId: number, value: string, max: number) => {
     const key = `${productId}-${siteId}`
     const num = parseFloat(value) || 0
@@ -72,7 +62,7 @@ export function ConsumeStockModal({ isOpen, onClose, items, onSuccess }: Consume
     setRecords(prev => ({ ...prev, [key]: clamped }))
   }
 
-  const handleConsume = async () => {
+  const handleConsume = () => {
     if (isMultiSite) return
     if (!consumptionUnit) {
       setError('Please select a consumption unit')
@@ -95,50 +85,52 @@ export function ConsumeStockModal({ isOpen, onClose, items, onSuccess }: Consume
     setIsLoading(true)
     setError(null)
 
-    try {
-      const payload = {
-        siteId: currentItems[0].siteId, // Assuming consumption is for the site of the selected items
-        consumptionUnitId: consumptionUnit.id,
-        consumptionDate: consumptionDate,
-        records: consumeRecords
-      }
-
-      const res = await InventoryService.consumeStock(payload)
-      if (res.success) {
-        onSuccess()
-        
-        // Update quantities of items and remove only those completely exhausted
-        const consumedMap = new Map(consumeRecords.map(r => [`${r.productId}-${r.sourceSiteId}`, r.quantity]))
-        
-        const nextItems = currentItems.map(item => {
-          const key = `${item.productId}-${item.siteId}`
-          const consumedQty = consumedMap.get(key) || 0
-          return {
-            ...item,
-            quantity: Math.max(0, item.quantity - consumedQty)
-          }
-        }).filter(item => item.quantity > 0)
-
-        if (nextItems.length === 0) {
-          setIsAllConsumed(true)
-        } else {
-          setCurrentItems(nextItems)
-          // Reset records to 1 for remaining items (clamped by new stock)
-          const nextRecords: Record<string, number> = {}
-          nextItems.forEach(item => {
-            nextRecords[`${item.productId}-${item.siteId}`] = Math.min(1, item.quantity)
-          })
-          setRecords(nextRecords)
-        }
-      } else {
-        setError(res.message || 'Consumption failed')
-      }
-    } catch (err: any) {
-      console.error('Consumption error:', err)
-      setError(err.message || 'Something went wrong')
-    } finally {
-      setIsLoading(false)
+    const payload = {
+      siteId: currentItems[0].siteId,
+      consumptionUnitId: consumptionUnit.id,
+      consumptionDate: consumptionDate,
+      records: consumeRecords
     }
+
+    InventoryService.consumeStock(payload)
+      .then(res => {
+        if (res.success) {
+          toast.success('Consumption Successful')
+          onSuccess()
+          
+          const consumedMap = new Map(consumeRecords.map(r => [`${r.productId}-${r.sourceSiteId}`, r.quantity]))
+          
+          const nextItems = currentItems.map(item => {
+            const key = `${item.productId}-${item.siteId}`
+            const consumedQty = consumedMap.get(key) || 0
+            return {
+              ...item,
+              quantity: Math.max(0, item.quantity - consumedQty)
+            }
+          }).filter(item => item.quantity > 0)
+
+          if (nextItems.length === 0) {
+            setIsAllConsumed(true)
+          } else {
+            setCurrentItems(nextItems)
+            const nextRecords: Record<string, number> = {}
+            nextItems.forEach(item => {
+              nextRecords[`${item.productId}-${item.siteId}`] = Math.min(1, item.quantity)
+            })
+            setRecords(nextRecords)
+          }
+        } else {
+          const msg = res.message || 'Consumption failed'
+          setError(msg)
+          toast.error(msg)
+        }
+      })
+      .catch((err: Error) => {
+        toast.error(err.message)
+      })
+      .finally(() => {
+        setIsLoading(false)
+      })
   }
 
   if (!isOpen) return null
@@ -329,14 +321,6 @@ export function ConsumeStockModal({ isOpen, onClose, items, onSuccess }: Consume
                     )}
                   </button>
                 </div>
-
-                {/* Error Message Row */}
-                {error && (
-                  <div className="flex items-center gap-2 text-red-500 text-[12px] font-bold bg-red-500/10 p-3 rounded-xl border border-red-500/20 max-w-fit animate-[fadeIn_0.2s_ease-out]">
-                    <AlertCircle size={14} />
-                    {error}
-                  </div>
-                )}
               </div>
             )}
           </div>

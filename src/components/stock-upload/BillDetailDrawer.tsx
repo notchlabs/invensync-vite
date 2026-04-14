@@ -1,9 +1,9 @@
-import { StockUploadService, type BatchInvoiceDetail, type UploadBatch } from '../../services/stockUploadService'
+import { StockUploadService, type BatchInvoiceDetail } from '../../services/stockUploadService'
 import { InventoryService, type SiteDistribution } from '../../services/inventoryService'
 import { BillViewModal } from './BillViewModal'
 import toast from 'react-hot-toast'
 import { useState, useEffect } from 'react'
-import { Calendar, CheckCircle, ChevronLeft, ExternalLink, FileText, LayoutDashboard, Loader2, MapPin, Package, Paperclip, X } from 'lucide-react'
+import { Calendar, CheckCircle, ChevronLeft, FileText, LayoutDashboard, Loader2, MapPin, Package, Paperclip, X } from 'lucide-react'
 
 interface BillDetailDrawerProps {
   id: number | null;
@@ -36,7 +36,7 @@ export function BillDetailDrawer({ id, isOpen, onClose }: BillDetailDrawerProps)
     return new Date(dateStr).toLocaleDateString('en-GB', { day: '2-digit', month: 'short', year: 'numeric' })
   }
 
-  const handleProductClick = async (product: any) => {
+  const handleProductClick = async (product: BatchInvoiceDetail['products'][number]) => {
     setSelectedProduct({ id: product.inboundId, name: product.name, unit: product.unit })
     setIsDistLoading(true)
     try {

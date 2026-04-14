@@ -1,7 +1,7 @@
 import { useState, useEffect, useCallback, useRef } from 'react'
 import { X, FileText, History, ExternalLink, Box, User, Calendar, Tag } from 'lucide-react'
 import { InfiniteScrollTable, type Column } from '../common/InfiniteScrollTable'
-import { InventoryService } from '../../services/inventoryService'
+import { InventoryService, type PurchaseRecord, type AuditLogItem } from '../../services/inventoryService'
 import type { InventoryItem } from '../../types/inventory'
 
 interface InventoryDetailModalProps {
@@ -12,8 +12,8 @@ interface InventoryDetailModalProps {
 
 export function InventoryDetailModal({ isOpen, onClose, item }: InventoryDetailModalProps) {
   const [activeTab, setActiveTab] = useState<'bills' | 'audit'>('bills')
-  const [billsData, setBillsData] = useState<any[]>([])
-  const [auditData, setAuditData] = useState<any[]>([])
+  const [billsData, setBillsData] = useState<PurchaseRecord[]>([])
+  const [auditData, setAuditData] = useState<AuditLogItem[]>([])
   const [isLoading, setIsLoading] = useState(false)
   const [auditHasMore, setAuditHasMore] = useState(true)
   
@@ -54,7 +54,7 @@ export function InventoryDetailModal({ isOpen, onClose, item }: InventoryDetailM
       const newItems = res.data.content || []
       
       // Calculate closing balances
-      const processedItems = newItems.map((log: any) => {
+      const processedItems = newItems.map((log: AuditLogItem) => {
         const currentBalance = balanceRef.current
         const isNegative = log.actionType === 'CONSUME' || log.actionType === 'OUTBOUND'
         const change = isNegative ? -log.qty : log.qty
@@ -81,11 +81,11 @@ export function InventoryDetailModal({ isOpen, onClose, item }: InventoryDetailM
       if (activeTab === 'bills') loadBills()
       else loadAudit(true)
     }
-  }, [isOpen, activeTab, item])
+  }, [isOpen, activeTab, item, loadBills, loadAudit])
 
   if (!isOpen || !item) return null
 
-  const billColumns: Column<any>[] = [
+  const billColumns: Column<PurchaseRecord>[] = [
     {
       header: 'Bill Ref',
       key: 'refNo',
@@ -147,7 +147,7 @@ export function InventoryDetailModal({ isOpen, onClose, item }: InventoryDetailM
     }
   ]
 
-  const auditColumns: Column<any>[] = [
+  const auditColumns: Column<AuditLogItem>[] = [
     {
       header: 'Date',
       key: 'date',

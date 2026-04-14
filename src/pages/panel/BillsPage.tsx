@@ -1,6 +1,6 @@
 import { useState, useCallback, useEffect, useRef } from 'react'
 import { useSearchParams } from 'react-router-dom'
-import { Search, RotateCw, ExternalLink, Calendar, User, Package, Building2 } from 'lucide-react'
+import { Search, RotateCw, Calendar, User, Building2 } from 'lucide-react'
 import { InfiniteScrollTable, type Column } from '../../components/common/InfiniteScrollTable'
 import { PageHeader } from '../../components/common/PageHeader'
 import { StockUploadService, type BatchDetail, type BatchDetailsPayload } from '../../services/stockUploadService'

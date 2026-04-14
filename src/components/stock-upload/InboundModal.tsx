@@ -1,7 +1,7 @@
 import { useState, useEffect, Fragment } from 'react';
 import { X, Loader2, Package, CheckCircle, UploadCloud, ArrowRight, ChevronRight } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
-import { StockUploadService } from '../../services/stockUploadService';
+import { StockUploadService, type InboundItem } from '../../services/stockUploadService';
 import { CustomCheckbox } from '../common/CustomCheckbox';
 import { formatIndianCurrency } from '../../utils/numberFormat';
 import { SiteFilterSingle } from '../filters/SiteFilterSingle';
@@ -14,8 +14,7 @@ interface InboundModalProps {
 }
 
 export function InboundModal({ isOpen, onClose }: InboundModalProps) {
-  const [batches, setBatches] = useState<any[]>([]);
-  const [inbounds, setInbounds] = useState<any[]>([]);
+  const [inbounds, setInbounds] = useState<(InboundItem & { sendQty: number | '' })[]>([]);
   const [isLoading, setIsLoading] = useState(true);
   const [selectedInbounds, setSelectedInbounds] = useState<Set<number>>(new Set());
   const [selectedSite, setSelectedSite] = useState<Site | null>(null);
@@ -30,14 +29,13 @@ export function InboundModal({ isOpen, onClose }: InboundModalProps) {
       try {
         const batchRes = await StockUploadService.fetchPendingBatches();
         const pendingBatches = batchRes.data || [];
-        setBatches(pendingBatches);
 
-        const allInbounds: any[] = [];
+        const allInbounds: (InboundItem & { sendQty: number | '' })[] = [];
         for (const batch of pendingBatches) {
           const inboundRes = await StockUploadService.fetchInbounds(batch.id);
           if (inboundRes.data) {
             // Initialize sendQty for each item
-            const mapped = inboundRes.data.map((item: any) => ({
+            const mapped = inboundRes.data.map((item: InboundItem) => ({
               ...item,
               sendQty: item.quantity
             }));
@@ -130,8 +128,9 @@ export function InboundModal({ isOpen, onClose }: InboundModalProps) {
       } else {
         toast.error(res.message || 'Failed to inbound material');
       }
-    } catch (err: any) {
-      toast.error(err.message || 'Error occurred while inbounding');
+    } catch (err: unknown) {
+      const errorMsg = err instanceof Error ? err.message : 'Error occurred while inbounding';
+      toast.error(errorMsg);
     } finally {
       setIsSubmitting(false);
     }
@@ -192,7 +191,15 @@ export function InboundModal({ isOpen, onClose }: InboundModalProps) {
                   <tbody className="divide-y divide-border-main/20">
                     {(() => {
                     // Group inbound items by batchId
-                    const groups: { batchId: number; supplierNames: string; refNumber: string; billDate: string; billUrl: string; items: { item: any; globalIdx: number }[] }[] = [];
+                    interface InboundGroup {
+                      batchId: number;
+                      supplierNames: string;
+                      refNumber: string;
+                      billDate: string;
+                      billUrl: string;
+                      items: { item: InboundItem & { sendQty: number | '' }; globalIdx: number }[];
+                    }
+                    const groups: InboundGroup[] = [];
                     inbounds.forEach((item, idx) => {
                       const existing = groups.find(g => g.batchId === item.batchId);
                       if (existing) {
@@ -203,13 +210,13 @@ export function InboundModal({ isOpen, onClose }: InboundModalProps) {
                           supplierNames: item.supplierNames || 'Unknown',
                           refNumber: item.refNumber || '-',
                           billDate: item.billDate,
-                          billUrl: item.billUrl,
+                          billUrl: item.billUrl || '',
                           items: [{ item, globalIdx: idx }],
                         });
                       }
                     });
 
-                    return groups.map((group, gi) => (
+                    return groups.map((group) => (
                       <Fragment key={`group-${group.batchId}`}> 
                         {/* Group Header */}
                         <tr key={`g-${group.batchId}`} className="bg-surface/50">

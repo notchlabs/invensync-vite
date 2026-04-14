@@ -1,13 +1,15 @@
 import { AlertCircle, Check, Loader2, RefreshCw, RotateCcw } from 'lucide-react';
 import { formatIndianCurrency } from '../../utils/numberFormat';
 
+import type { DuplicateInfo } from '../../services/stockUploadService';
+
 interface BillFooterProps {
   subtotal: number;
   tax: number;
   calculatedTotal: number;
   billedTotal: number;
   isDuplicate: boolean;
-  duplicateInfo: any;
+  duplicateInfo?: DuplicateInfo & { siteNames?: string };
   isSubmitting: boolean;
   onConfirmAndSave: () => void;
   reprocessCount: number;

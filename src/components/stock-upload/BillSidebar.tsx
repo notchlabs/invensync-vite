@@ -1,10 +1,11 @@
 import { FileText, ChevronDown, AlertCircle, X, Loader2 } from 'lucide-react';
 import type { UploadQueueItem } from './UploadArea';
+import type { DuplicateInfo } from '../../services/stockUploadService';
 
 interface BillSidebarProps {
   isVerifying: boolean;
   uniqueBills: UploadQueueItem[];
-  duplicateBills: (UploadQueueItem & { duplicateInfo: any })[];
+  duplicateBills: (UploadQueueItem & { duplicateInfo: DuplicateInfo })[];
   selectedBillId: string | null;
   setSelectedBillId: (id: string) => void;
   uniqueOpen: boolean;

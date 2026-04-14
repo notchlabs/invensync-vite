@@ -1,5 +1,5 @@
-import { useState, useMemo } from 'react'
-import { Calendar, Clock, ChevronDown } from 'lucide-react'
+import { useMemo } from 'react'
+import { Calendar, ChevronDown } from 'lucide-react'
 
 interface FriendlyDateTimePickerProps {
   value: string // YYYY-MM-DDTHH:mm
@@ -9,7 +9,6 @@ interface FriendlyDateTimePickerProps {
 }
 
 export function FriendlyDateTimePicker({ value, onChange, label, className = '' }: FriendlyDateTimePickerProps) {
-  const [isOpen, setIsOpen] = useState(false)
 
   const formatFriendly = (val: string) => {
     if (!val) return ''

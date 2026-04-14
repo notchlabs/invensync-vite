@@ -47,13 +47,15 @@ export function MultiSelectUser({
   useEffect(() => {
     if (!isOpen || hasFetched.current) return
     hasFetched.current = true
-    setIsLoading(true)
+    // Defer state update to next tick to avoid cascading render warning
+    const timer = setTimeout(() => setIsLoading(true), 0)
     ApiService.get<{ value: GraphUser[] }>(
       'https://graph.microsoft.com/v1.0/users?$select=displayName,id,mail,mobilePhone&$top=100'
     )
       .then(data => setUsers(data.value || []))
       .catch(console.error)
       .finally(() => setIsLoading(false))
+    return () => clearTimeout(timer)
   }, [isOpen])
 
   const filtered = users.filter(

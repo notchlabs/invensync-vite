@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useMemo } from 'react';
+import { useState, useEffect, useMemo, useCallback } from 'react';
 import { useSearchParams } from 'react-router-dom';
 import { CheckCircle2 } from 'lucide-react';
 import toast from 'react-hot-toast';
@@ -11,6 +11,7 @@ import { InventoryService } from '../../services/inventoryService';
 import { ENV } from '../../config/env';
 
 import { ConsumptionFilters } from '../../components/consumption/ConsumptionFilters';
+import { type ConsumptionUnit } from '../../components/common/ConsumptionUnitSelect';
 import { ConsumedItemsList } from '../../components/consumption/ConsumedItemsList';
 import { ConsumptionSummary } from '../../components/consumption/ConsumptionSummary';
 import { ManagerAuditForm } from '../../components/consumption/ManagerAuditForm';
@@ -21,25 +22,28 @@ export default function DailyConsumptionPage() {
 
   // URL state with defaults from ENV
   const siteIdParam = searchParams.get('site') || ENV.DEFAULT_SITE_ID;
-  const dateParam = searchParams.get('date');
   const cuIdParam = searchParams.get('cuId') || ENV.DEFAULT_CONSUMPTION_UNIT_ID;
 
   // Local component state resolving URL IDs
   const [selectedSite, setSelectedSite] = useState<Site | null>(null);
-  const [selectedDate, setSelectedDate] = useState<string>(
-    dateParam || new Date().toISOString().split('T')[0]
-  );
-  const [selectedCu, setSelectedCu] = useState<any | null>(null);
+  const [selectedDate, setSelectedDate] = useState<string>(() => {
+    const d = new Date();
+    const year = d.getFullYear();
+    const month = String(d.getMonth() + 1).padStart(2, '0');
+    const day = String(d.getDate()).padStart(2, '0');
+    return `${year}-${month}-${day}`;
+  });
+  const [selectedCu, setSelectedCu] = useState<ConsumptionUnit | null>(null);
 
   // Data fetching state
   const [isLoadingItems, setIsLoadingItems] = useState(!!siteIdParam && !!cuIdParam);
   const [isLoadingContext, setIsLoadingContext] = useState(false);
   const [items, setItems] = useState<BucketItem[]>([]);
   const [searchQuery, setSearchQuery] = useState('');
-  
+
   const [salesRecord, setSalesRecord] = useState<ExistingSales | null>(null);
   const [shifts, setShifts] = useState<Shift[]>([]);
-  
+
   // Manager Audit Form
   const [mopReading, setMopReading] = useState<number>(0);
   const [posReading, setPosReading] = useState<number>(0);
@@ -67,7 +71,7 @@ export default function DailyConsumptionPage() {
   // Sync state to params
   useEffect(() => {
     const params: Record<string, string> = { date: selectedDate };
-    
+
     // Preserve site from param if state is not yet set (hydration phase)
     if (selectedSite) {
       params.site = selectedSite.id.toString();
@@ -108,8 +112,8 @@ export default function DailyConsumptionPage() {
         }
 
         setShifts(shiftsRes.data || []);
-      } catch (err) {
-        console.error('Failed to fetch sales context', err);
+      } catch {
+        console.error('Failed to fetch sales context');
       } finally {
         setIsLoadingContext(false);
       }
@@ -125,7 +129,7 @@ export default function DailyConsumptionPage() {
         setItems([]);
         return;
       }
-      
+
       setIsLoadingItems(true);
       try {
         const payload = {
@@ -138,8 +142,8 @@ export default function DailyConsumptionPage() {
         };
         const res = await ConsumptionService.fetchBucketItems(payload);
         setItems(res.data || []);
-      } catch (err) {
-        console.error('Failed to fetch bucket items', err);
+      } catch {
+        console.error('Failed to fetch bucket items');
         toast.error('Failed to load consumption items');
       } finally {
         setIsLoadingItems(false);
@@ -153,13 +157,17 @@ export default function DailyConsumptionPage() {
   const updateItem = (index: number, field: keyof BucketItem, value: number) => {
     if (isConcluded) return;
     const newItems = [...items];
-    (newItems[index] as any)[field] = value;
+    const item = newItems[index];
+    if (field in item) {
+      const typedItem = item as unknown as Record<string, unknown>;
+      typedItem[field] = value;
+    }
     setItems(newItems);
   };
 
   const handleRevertItem = async (cuBillId: number) => {
     if (!selectedSite || isConcluded) return;
-    
+
     if (!window.confirm('Are you sure you want to revert this consumed item back into inventory?')) {
       return;
     }
@@ -171,32 +179,13 @@ export default function DailyConsumptionPage() {
       });
       toast.success('Item reverted successfully');
       setItems(items.filter(i => i.cuBillId !== cuBillId));
-    } catch (err) {
+    } catch {
       toast.error('Failed to revert item');
     }
   };
 
-  const handleFileUpload = async (e: React.ChangeEvent<HTMLInputElement>, isPos: boolean) => {
-    const file = e.target.files?.[0];
-    if (!file) return;
 
-    const loader = toast.loading(`Extracting ${isPos ? 'POS' : 'MOP'} reading...`);
-    try {
-      const res = await ConsumptionService.extractMposReceipt(file);
-      toast.success('Extracted successfully', { id: loader });
-      if (isPos) {
-        setPosReading(res.data.value);
-      } else {
-        setMopReading(res.data.value);
-      }
-    } catch (err) {
-      toast.error('Extraction failed. Please type manually.', { id: loader });
-    }
-    // reset input
-    e.target.value = '';
-  };
-
-  const getDayReportAggregations = () => {
+  const getDayReportAggregations = useCallback(() => {
     const aggr = {
       wbcSale: 0,
       wStoreSale: 0,
@@ -227,7 +216,7 @@ export default function DailyConsumptionPage() {
     // 2. Add real-time totals from the current list of items if not concluded
     if (!isConcluded && items.length > 0) {
       items.forEach(item => {
-         const sale = item.cash + item.upi + item.loyalty;
+        const sale = item.cash + item.upi + item.loyalty;
         const isWbc = item.vendorIds === '-1';
         if (isWbc) {
           aggr.wbcSale += sale
@@ -244,9 +233,9 @@ export default function DailyConsumptionPage() {
     }
 
     return aggr;
-  };
+  }, [items, shifts, isConcluded, selectedCu]);
 
-  const handleSave = async (concludeShift: boolean, readings?: { mop: number; pos: number }) => {
+  const handleSave = (concludeShift: boolean, readings?: { mop: number; pos: number }) => {
     if (!selectedSite || !selectedCu || !selectedDate) {
       toast.error('Missing site or consumption unit Context');
       return;
@@ -266,72 +255,111 @@ export default function DailyConsumptionPage() {
         upi: item.upi,
         noBill: item.noBill,
         loyalty: item.loyalty,
-        total: item.amountIncTax
+        total: item.loyalty + item.upi + item.cash
       }))
     };
 
     setIsSaving(true);
     const loader = toast.loading(concludeShift ? 'Ending shift...' : 'Saving sales data...');
-    try {
-      if (concludeShift) {
-        await ConsumptionService.endShift(payload);
-        
-        // If readings were passed from the modal, we update them in state
-        if (readings) {
-          setMopReading(readings.mop);
-          setPosReading(readings.pos);
-        }
 
-        toast.success('Shift ended successfully', { id: loader });
-        window.location.reload();
-      } else {
-        await ConsumptionService.saveSales(payload);
-        toast.success('Progress saved', { id: loader });
-      }
-    } catch (err) {
-      toast.error('Failed to save', { id: loader });
-    } finally {
-      setIsSaving(false);
+    if (concludeShift) {
+      ConsumptionService.endShift(payload)
+        .then(res => {
+          if (res.success) {
+            // Verify and retrieve the correct salesId after shift end
+            ConsumptionService.existsSalesByDateAndSiteId(payload.date, payload.siteId)
+              .then(existsRes => {
+                if (existsRes.success && existsRes.data && readings) {
+                  ConsumptionService.saveSalesAudit(existsRes.data.id, {
+                    recordedBilledAmountByManager: readings.mop,
+                    recordedPosAmountByManager: readings.pos,
+                    cashCollectedByManager: 0,
+                    upiCollectedByManager: 0
+                  })
+                    .then(() => {
+                      toast.success('Audit data synchronized');
+                    })
+                    .catch(auditErr => {
+                      console.error('Failed to auto-save audit:', auditErr);
+                      toast.error('Shift ended, but audit sync failed.');
+                    })
+                    .finally(() => {
+                      toast.success('Shift ended successfully', { id: loader });
+                      window.location.reload();
+                    });
+                } else {
+                  toast.success('Shift ended successfully', { id: loader });
+                  window.location.reload();
+                }
+              })
+              .catch(verifyErr => {
+                console.error('Verification error after shift end:', verifyErr);
+                toast.success('Shift ended successfully', { id: loader });
+                window.location.reload();
+              });
+          } else {
+            toast.error(res.message || 'Failed to end shift', { id: loader });
+            setIsSaving(false);
+          }
+        })
+        .catch(err => {
+          console.error('End shift error:', err);
+          toast.error('Failed to end shift', { id: loader });
+          setIsSaving(false);
+        });
+    } else {
+      ConsumptionService.saveSales(payload)
+        .then(() => {
+          toast.success('Progress saved', { id: loader });
+        })
+        .catch((err: Error) => {
+          toast.error(err.message || 'Failed to save', { id: loader });
+        })
+        .finally(() => {
+          setIsSaving(false);
+        });
     }
   };
 
-  const handleConfirmEndShift = async (mop: number, pos: number) => {
+  const handleConfirmEndShift = (mop: number, pos: number) => {
     setIsEndShiftModalOpen(false);
-    await handleSave(true, { mop, pos });
+    handleSave(true, { mop, pos });
   };
 
-  const handleSaveAudit = async () => {
+  const handleSaveAudit = () => {
     if (!salesRecord) {
       toast.error('No sales record exists to audit. Please submit sales first.');
       return;
     }
     const loader = toast.loading('Saving manager audit...');
-    try {
-      await ConsumptionService.saveSalesAudit(salesRecord.id, {
-        recordedBilledAmountByManager: mopReading,
-        recordedPosAmountByManager: posReading,
-        cashCollectedByManager: cashCollected,
-        upiCollectedByManager: upiCollected
+    console.log("sales", salesRecord);
+    ConsumptionService.saveSalesAudit(salesRecord.id, {
+      recordedBilledAmountByManager: mopReading,
+      recordedPosAmountByManager: posReading,
+      cashCollectedByManager: cashCollected,
+      upiCollectedByManager: upiCollected
+    })
+      .then(() => {
+        toast.success('Audit saved', { id: loader });
+      })
+      .catch((err: Error) => {
+        toast.error(err.message || 'Failed to save audit', { id: loader });
       });
-      toast.success('Audit saved', { id: loader });
-    } catch (err) {
-      toast.error('Failed to save audit', { id: loader });
-    }
   };
 
-  const dayAggr = useMemo(() => getDayReportAggregations(), [items, shifts, isConcluded, selectedCu]);
+  const dayAggr = useMemo(() => getDayReportAggregations(), [getDayReportAggregations]);
 
   return (
     <div className="w-full h-full overflow-y-auto overflow-x-hidden custom-scrollbar">
       <div className="p-4 md:p-6 max-w-[1400px] mx-auto w-full flex flex-col gap-6 pb-20">
         <div className="flex items-center justify-between">
-          <PageHeader 
-            title="Daily Consumption & Sales" 
-            description="Track item-wise sales by payment mode for the selected site and date" 
+          <PageHeader
+            title="Daily Consumption & Sales"
+            description="Track item-wise sales by payment mode for the selected site and date"
           />
         </div>
 
-        <ConsumptionFilters 
+        <ConsumptionFilters
           selectedDate={selectedDate}
           setSelectedDate={setSelectedDate}
           selectedSite={selectedSite}
@@ -351,7 +379,7 @@ export default function DailyConsumptionPage() {
           </div>
         )}
 
-        <ConsumedItemsList 
+        <ConsumedItemsList
           items={items}
           isLoadingItems={isLoadingItems}
           searchQuery={searchQuery}
@@ -363,7 +391,7 @@ export default function DailyConsumptionPage() {
           selectedCu={selectedCu}
         />
 
-        <ConsumptionSummary 
+        <ConsumptionSummary
           shifts={shifts}
           selectedDate={selectedDate}
           dayAggr={dayAggr}
@@ -371,7 +399,7 @@ export default function DailyConsumptionPage() {
         />
 
         {isConcluded && (
-          <ManagerAuditForm 
+          <ManagerAuditForm
             isConcluded={isConcluded}
             salesRecord={salesRecord}
             mopReading={mopReading}
@@ -390,14 +418,14 @@ export default function DailyConsumptionPage() {
 
         {!isConcluded && (
           <div className="flex flex-col sm:flex-row sm:justify-end gap-3 pb-8 px-1 sm:px-0">
-            <button 
+            <button
               disabled={isSaving}
               onClick={() => setIsEndShiftModalOpen(true)}
               className="w-full sm:w-auto px-8 py-3 bg-red-600 text-white text-[14px] font-bold rounded-lg hover:bg-red-700 transition-all shadow-sm disabled:opacity-50"
             >
               End Shift
             </button>
-            <button 
+            <button
               disabled={isSaving}
               onClick={() => handleSave(false)}
               className="w-full sm:w-auto px-8 py-3 bg-neutral-900 dark:bg-neutral-100 text-white dark:text-neutral-900 text-[14px] font-bold rounded-lg hover:opacity-90 transition-all shadow-sm disabled:opacity-50"
@@ -408,7 +436,7 @@ export default function DailyConsumptionPage() {
         )}
       </div>
 
-      <EndShiftModal 
+      <EndShiftModal
         isOpen={isEndShiftModalOpen}
         onClose={() => setIsEndShiftModalOpen(false)}
         onConfirm={handleConfirmEndShift}

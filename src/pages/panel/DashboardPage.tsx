@@ -1,5 +1,5 @@
 import { useState, useEffect } from 'react'
-import { Activity, Database, TrendingUp, Target, ArrowUpRight, ArrowDownRight } from 'lucide-react'
+import { Activity, Database, TrendingUp, Target } from 'lucide-react'
 import Skeleton from 'react-loading-skeleton'
 import { ReportService, type InventoryStats, type ProfitLossMonth } from '../../services/reportService'
 import { ENV } from '../../config/env'

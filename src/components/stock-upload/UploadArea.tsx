@@ -1,7 +1,7 @@
 import { useState, useRef, useEffect, useCallback } from 'react';
 import { Bot, Upload, X, Check, FileText, Loader2, Play, RefreshCw } from 'lucide-react';
 import * as pdfjsLib from 'pdfjs-dist';
-import { StockUploadService } from '../../services/stockUploadService';
+import { StockUploadService, type PendingBatch, type ExtractedExtractionData } from '../../services/stockUploadService';
 import { ConfirmStockModal } from './ConfirmStockModal';
 import { InboundModal } from './InboundModal';
 import toast from 'react-hot-toast';
@@ -19,7 +19,7 @@ export interface UploadQueueItem {
   status: FileStatus;
   message?: string;
   ext?: string;
-  extractedData?: any;
+  extractedData?: ExtractedExtractionData;
 }
 
 export const UploadArea = ({ 
@@ -34,7 +34,7 @@ export const UploadArea = ({
   const [isExtractingFiles, setIsExtractingFiles] = useState(false);
   const [showConfirmModal, setShowConfirmModal] = useState(false);
   const [showInboundModal, setShowInboundModal] = useState(false);
-  const [pendingBatches, setPendingBatches] = useState<any[]>([]);
+  const [pendingBatches, setPendingBatches] = useState<PendingBatch[]>([]);
 
   useEffect(() => {
     fetchPending();
@@ -53,37 +53,6 @@ export const UploadArea = ({
 
   const fileInputRef = useRef<HTMLInputElement>(null);
 
-  const handleGlobalDragOver = useCallback((e: DragEvent) => {
-    e.preventDefault();
-    if (!isProcessingGlobal) setIsHovering(true);
-  }, [isProcessingGlobal]);
-
-  const handleGlobalDragLeave = useCallback((e: DragEvent) => {
-    e.preventDefault();
-    if (e.relatedTarget === null) {
-      setIsHovering(false);
-    }
-  }, []);
-
-  const handleGlobalDrop = useCallback((e: DragEvent) => {
-    e.preventDefault();
-    setIsHovering(false);
-    if (!isProcessingGlobal && e.dataTransfer?.files) {
-      handleFiles(Array.from(e.dataTransfer.files));
-    }
-  }, [isProcessingGlobal, singleInvoiceMode]);
-
-  useEffect(() => {
-    window.addEventListener('dragover', handleGlobalDragOver);
-    window.addEventListener('dragleave', handleGlobalDragLeave);
-    window.addEventListener('drop', handleGlobalDrop);
-    return () => {
-      window.removeEventListener('dragover', handleGlobalDragOver);
-      window.removeEventListener('dragleave', handleGlobalDragLeave);
-      window.removeEventListener('drop', handleGlobalDrop);
-    };
-  }, [handleGlobalDragOver, handleGlobalDragLeave, handleGlobalDrop]);
-
   const splitPdfIntoImages = async (file: File): Promise<File[]> => {
     const arrayBuffer = await file.arrayBuffer();
     const pdf = await pdfjsLib.getDocument({ data: arrayBuffer }).promise;
@@ -100,8 +69,7 @@ export const UploadArea = ({
       canvas.height = viewport.height;
       canvas.width = viewport.width;
 
-      // @ts-ignore - Some versions of pdfjs-dist types have mismatches with the runtime property names
-      await page.render({ canvasContext: context, viewport } as any).promise;
+      await page.render({ canvasContext: context, viewport, canvas }).promise;
       
       const blob = await new Promise<Blob | null>((resolve) => canvas.toBlob(resolve, 'image/jpeg', 0.95));
       if (blob) {
@@ -114,7 +82,7 @@ export const UploadArea = ({
     return extractedFiles;
   };
 
-  const processIncomingFile = async (file: File) => {
+  const processIncomingFile = useCallback(async (file: File) => {
     if (file.type === 'application/pdf' && !singleInvoiceMode) {
       try {
         const imageFiles = await splitPdfIntoImages(file);
@@ -148,9 +116,9 @@ export const UploadArea = ({
         ext: file.name.split('.').pop()
       }];
     }
-  };
+  }, [singleInvoiceMode]); // UseCallback to avoid dependency issues
 
-  const handleFiles = async (files: File[]) => {
+  const handleFiles = useCallback(async (files: File[]) => {
     if (isProcessingGlobal || isExtractingFiles) return;
 
     const MAX_SIZE = 10 * 1024 * 1024; // 10MB
@@ -176,7 +144,39 @@ export const UploadArea = ({
     } finally {
       setIsExtractingFiles(false);
     }
-  };
+  }, [isProcessingGlobal, isExtractingFiles, processIncomingFile]); // Added processIncomingFile dependency
+
+  const handleGlobalDragOver = useCallback((e: DragEvent) => {
+    e.preventDefault();
+    if (!isProcessingGlobal) setIsHovering(true);
+  }, [isProcessingGlobal]);
+
+  const handleGlobalDragLeave = useCallback((e: DragEvent) => {
+    e.preventDefault();
+    if (e.relatedTarget === null) {
+      setIsHovering(false);
+    }
+  }, []);
+
+  const handleGlobalDrop = useCallback((e: DragEvent) => {
+    e.preventDefault();
+    setIsHovering(false);
+    if (!isProcessingGlobal && e.dataTransfer?.files) {
+      handleFiles(Array.from(e.dataTransfer.files));
+    }
+  }, [isProcessingGlobal, handleFiles]);
+
+  useEffect(() => {
+    window.addEventListener('dragover', handleGlobalDragOver);
+    window.addEventListener('dragleave', handleGlobalDragLeave);
+    window.addEventListener('drop', handleGlobalDrop);
+    return () => {
+      window.removeEventListener('dragover', handleGlobalDragOver);
+      window.removeEventListener('dragleave', handleGlobalDragLeave);
+      window.removeEventListener('drop', handleGlobalDrop);
+    };
+  }, [handleGlobalDragOver, handleGlobalDragLeave, handleGlobalDrop]);
+
 
   const retryFile = async (id: string) => {
     const item = queue.find(q => q.id === id);
@@ -195,7 +195,7 @@ export const UploadArea = ({
           message: 'The bill image is not clear. Kindly attach a clear copy.' 
         } : q));
       }
-    } catch (err) {
+    } catch {
       setQueue(prev => prev.map(q => q.id === id ? { 
         ...q, 
         status: 'FAILED', 
@@ -228,7 +228,7 @@ export const UploadArea = ({
             message: 'The bill image is not clear. Kindly attach a clear copy.' 
           } : q));
         }
-      } catch (err) {
+      } catch {
         setQueue(prev => prev.map(q => q.id === item.id ? { 
           ...q, 
           status: 'FAILED', 
@@ -321,7 +321,7 @@ export const UploadArea = ({
               <div className="flex flex-col">
                 <span className="text-[13px] font-black">{pendingBatches.length} Pending Bill{pendingBatches.length > 1 ? 's' : ''} Found</span>
                 <span className="text-[11px]">
-                  Last bill: <strong className="font-bold">Ref: {pendingBatches[0].refNumber || `Batch ${pendingBatches[0].id}`}</strong>
+                  Last bill: <strong className="font-bold">Ref: {pendingBatches[0].refNo || `Batch ${pendingBatches[0].id}`}</strong>
                 </span>
               </div>
             </div>

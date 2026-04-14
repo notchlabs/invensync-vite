@@ -10,16 +10,13 @@ export function useGoogleMaps(): boolean {
   const [ready, setReady] = useState(_loaded)
 
   useEffect(() => {
-    if (_loaded) {
-      setReady(true)
-      return
-    }
+    if (_loaded) return
 
     _callbacks.push(() => setReady(true))
 
     if (!_loading) {
       _loading = true
-      ;(window as any).__gmapsInit = () => {
+      ;(window as unknown as { __gmapsInit: () => void }).__gmapsInit = () => {
         _loaded = true
         _loading = false
         _callbacks.forEach(cb => cb())

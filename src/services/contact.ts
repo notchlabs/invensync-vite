@@ -9,7 +9,7 @@ const getBaseDomain = () => {
   try {
     const url = new URL(ENV.API_BASE_URL);
     return url.origin;
-  } catch (e) {
+  } catch {
     return ENV.API_BASE_URL.replace('/api/v1', '');
   }
 };
@@ -41,7 +41,7 @@ export const ContactService = {
   /**
    * Submits the contact form to the backend
    */
-  submitContactForm: async (payload: ContactFormPayload): Promise<ApiResponse<any>> => {
+  submitContactForm: async (payload: ContactFormPayload): Promise<ApiResponse<null>> => {
     const response = await fetch(`${BASE_URL}/api/public/contact-form/submit`, {
       method: 'POST',
       headers: {

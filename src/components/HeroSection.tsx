@@ -1,6 +1,6 @@
 import { useEffect, useRef } from 'react'
 import {
-  ArrowRight, Play, CheckCircle, Search,
+  ArrowRight, CheckCircle, Search,
   Filter, Plus, ScanLine, Edit2
 } from 'lucide-react'
 

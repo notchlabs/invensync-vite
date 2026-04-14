@@ -1,5 +1,5 @@
-import { useState, useEffect, useCallback, useRef } from 'react'
-import { X, Package, Loader2, Plus, Trash2, Info, AlertCircle, ShoppingCart, Calculator, ArrowRight, ChevronDown, ChevronUp, Upload, Search } from 'lucide-react'
+import { useState, useEffect, useRef } from 'react'
+import { X, Package, Loader2, Plus, Trash2, Info, Upload, Search, ArrowRight, ChevronDown } from 'lucide-react'
 import { toast } from 'react-hot-toast'
 import { InventoryService } from '../../services/inventoryService'
 import { HsnSelect } from '../common/HsnSelect'
@@ -93,7 +93,7 @@ export function CreateCompositeModal({ isOpen, onClose, rawItems, onSuccess }: C
     }, 800)
 
     return () => clearTimeout(timer)
-  }, [productName])
+  }, [productName, isImageManual])
 
   const handleImageUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0]
@@ -108,9 +108,10 @@ export function CreateCompositeModal({ isOpen, onClose, rawItems, onSuccess }: C
       } else {
         toast.error(res.message || 'Image upload failed')
       }
-    } catch (err: any) {
+    } catch (err: unknown) {
       console.error('Image upload error:', err)
-      toast.error(err.message || 'Failed to upload image')
+      const message = err instanceof Error ? err.message : 'Failed to upload image'
+      toast.error(message)
     } finally {
       setIsUploading(false)
       if (fileInputRef.current) fileInputRef.current.value = ''
@@ -175,8 +176,9 @@ export function CreateCompositeModal({ isOpen, onClose, rawItems, onSuccess }: C
     }
 
     setIsLoading(true)
-
-    const extraChargesMap: Record<string, any> = {}
+    
+    interface ChargeDetail { value: number; taxable: boolean }
+    const extraChargesMap: Record<string, ChargeDetail> = {}
     extraCharges.forEach((c, idx) => {
       extraChargesMap[String(idx + 1)] = { value: Number(c.amount), taxable: c.taxable }
     })
@@ -211,9 +213,10 @@ export function CreateCompositeModal({ isOpen, onClose, rawItems, onSuccess }: C
           toast.error(res.systemMessage || res.message || 'Failed to create final product')
         }
       })
-      .catch((err: any) => {
+      .catch((err: unknown) => {
         console.error('Create product error:', err)
-        toast.error(err.systemMessage || err.message || 'Something went wrong')
+        const typedErr = err as { systemMessage?: string; message?: string }
+        toast.error(typedErr.systemMessage || typedErr.message || 'Something went wrong')
       })
       .finally(() => {
         setIsLoading(false)
@@ -499,7 +502,7 @@ export function CreateCompositeModal({ isOpen, onClose, rawItems, onSuccess }: C
                     Structure of raw materials required to produce 1 unit of this product.
                   </p>
                   <div className="flex flex-col max-h-[500px] overflow-y-auto pr-2 custom-scrollbar">
-                    {localItems.map((item, index) => {
+                    {localItems.map((item) => {
                       const key = `${item.productId}-${item.siteId}`
                       return (
                         <div key={key} className="py-3 border-b last:border-0 border-border-main/40 flex items-center gap-3 group transition-all relative hover:bg-surface/30 px-2 -mx-2 rounded-lg">

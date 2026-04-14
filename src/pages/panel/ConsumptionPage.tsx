@@ -1,16 +1,18 @@
 import { useState, useEffect, useRef, useCallback } from 'react'
-import { Search, Package, ShoppingBag, X, ChevronRight, LineChartIcon } from 'lucide-react'
+import { Search, Package, ShoppingBag, ChevronRight, LineChartIcon } from 'lucide-react'
 import { AnimatePresence, motion } from 'framer-motion'
 import toast from 'react-hot-toast'
 import Skeleton from 'react-loading-skeleton'
 import { InventoryService, type PreparationProduct } from '../../services/inventoryService'
 import { ConsumptionService } from '../../services/consumptionService'
-import type { InventoryItem } from '../../types/inventory'
+import type { InventoryItem, Site } from '../../types/inventory'
 import { ENV } from '../../config/env'
 import type { CartEntry, ItemSettings } from '../../components/inventory-consumption/types'
 import { ProductCard } from '../../components/inventory-consumption/ProductCard'
 import { ConfirmConsumptionModal } from '../../components/inventory-consumption/ConfirmConsumptionModal'
 import { useNavigate } from 'react-router-dom'
+import type { ApiResponse } from '../../types/api'
+import type { PaginatedResponse } from '../../services/common/common.types'
 
 // ── constants ─────────────────────────────────────────────────────────────────
 
@@ -48,9 +50,9 @@ export default function ConsumptionPage() {
   // ── Site name
   useEffect(() => {
     InventoryService.fetchSitesByIds([SITE_ID])
-      .then((res: any) => {
-        const sites = res.data ?? []
-        const site  = Array.isArray(sites) ? sites.find((s: any) => s.id === SITE_ID) : null
+      .then((res: ApiResponse<PaginatedResponse<Site>>) => {
+        const sites = res.data?.content ?? []
+        const site  = sites.find((s: Site) => s.id === SITE_ID)
         if (site?.name) setSiteName(site.name)
       })
       .catch(() => {})
@@ -210,7 +212,6 @@ export default function ConsumptionPage() {
           <div className="flex items-center gap-3 w-full sm:w-auto">
           <button 
             onClick={() => {
-              const url = new URLSearchParams()
               navigate(`/app/panel/inventory/consumption?siteId=${SITE_ID}`)
             }}
             className="flex-1 sm:flex-none flex items-center justify-center cursor-pointer gap-1.5 px-4 py-2 bg-btn-primary hover:opacity-90 text-btn-primary-fg text-[13px] font-semibold rounded-lg border border-border-main/50 transition-all shadow-sm tracking-wide"
@@ -271,7 +272,6 @@ export default function ConsumptionPage() {
                     return (
                       <ProductCard
                         key={`${item.productId}-${item.siteId}`}
-                        productId={item.productId}
                         productName={item.productName}
                         vendorName={item.vendorNames}
                         price={item.mrp}
@@ -304,7 +304,6 @@ export default function ConsumptionPage() {
                         return (
                           <ProductCard
                             key={`${item.productId}-${item.siteId}`}
-                            productId={item.productId}
                             productName={item.productName}
                             vendorName={item.vendorNames}
                             price={item.mrp}
@@ -344,7 +343,6 @@ export default function ConsumptionPage() {
                 return (
                   <ProductCard
                     key={item.productId}
-                    productId={item.productId}
                     productName={item.productName}
                     vendorName={null}
                     price={item.price}

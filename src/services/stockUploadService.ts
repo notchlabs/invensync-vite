@@ -8,14 +8,20 @@ export interface ExtractedProduct {
   quantity: number;
   unit: string;
   hsnCode: number;
+  hsnName: string;
   discountPercentage: number;
   cgstInPerc: number;
   sgstInPerc: number;
+  taxPerc: number;
+  imageUrl?: string | null;
+  _cacheId?: number;
 }
 
 export interface ExtractedVendor {
   name: string;
   address: string;
+  email: string;
+  phone: string;
   gst: string;
 }
 

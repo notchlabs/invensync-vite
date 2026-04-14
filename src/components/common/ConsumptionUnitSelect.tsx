@@ -2,7 +2,7 @@ import { SearchableSingleSelect } from './SearchableSingleSelect'
 import { InventoryService } from '../../services/inventoryService'
 import { useEffect, useRef } from 'react'
 
-interface ConsumptionUnit {
+export interface ConsumptionUnit {
   id: number
   label: string
   description?: string

@@ -3,7 +3,8 @@ import { Outlet, useLocation, Link, useSearchParams } from 'react-router-dom'
 import { useMsal } from '@azure/msal-react'
 import { useTheme } from '../context/ThemeContext'
 import { Menu, PanelLeft, Sun, Moon, MoreVertical, LogOut } from 'lucide-react'
-import { AppSidebar, NAV_ITEMS } from '../components/layout/AppSidebar'
+import { AppSidebar } from '../components/layout/AppSidebar'
+import { NAV_ITEMS } from '../config/navigation'
 import toast from 'react-hot-toast'
 
 /* ── Account dropdown ────────────────────────────────────── */
@@ -26,14 +27,14 @@ function AccountMenu() {
   const handleLogout = async () => {
     try {
       await instance.logoutRedirect({ postLogoutRedirectUri: window.location.origin })
-    } catch (e: any) {
+    } catch (e: unknown) {
       console.error('Logout failed:', e)
-      toast.error('Logout failed. Please try again.')
+      const error = e as { message?: string }
+      toast.error(error.message || 'Logout failed. Please try again.')
     }
   }
 
   if (!activeAccount) return null
-  console.log('Active account:', activeAccount)
   return (
     <div className="relative" ref={menuRef}>
       <button

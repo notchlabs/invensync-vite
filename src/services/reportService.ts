@@ -1,6 +1,6 @@
 import { ApiService } from './common/apiService';
 import type { ApiResponse } from '../types/api';
-import type { PaginatedData } from '../types/inventory';
+import type { PaginatedResponse } from './common/common.types';
 
 export interface StatItem {
   amount: number;
@@ -65,7 +65,7 @@ export class ReportService {
     page: number,
     size: number,
     payload: ConsumptionReportPayload,
-  ): Promise<ApiResponse<PaginatedData<ConsumptionReportItem>>> {
+  ): Promise<ApiResponse<{ data: PaginatedResponse<ConsumptionReportItem>; summary: ConsumptionReportSummary | null }>> {
     return ApiService.post(`/list/consumption-report?page=${page}&size=${size}`, payload);
   }
 }

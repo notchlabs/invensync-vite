@@ -17,6 +17,50 @@ export interface Shift {
   loyalty?: number;
 }
 
+export interface SalesProductDetail {
+  itemId: number;
+  productId: number;
+  amountIncTax: number;
+  isWbc: boolean;
+  qty: number;
+  cash: number;
+  upi: number;
+  noBill: number;
+  loyalty: number;
+  total: number;
+}
+
+export interface SaveSalesPayload {
+  siteId: number;
+  consumptionUnitId: number;
+  date: string;
+  productDetails: SalesProductDetail[];
+}
+
+export interface SalesAuditPayload {
+  recordedBilledAmountByManager: number;
+  recordedPosAmountByManager: number;
+  cashCollectedByManager: number;
+  upiCollectedByManager: number;
+}
+
+export interface RealTimeConsumePayload {
+  consumptionUnitId: number;
+  consumptionDate: string;
+  saveDetails: boolean;
+  records: {
+    sourceSiteId: number;
+    productId: number;
+    productName: string;
+    quantity: number;
+    amountIncTax: number;
+    upi: number;
+    cash: number;
+    noBill: boolean;
+    loyalty: boolean;
+  }[];
+}
+
 export interface BucketItem {
   cuBillId: number;
   productId: number;
@@ -85,7 +129,7 @@ export class ConsumptionService {
   /**
    * Revert a consumed item
    */
-  static async revertConsumedItem(payload: { consumptionUnitId: number; siteId: number }): Promise<ApiResponse<any>> {
+  static async revertConsumedItem(payload: { consumptionUnitId: number; siteId: number }): Promise<ApiResponse<null>> {
     return ApiService.post('/inbound/storage/revert-stock-consumption', payload);
   }
 
@@ -101,43 +145,28 @@ export class ConsumptionService {
   /**
    * Save sales progress (without ending shift)
    */
-  static async saveSales(payload: any): Promise<ApiResponse<any>> {
+  static async saveSales(payload: SaveSalesPayload): Promise<ApiResponse<null>> {
     return ApiService.post('/sales/save-consumption', payload);
   }
 
   /**
    * End shift and finalize
    */
-  static async endShift(payload: any): Promise<ApiResponse<any>> {
+  static async endShift(payload: SaveSalesPayload): Promise<ApiResponse<number>> {
     return ApiService.post('/sales/end-shift', payload);
   }
 
   /**
    * Save Manager Audit inputs
    */
-  static async saveSalesAudit(salesId: number, payload: { recordedBilledAmountByManager: number; recordedPosAmountByManager: number; cashCollectedByManager: number; upiCollectedByManager: number }): Promise<ApiResponse<any>> {
+  static async saveSalesAudit(salesId: number, payload: SalesAuditPayload): Promise<ApiResponse<null>> {
     return ApiService.post(`/sales/${salesId}/audit`, payload);
   }
 
   /**
    * Consume real-time stock
    */
-  static async consumeStock(payload: {
-    consumptionUnitId: number;
-    consumptionDate: string;
-    saveDetails: boolean;
-    records: {
-      sourceSiteId: number;
-      productId: number;
-      productName: string;
-      quantity: number;
-      amountIncTax: number;
-      upi: number;
-      cash: number;
-      noBill: boolean;
-      loyalty: boolean;
-    }[]
-  }): Promise<ApiResponse<any>> {
+  static async consumeStock(payload: RealTimeConsumePayload): Promise<ApiResponse<null>> {
     return ApiService.post('/inbound/storage/consume-stock', payload);
   }
 }

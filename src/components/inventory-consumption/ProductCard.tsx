@@ -6,10 +6,9 @@ import { ProductImage } from "./ProductImage"
 import { formatIndianCurrency } from "../../utils/numberFormat"
 
 export function ProductCard({
-  productId, productName, vendorName, price, unit, imageUrl,
+  productName, vendorName, price, unit, imageUrl,
   cartQty, onAdd, onRemove, isOutOfStock,
 }: {
-  productId: number
   productName: string
   vendorName?: string | null
   price: number

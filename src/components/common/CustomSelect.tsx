@@ -9,7 +9,7 @@ export const CustomSelect = ({
   onChange,
   className = ""
 }: { 
-  icon?: any, 
+  icon?: React.ElementType, 
   placeholder: string, 
   options: { label: string, value: string }[],
   value: string,

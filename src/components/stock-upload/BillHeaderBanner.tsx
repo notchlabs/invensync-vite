@@ -1,4 +1,4 @@
-import { X, RefreshCw, Phone, FileDigit, Calendar, FileText, MapPin, Paperclip } from 'lucide-react';
+import { X, Phone, FileDigit, Calendar, FileText, MapPin, Paperclip } from 'lucide-react';
 import type { UploadQueueItem } from './UploadArea';
 
 interface BillHeaderBannerProps {

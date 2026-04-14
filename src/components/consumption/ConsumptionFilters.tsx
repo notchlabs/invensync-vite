@@ -1,14 +1,14 @@
-import { SiteFilterSingle } from '../filters/SiteFilterSingle';
-import { ConsumptionUnitSelect } from '../common/ConsumptionUnitSelect';
+import { ConsumptionUnitSelect, type ConsumptionUnit } from '../common/ConsumptionUnitSelect';
 import type { Site } from '../../types/inventory';
+import { SiteFilterSingle } from '../filters/SiteFilterSingle';
 
 interface ConsumptionFiltersProps {
   selectedDate: string;
   setSelectedDate: (date: string) => void;
   selectedSite: Site | null;
   setSelectedSite: (site: Site | null) => void;
-  selectedCu: any | null;
-  setSelectedCu: (cu: any | null) => void;
+  selectedCu: ConsumptionUnit | null;
+  setSelectedCu: (cu: ConsumptionUnit | null) => void;
   initialCuId?: number | null;
 }
 
@@ -31,7 +31,7 @@ export const ConsumptionFilters = ({
           className="w-full h-10 px-4 bg-surface border border-border-main rounded-lg text-[14px] text-primary-text outline-none focus:ring-2 focus:ring-btn-primary/20 appearance-none"
         />
       </div>
-      <SiteFilterSingle 
+      <SiteFilterSingle
         value={selectedSite} 
         onChange={setSelectedSite} 
         className="flex-1 min-w-0 w-full sm:w-auto"

@@ -4,9 +4,15 @@ import { CustomSelect } from './common/CustomSelect'
 import { ContactService } from '../services/contact'
 import toast from 'react-hot-toast'
 
+interface ReCaptcha {
+  render: (container: HTMLElement, options: Record<string, unknown>) => number;
+  reset: (widgetId: number) => void;
+  getResponse: (widgetId: number) => string;
+}
+
 declare global {
   interface Window {
-    grecaptcha: any;
+    grecaptcha: ReCaptcha;
     onRecaptchaLoad: () => void;
   }
 }
@@ -48,7 +54,9 @@ export const FooterCTA = () => {
     // Don't load twice
     if (document.getElementById('recaptcha-script')) {
       if (window.grecaptcha?.render) {
-        setRecaptchaReady(true)
+        // Defer state update to next tick to avoid cascading render warning
+        const timer = setTimeout(() => setRecaptchaReady(true), 0)
+        return () => clearTimeout(timer)
       }
       return
     }
@@ -163,9 +171,10 @@ export const FooterCTA = () => {
         setErrorMessage(msg)
         toast.error(msg)
       }
-    } catch (err: any) {
+    } catch (err: unknown) {
       setFormStatus('error')
-      const msg = err.message || 'Network error. Please try again.'
+      const typedErr = err as { message?: string }
+      const msg = typedErr.message || 'Network error. Please try again.'
       setErrorMessage(msg)
       toast.error(msg)
     }

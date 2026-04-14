@@ -1,6 +1,6 @@
-import React, { useState } from 'react';
+import { useState } from 'react';
 import { X, Camera, Printer, CreditCard, ImagePlus, Loader2, Check, AlertCircle } from 'lucide-react';
-import { motion, AnimatePresence } from 'framer-motion';
+import { motion } from 'framer-motion';
 import { ConsumptionService } from '../../services/consumptionService';
 import toast from 'react-hot-toast';
 
@@ -42,7 +42,7 @@ export const EndShiftModal = ({ isOpen, onClose, onConfirm, isLoading }: EndShif
       } else {
         toast.error(res.data.message || 'Could not find a total value in this image');
       }
-    } catch (err) {
+    } catch {
       toast.error('Extraction failed. You can still proceed manually.');
     } finally {
       if (isPos) setIsExtractingPos(false);

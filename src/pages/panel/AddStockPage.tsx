@@ -1,17 +1,9 @@
-import React, { useRef } from 'react';
+import React from 'react';
 import { PageHeader } from '../../components/common/PageHeader';
 import { UploadArea } from '../../components/stock-upload/UploadArea';
 import { RecentlyUploadedBills } from '../../components/stock-upload/RecentlyUploadedBills';
 
 export default function AddStockPage() {
-  const recentBillsRef = useRef<{ fetchBatches: () => void } | null>(null);
-
-  const handleRefreshRecent = () => {
-    // A trick to reload the RecentlyUploadedBills without prop drilling explicit state if we don't want to.
-    // Alternatively, we can use a key or boolean toggle to force refetch.
-    // Let's use a standard React approach with a state toggle in real apps, but since
-    // it's contained here, an event can be dispatched or we can manage state.
-  };
 
   // State to trigger refetch in RecentlyUploadedBills
   const [refreshTrigger, setRefreshTrigger] = React.useState(0);

@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react';
+import { useState } from 'react';
 import { X, FileText, Calendar, Building2, Package, Loader2, ExternalLink, Hash } from 'lucide-react';
 import { StockUploadService, type UploadBatch, type BatchInvoiceDetail } from '../../services/stockUploadService';
 import { formatIndianCurrency } from '../../utils/numberFormat';
@@ -13,15 +13,17 @@ export function BillViewModal({ isOpen, onClose, batch }: BillViewModalProps) {
   const [detail, setDetail] = useState<BatchInvoiceDetail | null>(null);
   const [isLoading, setIsLoading] = useState(true);
 
-  useEffect(() => {
-    if (!isOpen) return;
+  const [prevBatchId, setPrevBatchId] = useState<number | null>(null);
+
+  if (isOpen && batch.id !== prevBatchId) {
+    setPrevBatchId(batch.id);
     setIsLoading(true);
     setDetail(null);
     StockUploadService.fetchBatchById(batch.id)
       .then(res => setDetail(res.data))
       .catch(console.error)
       .finally(() => setIsLoading(false));
-  }, [isOpen, batch.id]);
+  }
 
   if (!isOpen) return null;
 

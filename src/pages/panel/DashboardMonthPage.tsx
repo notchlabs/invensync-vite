@@ -154,9 +154,15 @@ export default function DashboardMonthPage() {
   const [loading, setLoading] = useState(true)
   const [expandedDate, setExpandedDate] = useState<string | null>(null)
 
+  // Adjusting state during render to avoid cascading renders in useEffect
+  const [prevMonthYear, setPrevMonthYear] = useState(monthYear)
+  if (monthYear !== prevMonthYear) {
+    setPrevMonthYear(monthYear)
+    setLoading(true)
+  }
+
   useEffect(() => {
     if (!year || !month) return
-    setLoading(true)
 
     const lastDay = lastDayOfMonth(year, month)
     const fromDate = `${year}-${String(month).padStart(2, '0')}-01T00:00:00.000Z`

@@ -173,15 +173,28 @@ export default function TransitPage() {
   useEffect(() => {
     setSearchParams(prev => {
       const p = new URLSearchParams(prev)
-      search ? p.set('search', search) : p.delete('search')
-      dateRange?.from ? p.set('fromDate', format(dateRange.from, 'yyyy-MM-dd')) : p.delete('fromDate')
-      dateRange?.to ? p.set('toDate', format(dateRange.to, 'yyyy-MM-dd')) : p.delete('toDate')
-      fromSites.length
-        ? p.set('fromSites', JSON.stringify(fromSites.map(s => ({ id: s.id, name: s.name, city: s.city, state: s.state }))))
-        : p.delete('fromSites')
-      toSites.length
-        ? p.set('toSites', JSON.stringify(toSites.map(s => ({ id: s.id, name: s.name, city: s.city, state: s.state }))))
-        : p.delete('toSites')
+      
+      if (search) p.set('search', search)
+      else p.delete('search')
+
+      if (dateRange?.from) p.set('fromDate', format(dateRange.from, 'yyyy-MM-dd'))
+      else p.delete('fromDate')
+
+      if (dateRange?.to) p.set('toDate', format(dateRange.to, 'yyyy-MM-dd'))
+      else p.delete('toDate')
+
+      if (fromSites.length) {
+        p.set('fromSites', JSON.stringify(fromSites.map(s => ({ id: s.id, name: s.name, city: s.city, state: s.state }))))
+      } else {
+        p.delete('fromSites')
+      }
+
+      if (toSites.length) {
+        p.set('toSites', JSON.stringify(toSites.map(s => ({ id: s.id, name: s.name, city: s.city, state: s.state }))))
+      } else {
+        p.delete('toSites')
+      }
+
       return p
     }, { replace: true })
   }, [search, dateRange, fromSites, toSites, setSearchParams])

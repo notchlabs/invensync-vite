@@ -1,5 +1,6 @@
 import { useState, useEffect, useRef } from 'react'
 import { X, Upload, Package, Edit3, ShieldCheck, Tag, Loader2 } from 'lucide-react'
+import { toast } from 'react-hot-toast'
 import { HsnSelect } from '../common/HsnSelect'
 import { InventoryService } from '../../services/inventoryService'
 import { VALIDATION_LIMITS } from '../../config/validation'
@@ -53,11 +54,15 @@ export function EditProductModal({ isOpen, onClose, item, onSuccess }: EditProdu
       if (res.success && res.data?.docUrl) {
         setFormData(prev => ({ ...prev, imageUrl: res.data.docUrl }))
       } else {
-        setError(res.message || 'Image upload failed')
+        const msg = res.message || 'Image upload failed'
+        setError(msg)
+        toast.error(msg)
       }
-    } catch (err: any) {
+    } catch (err: unknown) {
       console.error('Image upload error:', err)
-      setError(err.message || 'Failed to upload image')
+      const errorMsg = err instanceof Error ? err.message : 'Failed to upload image'
+      setError(errorMsg)
+      toast.error(errorMsg)
     } finally {
       setIsUploading(false)
       if (fileInputRef.current) fileInputRef.current.value = ''
@@ -82,14 +87,19 @@ export function EditProductModal({ isOpen, onClose, item, onSuccess }: EditProdu
 
       const res = await InventoryService.updateProduct(item.productId, payload)
       if (res.success) {
+        toast.success('Product updated successfully')
         onSuccess()
         onClose()
       } else {
-        setError(res.message || 'Failed to update product')
+        const msg = res.message || 'Failed to update product'
+        setError(msg)
+        toast.error(msg)
       }
-    } catch (err: any) {
+    } catch (err: unknown) {
       console.error('Update product error:', err)
-      setError(err.message || 'Something went wrong')
+      const errorMsg = err instanceof Error ? err.message : 'Something went wrong'
+      setError(errorMsg)
+      toast.error(errorMsg)
     } finally {
       setIsLoading(false)
     }
@@ -257,7 +267,6 @@ export function EditProductModal({ isOpen, onClose, item, onSuccess }: EditProdu
             </div>
           </div>
 
-          {error && <p className="text-[12px] font-bold text-red-500 bg-red-500/10 p-2.5 rounded-lg border border-red-500/20">{error}</p>}
         </div>
 
         {/* Footer */}

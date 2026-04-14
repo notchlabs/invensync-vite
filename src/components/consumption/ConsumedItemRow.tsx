@@ -84,19 +84,47 @@ export const ConsumedItemRow = ({
       <div className="grid grid-cols-4 gap-2.5 lg:gap-3 w-full">
         <div className="flex flex-col gap-1.5 flex-1 min-w-0">
           <label className="text-[11px] lg:text-[10px] text-muted-text font-bold uppercase tracking-wider pl-1 font-display">Cash</label>
-          <input type="number" disabled={isConcluded} value={item.cash} onChange={(e) => updateItem(idx, 'cash', Number(e.target.value))} className="w-full h-10 lg:h-8 px-2 text-[13px] font-bold text-primary-text bg-secondary border border-border-main rounded-xl lg:rounded-md outline-none focus:border-primary-text focus:bg-background focus:ring-4 focus:ring-primary-text/5 transition-all font-display" />
+          <input 
+            type="number" 
+            disabled={isConcluded} 
+            value={item.cash} 
+            onFocus={(e) => e.target.select()}
+            onChange={(e) => updateItem(idx, 'cash', Number(e.target.value))} 
+            className="w-full h-10 lg:h-8 px-2 text-[13px] font-bold text-primary-text bg-secondary border border-border-main rounded-xl lg:rounded-md outline-none focus:border-primary-text focus:bg-background focus:ring-4 focus:ring-primary-text/5 transition-all font-display" 
+          />
         </div>
         <div className="flex flex-col gap-1.5 flex-1 min-w-0">
           <label className="text-[11px] lg:text-[10px] text-muted-text font-bold uppercase tracking-wider pl-1 font-display">UPI</label>
-          <input type="number" disabled={isConcluded} value={item.upi} onChange={(e) => updateItem(idx, 'upi', Number(e.target.value))} className="w-full h-10 lg:h-8 px-2 text-[13px] font-bold text-primary-text bg-secondary border border-border-main rounded-xl lg:rounded-md outline-none focus:border-primary-text focus:bg-background focus:ring-4 focus:ring-primary-text/5 transition-all font-display" />
+          <input 
+            type="number" 
+            disabled={isConcluded} 
+            value={item.upi} 
+            onFocus={(e) => e.target.select()}
+            onChange={(e) => updateItem(idx, 'upi', Number(e.target.value))} 
+            className="w-full h-10 lg:h-8 px-2 text-[13px] font-bold text-primary-text bg-secondary border border-border-main rounded-xl lg:rounded-md outline-none focus:border-primary-text focus:bg-background focus:ring-4 focus:ring-primary-text/5 transition-all font-display" 
+          />
         </div>
         <div className="flex flex-col gap-1.5 flex-1 min-w-0">
           <label className="text-[11px] lg:text-[10px] text-muted-text font-bold uppercase tracking-wider pl-1 font-display">No Bill</label>
-          <input type="number" disabled={isConcluded} value={item.noBill} onChange={(e) => updateItem(idx, 'noBill', Number(e.target.value))} className="w-full h-10 lg:h-8 px-2 text-[13px] font-bold text-primary-text bg-secondary border border-border-main rounded-xl lg:rounded-md outline-none focus:border-primary-text focus:bg-background focus:ring-4 focus:ring-primary-text/5 transition-all font-display" />
+          <input 
+            type="number" 
+            disabled={isConcluded} 
+            value={item.noBill} 
+            onFocus={(e) => e.target.select()}
+            onChange={(e) => updateItem(idx, 'noBill', Number(e.target.value))} 
+            className="w-full h-10 lg:h-8 px-2 text-[13px] font-bold text-primary-text bg-secondary border border-border-main rounded-xl lg:rounded-md outline-none focus:border-primary-text focus:bg-background focus:ring-4 focus:ring-primary-text/5 transition-all font-display" 
+          />
         </div>
         <div className="flex flex-col gap-1.5 flex-1 min-w-0">
           <label className="text-[11px] lg:text-[10px] text-muted-text font-bold uppercase tracking-wider pl-1 font-display">Loyalty</label>
-          <input type="number" disabled={isConcluded} value={item.loyalty} onChange={(e) => updateItem(idx, 'loyalty', Number(e.target.value))} className="w-full h-10 lg:h-8 px-2 text-[13px] font-bold text-primary-text bg-secondary border border-border-main rounded-xl lg:rounded-md outline-none focus:border-primary-text focus:bg-background focus:ring-4 focus:ring-primary-text/5 transition-all font-display" />
+          <input 
+            type="number" 
+            disabled={isConcluded} 
+            value={item.loyalty} 
+            onFocus={(e) => e.target.select()}
+            onChange={(e) => updateItem(idx, 'loyalty', Number(e.target.value))} 
+            className="w-full h-10 lg:h-8 px-2 text-[13px] font-bold text-primary-text bg-secondary border border-border-main rounded-xl lg:rounded-md outline-none focus:border-primary-text focus:bg-background focus:ring-4 focus:ring-primary-text/5 transition-all font-display" 
+          />
         </div>
       </div>
 

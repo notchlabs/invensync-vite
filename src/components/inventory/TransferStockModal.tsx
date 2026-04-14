@@ -1,4 +1,5 @@
-import { useState, useEffect } from 'react'
+import { useState } from 'react'
+import { useNavigate } from 'react-router-dom'
 import { X, Calendar, CheckCircle2, AlertCircle, Trash2, Package, LayoutGrid, ChevronRight, RotateCw, Loader2, FileText, ExternalLink } from 'lucide-react'
 import { toast } from 'react-hot-toast'
 import { SiteFilterSingle } from '../filters/SiteFilterSingle'
@@ -14,24 +15,32 @@ interface TransferStockModalProps {
 }
 
 export function TransferStockModal({ isOpen, onClose, items, onSuccess }: TransferStockModalProps) {
+  const navigate = useNavigate()
   // Local state for items being transferred
   const [localItems, setLocalItems] = useState<(InventoryItem & { transferQty: number })[]>([])
+  const [prevIsOpen, setPrevIsOpen] = useState(isOpen)
   const [destinationSite, setDestinationSite] = useState<Site | null>(null)
-  const [billDate, setBillDate] = useState(new Date().toISOString().split('T')[0])
+  const [billDate, setBillDate] = useState(() => {
+    const d = new Date();
+    return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-${String(d.getDate()).padStart(2, '0')}`;
+  })
   const [isPreviewLoading, setIsPreviewLoading] = useState(false)
   const [isTransferLoading, setIsTransferLoading] = useState(false)
   const [isCorrectionLoading, setIsCorrectionLoading] = useState(false)
   const [successData, setSuccessData] = useState<{ url: string; type: string } | null>(null)
 
-  // Initialize local items when modal opens
-  useEffect(() => {
-    if (isOpen) {
-      setLocalItems(items.map(item => ({ ...item, transferQty: 1 })))
-      setDestinationSite(null)
-      setBillDate(new Date().toISOString().split('T')[0])
-      setSuccessData(null)
-    }
-  }, [isOpen, items])
+  // Adjusting state during render
+  if (isOpen && !prevIsOpen) {
+    setPrevIsOpen(true)
+    setLocalItems(items.map(item => ({ ...item, transferQty: 1 })))
+    setDestinationSite(null)
+    const d = new Date();
+    const dateStr = `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-${String(d.getDate()).padStart(2, '0')}`;
+    setBillDate(dateStr)
+    setSuccessData(null)
+  } else if (!isOpen && prevIsOpen) {
+    setPrevIsOpen(false)
+  }
 
   // Validation: Check for unique "From Site"
   const fromSites = Array.from(new Set(localItems.map(item => item.siteId)))
@@ -492,7 +501,10 @@ export function TransferStockModal({ isOpen, onClose, items, onSuccess }: Transf
 
             {/* Bottom Utilities */}
             <div className="mt-auto flex flex-col gap-1 px-1">
-              <button className="flex items-center justify-between group p-3 hover:bg-surface rounded-xl transition-all">
+              <button 
+                onClick={() => { onClose(); navigate('/app/panel/transit'); }}
+                className="flex items-center justify-between group p-3 hover:bg-surface rounded-xl transition-all"
+              >
                 <span className="text-[12px] font-black  tracking-wide text-primary-text">Go to Transit Page</span>
                 <ChevronRight size={16} className="text-muted-text group-hover:translate-x-1 transition-transform" />
               </button>

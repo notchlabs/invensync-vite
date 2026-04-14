@@ -394,7 +394,6 @@ export default function InventoryPage() {
         <div className="flex items-center gap-3 w-full sm:w-auto">
           <button
             onClick={() => {
-              const url = new URLSearchParams();
               navigate(`/app/panel/inventory/consumption?siteId=${SITE_ID}`);
             }}
             className="flex-1 sm:flex-none flex items-center justify-center gap-1.5 px-4 py-2 bg-btn-primary hover:opacity-90 text-btn-primary-fg text-[13px] font-semibold rounded-lg border border-border-main/50 transition-all shadow-sm tracking-wide cursor-pointer"

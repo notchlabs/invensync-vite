@@ -1,10 +1,10 @@
 import { useState, useEffect, useRef, useCallback } from 'react'
 import { Search, Loader2, ChevronDown, Check } from 'lucide-react'
-import type { PaginatedData } from '../../types/inventory'
+import type { PaginatedResponse } from '../../services/common/common.types'
 
 interface InfiniteScrollMultiSelectProps<T> {
   placeholder: string
-  fetchData: (page: number, size: number, search: string) => Promise<{ data: PaginatedData<T> }>
+  fetchData: (page: number, size: number, search: string) => Promise<{ data: PaginatedResponse<T> }>
   keyExtractor: (item: T) => string | number
   renderLabel: (item: T) => React.ReactNode
   selectedItems: T[]
