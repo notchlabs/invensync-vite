@@ -33,10 +33,93 @@ export interface UploadBatch {
   supplierName: string;
   refNo: string;
   totalPrice: number;
-  state: any;
+  state: string;
   siteNames: string;
   createdAt: string;
   billUrl: string;
+}
+
+export interface DuplicateInfo {
+  id: number;
+  supplierName: string;
+  refNo: string;
+  createdAt: string;
+  billUrl: string;
+}
+
+export interface CreateBatchPayload {
+  vendor: {
+    name: string;
+    gst: string | null;
+    email: string;
+    phone: string;
+    address: string;
+    billTotalIncludingTax: number | null;
+    invoiceNumber: string | null;
+    isInvoiceNumberClear: boolean | null;
+    billDate: string | null;
+  };
+  totalWithoutTax: string;
+  tax: string;
+  billTotalIncludingTax: number | null;
+  extraCharges: Record<string, unknown>;
+  products: {
+    name: string;
+    quantity: number;
+    unit: string;
+    hsnCode: number | null;
+    hsnName: string | null;
+    cgstInPerc: number;
+    sgstInPerc: number;
+    price: number;
+    totalExcludingTax: number;
+    tax: number;
+    totalIncludingTax: number;
+    imageUrl: string | null;
+    productId?: number;
+  }[];
+  invoiceNumber: string | null;
+  isInvoiceNumberClear: boolean | null;
+  billDate: string | null;
+  totalWithTax: string;
+  totalIncAll: string;
+  billUrl: string;
+}
+
+export interface PendingBatch {
+  id: number;
+  supplierNames: string;
+  refNo: string;
+  billDate: string;
+  billUrl: string;
+  createdAt: string;
+}
+
+export interface InboundItem {
+  batchId: number;
+  supplierNames: string;
+  refNumber: string;
+  billDate: string;
+  billUrl: string;
+  productId: number;
+  productName: string;
+  imageUrl: string | null;
+  price: number;
+  quantity: number;
+  unit: string;
+  tax: number;
+  totalExcTax: number;
+  totalIncTax: number;
+  inboundId: number;
+}
+
+export interface InboundMaterialPayload {
+  destinationSiteId: number;
+  destinationSiteName: string;
+  productId: number;
+  productName: string;
+  quantity: number;
+  inboundId: number;
 }
 
 export interface BatchDetail {
@@ -78,7 +161,7 @@ export interface BatchInvoiceDetail {
   tax: number;
   totalWithTax: number;
   totalIncAll: number | null;
-  extraCharges: any;
+  extraCharges: Record<string, unknown>;
   products: {
     hsnCode: number;
     tax: number;
@@ -128,7 +211,7 @@ export class StockUploadService {
   /**
    * Verify if a bill is unique or duplicate
    */
-  static async verifyBill(payload: ExtractedExtractionData): Promise<ApiResponse<any>> {
+  static async verifyBill(payload: ExtractedExtractionData): Promise<ApiResponse<DuplicateInfo | null>> {
     return ApiService.post('/batch/verify-bill', payload);
   }
 
@@ -147,35 +230,35 @@ export class StockUploadService {
   /**
    * Create a new batch
    */
-  static async createBatch(payload: any): Promise<ApiResponse<any>> {
+  static async createBatch(payload: CreateBatchPayload): Promise<ApiResponse<{ id: number }>> {
     return ApiService.post('/batch/create', payload);
   }
 
   /**
    * Fetch batches that are confirmed but not yet inbounded
    */
-  static async fetchPendingBatches(): Promise<ApiResponse<any[]>> {
+  static async fetchPendingBatches(): Promise<ApiResponse<PendingBatch[]>> {
     return ApiService.get('/batch/pending');
   }
 
   /**
    * Fetch inbound line items for a specific batch
    */
-  static async fetchInbounds(batchId: string | number): Promise<ApiResponse<any[]>> {
+  static async fetchInbounds(batchId: string | number): Promise<ApiResponse<InboundItem[]>> {
     return ApiService.get(`/inbound/fetch?batchId=${batchId}`);
   }
 
   /**
    * Delete a pending batch
    */
-  static async deleteBatch(batchId: string | number): Promise<ApiResponse<any>> {
+  static async deleteBatch(batchId: string | number): Promise<ApiResponse<{ message: string }>> {
     return ApiService.delete(`/batch/delete/${batchId}`);
   }
 
   /**
    * Submit inbound material to a specific site
    */
-  static async inboundMaterial(payload: any[]): Promise<ApiResponse<any>> {
+  static async inboundMaterial(payload: InboundMaterialPayload[]): Promise<ApiResponse<{ message: string }>> {
     return ApiService.post('/inbound/storage/inbound', payload);
   }
 
