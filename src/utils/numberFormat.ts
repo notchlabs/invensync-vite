@@ -12,3 +12,11 @@ export const formatIndianNumber = (num: number | string | undefined | null): str
 export const formatIndianCurrency = (num: number | string | undefined | null): string => {
   return `₹${formatIndianNumber(num)}`;
 };
+
+export const fmtShort = (n: number): string => {
+  const abs  = Math.abs(n)
+  const sign = n < 0 ? '-' : ''
+  if (abs >= 100_000) return `${sign}₹${(abs / 100_000).toFixed(2)} L`
+  if (abs >= 1_000)   return `${sign}₹${(abs / 1_000).toFixed(2)} K`
+  return `${sign}₹${abs.toFixed(2)}`
+}

@@ -83,4 +83,5 @@ export interface InventoryFetchPayload {
   searchByProductName: string | null;
   searchByBillNo: string | null;
   searchBySupplierName: string | null;
+  showZeroStock: boolean;
 }

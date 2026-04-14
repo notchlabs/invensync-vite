@@ -24,7 +24,7 @@ const EditPencilIcon = ({ onClick }: { onClick?: (e: React.MouseEvent) => void }
 export interface Column<T> {
   header: React.ReactNode
   key: string
-  render?: (row: T) => React.ReactNode
+  render?: (row: T, index: number) => React.ReactNode
 
   // Declarative JSON-based config
   cellType?: 'product' | 'location' | 'quantity' | 'currency' | 'currency-net'
@@ -194,7 +194,7 @@ export function InfiniteScrollTable<T>({
                     let content: React.ReactNode = null;
 
                     if (col.render) {
-                      content = col.render(row)
+                      content = col.render(row, index)
                     } else if (col.cellType && col.dataMap) {
                       const { title, subtitle, image, value, unit } = col.dataMap
                       const r = row as any

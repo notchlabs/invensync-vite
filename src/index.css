@@ -28,7 +28,15 @@
   --color-selection-bar-fg: var(--selection-text);
 
   --color-table-head: var(--table-head-bg);
+  --color-stats-card: var(--bg-stats-card);
+  --color-stats-card-border: var(--border-stats-card);
+  --color-stats-text: var(--text-stats-primary);
+  --color-stats-muted: var(--text-stats-muted);
+  --color-stats-label: var(--text-stats-label);
 
+
+  --color-card-light: var(--bg-card-light);
+  --color-tab-light: var(--bg-tab-light);
   --shadow-sm: var(--shadow-sm);
   --shadow-md: var(--shadow-md);
 }
@@ -62,6 +70,16 @@
 
   --shadow-sm: 0 1px 2px 0 rgba(0, 0, 0, 0.05);
   --shadow-md: 0 4px 6px -1px rgba(0, 0, 0, 0.1), 0 2px 4px -1px rgba(0, 0, 0, 0.06);
+
+  /* Stats/feature card — distinct from regular cards */
+  --bg-stats-card: #fff5ec;
+  --border-stats-card: #fdd9a8;
+  --text-stats-primary: #1c1917;
+  --text-stats-muted: #a8a29e;
+  --text-stats-label: #78716c;
+
+  --bg-card-light: #faf7f4;
+  --bg-tab-light: #e9e9e9;
 }
 
 .dark {
@@ -93,6 +111,16 @@
 
   --shadow-sm: 0 1px 4px 0 rgba(0, 0, 0, 0.4);
   --shadow-md: 0 8px 30px rgba(0, 0, 0, 0.5);
+
+  /* Stats/feature card */
+  --bg-stats-card: #26241f;
+  --border-stats-card: #443d34;
+  --text-stats-primary: #fafafa;
+  --text-stats-muted: #3f3f46;
+  --text-stats-label: #27272a;
+
+    --bg-card-light: #1f1f1e;
+    --bg-tab-light: #1f1f1e;
 }
 
 /* Base */

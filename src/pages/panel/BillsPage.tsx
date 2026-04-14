@@ -1,25 +1,71 @@
 import { useState, useCallback, useEffect, useRef } from 'react'
+import { useSearchParams } from 'react-router-dom'
 import { Search, RotateCw, ExternalLink, Calendar, User, Package, Building2 } from 'lucide-react'
 import { InfiniteScrollTable, type Column } from '../../components/common/InfiniteScrollTable'
 import { PageHeader } from '../../components/common/PageHeader'
 import { StockUploadService, type BatchDetail, type BatchDetailsPayload } from '../../services/stockUploadService'
 import { VendorFilter } from '../../components/filters/VendorFilter'
 import { SiteFilter } from '../../components/filters/SiteFilter'
-import { DateRangePicker } from '../../components/common/DateRangePicker'
+import { AdvancedDateRangePicker } from '../../components/common/AdvancedDateRangePicker'
 import { BillDetailDrawer } from '../../components/stock-upload/BillDetailDrawer'
 import type { Site, Vendor } from '../../types/inventory'
+import type { DateRange } from 'react-day-picker'
+import { format } from 'date-fns'
+
+function parseDate(val: string | null): Date | undefined {
+  if (!val) return undefined
+  const d = new Date(val)
+  return isNaN(d.getTime()) ? undefined : d
+}
 
 export default function BillsPage() {
-  // Filter States
-  const [searchKey, setSearchKey] = useState('')
-  const [selectedVendors, setSelectedVendors] = useState<Vendor[]>([])
-  const [selectedSites, setSelectedSites] = useState<Site[]>([])
-  
-  // Date states (YYYY-MM-DD)
-  const [billFrom, setBillFrom] = useState('')
-  const [billTo, setBillTo] = useState('')
-  const [uploadFrom, setUploadFrom] = useState('')
-  const [uploadTo, setUploadTo] = useState('')
+  const [searchParams, setSearchParams] = useSearchParams()
+
+  // Parse initial filter values from URL params
+  const [searchKey, setSearchKey] = useState(() => searchParams.get('q') || '')
+  const [selectedVendors, setSelectedVendors] = useState<Vendor[]>(() => {
+    try {
+      return (JSON.parse(searchParams.get('vendors') || '[]') as { id: number; name: string }[]).map(v => ({
+        id: v.id, name: v.name, contactEmail: '', contactPhone: '', gstNumber: '', address: '',
+      }))
+    } catch { return [] }
+  })
+  const [selectedSites, setSelectedSites] = useState<Site[]>(() => {
+    try {
+      return (JSON.parse(searchParams.get('sites') || '[]') as { id: number; name: string; city: string; state: string }[]).map(s => ({
+        id: s.id, name: s.name, city: s.city, state: s.state,
+        address: '', country: '', zipCode: 0, gpsLat: 0, gpsLng: 0,
+        startDate: null, endDate: null, projectType: '', status: '', searchKey: '',
+      }))
+    } catch { return [] }
+  })
+
+  // Date states
+  const [billRange, setBillRange] = useState<DateRange | undefined>(() => {
+    const from = parseDate(searchParams.get('billFrom'))
+    const to = parseDate(searchParams.get('billTo'))
+    return from ? { from, to } : undefined
+  })
+  const [uploadRange, setUploadRange] = useState<DateRange | undefined>(() => {
+    const from = parseDate(searchParams.get('uploadFrom'))
+    const to = parseDate(searchParams.get('uploadTo'))
+    return from ? { from, to } : undefined
+  })
+
+  // Sync filters → URL params
+  useEffect(() => {
+    const params: Record<string, string> = {}
+    if (searchKey) params.q = searchKey
+    if (selectedVendors.length > 0)
+      params.vendors = JSON.stringify(selectedVendors.map(v => ({ id: v.id, name: v.name })))
+    if (selectedSites.length > 0)
+      params.sites = JSON.stringify(selectedSites.map(s => ({ id: s.id, name: s.name, city: s.city, state: s.state })))
+    if (billRange?.from) params.billFrom = format(billRange.from, 'yyyy-MM-dd')
+    if (billRange?.to) params.billTo = format(billRange.to, 'yyyy-MM-dd')
+    if (uploadRange?.from) params.uploadFrom = format(uploadRange.from, 'yyyy-MM-dd')
+    if (uploadRange?.to) params.uploadTo = format(uploadRange.to, 'yyyy-MM-dd')
+    setSearchParams(params, { replace: true })
+  }, [searchKey, selectedVendors, selectedSites, billRange, uploadRange, setSearchParams])
 
   // Table Data State
   const [tableData, setTableData] = useState<BatchDetail[]>([])
@@ -73,10 +119,10 @@ export default function BillsPage() {
         searchKey: searchKey || null,
         vendor: selectedVendors.map(v => v.id),
         site: selectedSites.map(s => s.id),
-        startDate: billFrom ? `${billFrom}T00:00:00.000Z` : null,
-        endDate: billTo ? `${billTo}T23:59:59.999Z` : null,
-        createdStartDate: uploadFrom ? `${uploadFrom}T00:00:00.000Z` : null,
-        createdEndDate: uploadTo ? `${uploadTo}T23:59:59.999Z` : null,
+        startDate: billRange?.from ? format(billRange.from, "yyyy-MM-dd'T'00:00:00.000'Z'") : null,
+        endDate: billRange?.to ? format(billRange.to, "yyyy-MM-dd'T'23:59:59.999'Z'") : null,
+        createdStartDate: uploadRange?.from ? format(uploadRange.from, "yyyy-MM-dd'T'00:00:00.000'Z'") : null,
+        createdEndDate: uploadRange?.to ? format(uploadRange.to, "yyyy-MM-dd'T'23:59:59.999'Z'") : null,
       }
 
       const res = await StockUploadService.fetchBatchDetails(pageRef.current, 12, payload)
@@ -93,7 +139,7 @@ export default function BillsPage() {
       isLoadingRef.current = false
       setIsLoading(false)
     }
-  }, [searchKey, selectedVendors, selectedSites, billFrom, billTo, uploadFrom, uploadTo])
+  }, [searchKey, selectedVendors, selectedSites, billRange, uploadRange])
 
   // Initial Load & Filter Change Effect
   useEffect(() => {
@@ -107,10 +153,8 @@ export default function BillsPage() {
     setSearchKey('')
     setSelectedVendors([])
     setSelectedSites([])
-    setBillFrom('')
-    setBillTo('')
-    setUploadFrom('')
-    setUploadTo('')
+    setBillRange(undefined)
+    setUploadRange(undefined)
   }
 
   const columns: Column<BatchDetail>[] = [
@@ -204,20 +248,20 @@ export default function BillsPage() {
           }}
           className="text-blue-600 dark:text-blue-500 text-[12px] font-black hover:underline inline-flex items-center gap-1"
         >
-          View <ExternalLink size={12} strokeWidth={2.5} />
+          View
         </button>
       )
     }
   ]
 
-  const hasAnyFilters = searchKey || selectedVendors.length > 0 || selectedSites.length > 0 || billFrom || uploadFrom
+  const hasAnyFilters = searchKey || selectedVendors.length > 0 || selectedSites.length > 0 || billRange?.from || uploadRange?.from
 
   return (
     <div className="p-4 md:p-6 max-w-[1500px] mx-auto w-full flex flex-col h-full overflow-hidden">
       <PageHeader 
         title="Bills" 
         description="View and manage all vendor bills in one place" 
-        className="mb-8"
+        className="mb-6"
       />
 
       {/* Filters Row */}
@@ -249,26 +293,20 @@ export default function BillsPage() {
         />
 
         {/* Bill Date Range */}
-        <div className="flex flex-col gap-1">
-          <span className="text-[9px] font-black text-muted-text uppercase tracking-tighter pl-1">Bill Date Range</span>
-          <DateRangePicker 
-            from={billFrom} 
-            to={billTo} 
-            onFromChange={setBillFrom} 
-            onToChange={setBillTo} 
-          />
-        </div>
+        <AdvancedDateRangePicker
+          selectedRange={billRange}
+          onRangeChange={setBillRange}
+          className="w-full sm:w-auto min-w-[200px]"
+          placeholder="Select bill range..."
+        />
 
         {/* Upload Date Range */}
-        <div className="flex flex-col gap-1">
-          <span className="text-[9px] font-black text-muted-text uppercase tracking-tighter pl-1">Upload Date Range</span>
-          <DateRangePicker 
-            from={uploadFrom} 
-            to={uploadTo} 
-            onFromChange={setUploadFrom} 
-            onToChange={setUploadTo} 
-          />
-        </div>
+        <AdvancedDateRangePicker
+          selectedRange={uploadRange}
+          onRangeChange={setUploadRange}
+          className="w-full sm:w-auto min-w-[200px]"
+          placeholder="Select upload range..."
+        />
 
         {/* Clear Filters */}
         {hasAnyFilters && (

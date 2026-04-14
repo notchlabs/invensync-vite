@@ -15,7 +15,8 @@ export const ENV = {
   MICROSOFT_AUTHORITY_URI: import.meta.env.VITE_MICROSOFT_AUTHORITY_URI || '',
   MICROSOFT_REDIRECT_URI: import.meta.env.VITE_MICROSOFT_REDIRECT_URI || '',
   DEFAULT_SITE_ID: import.meta.env.VITE_DEFAULT_SITE_ID || '29',
-  DEFAULT_CUSTOMER_ID: import.meta.env.VITE_DEFAULT_CUSTOMER_ID || '28',
+  DEFAULT_SITE_NAME: import.meta.env.VITE_DEFAULT_SITE_NAME || 'WildBean Cafe',
+  DEFAULT_CONSUMPTION_UNIT_ID: import.meta.env.VITE_DEFAULT_CONSUMPTION_UNIT_ID || '28',
 }
 
 // Map out backend API endpoint paths here to keep network calls clean

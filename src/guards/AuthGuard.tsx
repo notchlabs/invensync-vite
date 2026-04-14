@@ -18,12 +18,21 @@ const AuthGuard = () => {
     }
   }, [isAuthenticated, inProgress, instance])
 
-  // Not authenticated and no interaction in progress — will trigger redirect on next render
+  // MSAL is still initialising / handling a redirect / refreshing tokens — wait silently
+  if (inProgress !== InteractionStatus.None) {
+    return (
+      <div className="min-h-screen flex items-center justify-center bg-app">
+        <Loader2 size={28} className="animate-spin text-muted-text" />
+      </div>
+    )
+  }
+
+  // MSAL is idle and user is definitively not authenticated — redirect to login
   if (!isAuthenticated) {
     return (
-      <div className="min-h-screen flex flex-col items-center justify-center bg-white gap-4">
-        <Loader2 size={32} className="animate-spin text-neutral-400" />
-        <p className="text-[14px] font-medium text-neutral-500">Redirecting to login...</p>
+      <div className="min-h-screen flex flex-col items-center justify-center bg-app gap-4">
+        <Loader2 size={28} className="animate-spin text-muted-text" />
+        <p className="text-[13px] font-medium text-muted-text">Redirecting to login...</p>
       </div>
     )
   }

@@ -11,6 +11,17 @@ import AppLayout from './layouts/AppLayout'
 import DailyConsumptionPage from './pages/panel/DailyConsumptionPage'
 import AddStockPage from './pages/panel/AddStockPage'
 import BillsPage from './pages/panel/BillsPage'
+import SitesPage from './pages/panel/SitesPage'
+import SiteFormPage from './pages/panel/SiteFormPage'
+import SiteDetailPage from './pages/panel/SiteDetailPage'
+import SiteConsumptionPage from './pages/panel/SiteConsumptionPage'
+import VendorsPage from './pages/panel/VendorsPage'
+import VendorDetailPage from './pages/panel/VendorDetailPage'
+import TransitPage from './pages/panel/TransitPage'
+import DashboardPage from './pages/panel/DashboardPage'
+import DashboardMonthPage from './pages/panel/DashboardMonthPage'
+import ConsumptionPage from './pages/panel/ConsumptionPage'
+import ConsumptionLogsPage from './pages/panel/ConsumptionLogsPage'
 
 function App() {
   return (
@@ -52,6 +63,18 @@ function App() {
             <Route path="/app/panel/inventory/consumption" element={<DailyConsumptionPage />} />
             <Route path="/app/panel/add-stock" element={<AddStockPage />} />
             <Route path="/app/panel/bills" element={<BillsPage />} />
+            <Route path="/app/panel/sites" element={<SitesPage />} />
+            <Route path="/app/panel/sites/create" element={<SiteFormPage />} />
+            <Route path="/app/panel/sites/edit" element={<SiteFormPage />} />
+            <Route path="/app/panel/sites/detail" element={<SiteDetailPage />} />
+            <Route path="/app/panel/sites/consumption" element={<SiteConsumptionPage />} />
+            <Route path="/app/panel/sites/:siteName/consumption/:unitLabel" element={<ConsumptionLogsPage />} />
+            <Route path="/app/panel/vendors" element={<VendorsPage />} />
+            <Route path="/app/panel/vendors/detail" element={<VendorDetailPage />} />
+            <Route path="/app/panel/transit" element={<TransitPage />} />
+            <Route path="/app/panel/dashboard" element={<DashboardPage />} />
+            <Route path="/app/panel/dashboard/:monthYear" element={<DashboardMonthPage />} />
+            <Route path="/app/panel/consumption" element={<ConsumptionPage />} />
             {/* Add more protected routes here */}
           </Route>
         </Route>

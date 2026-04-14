@@ -1,5 +1,5 @@
-import React from 'react';
-import { ShieldCheck, Upload } from 'lucide-react';
+
+import { ShieldCheck } from 'lucide-react';
 import type { ExistingSales } from '../../services/consumptionService';
 
 interface ManagerAuditFormProps {

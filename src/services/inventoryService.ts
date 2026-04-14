@@ -1,6 +1,35 @@
-import { ApiService } from './common/apiService';
 import type { ApiResponse } from '../types/api';
 import type { Vendor, Product, Site, PaginatedData, InventoryItem, InventoryFetchPayload } from '../types/inventory';
+import { ApiService } from './common/apiService';
+
+export interface SiteDistribution {
+  totalSites: number;
+  availableQty: number;
+  consumedQty: number;
+  transitQty: number;
+  sites: {
+    city: string;
+    productId: number;
+    availableQty: number;
+    consumedQty: number;
+    transitQty: number;
+    inboundStorageId: number;
+    name: string;
+    id: number;
+    state: string;
+  }[];
+}
+
+export interface VendorStat {
+  id: number;
+  supplierName: string;
+  address: string;
+  gst: string;
+  email: string;
+  phone: string;
+  orders: number;
+  orderValue: number;
+}
 
 export class InventoryService {
   /**
@@ -8,6 +37,20 @@ export class InventoryService {
    */
   static async fetchVendors(page: number, size: number, searchTerm: string = ''): Promise<ApiResponse<PaginatedData<Vendor>>> {
     return ApiService.post(`/supplier/list?page=${page}&size=${size}`, { searchTerm });
+  }
+
+  /**
+   * Fetch vendor stats (orders, order value)
+   */
+  static async fetchVendorStats(page: number, size: number, search: string = ''): Promise<ApiResponse<PaginatedData<VendorStat>>> {
+    return ApiService.post(`/supplier/list-stats?page=${page}&size=${size}`, { search });
+  }
+
+  /**
+   * Fetch a single supplier by ID
+   */
+  static async fetchSupplierById(id: number): Promise<ApiResponse<VendorStat>> {
+    return ApiService.get(`/supplier/${id}`);
   }
 
   /**
@@ -141,4 +184,27 @@ export class InventoryService {
   static async quickTransfer(payload: any): Promise<ApiResponse<string>> {
     return ApiService.post('/inbound/storage/quick-transfer', payload);
   }
+
+  /**
+   * Fetch site distribution for a specific inbound ID
+   */
+  static async fetchSiteDistribution(inboundId: number): Promise<ApiResponse<SiteDistribution>> {
+    return ApiService.get(`/inbound/storage/fetch-site-distribution?inboundId=${inboundId}`);
+  }
+
+  /**
+   * Search preparation (BOQ composite) products
+   */
+  static async searchPreparationProducts(searchTerm: string): Promise<ApiResponse<{ content: PreparationProduct[]; totalElements: number; last: boolean }>> {
+    return ApiService.post('/product-boq/search', { searchTerm });
+  }
+}
+
+export interface PreparationProduct {
+  productId: number;
+  unit: string;
+  amountIncTax: number;
+  price: number;
+  productName: string;
+  productImage: string | null;
 }

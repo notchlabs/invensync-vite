@@ -1,7 +1,9 @@
-import { useState, useEffect } from 'react'
-import { X, Calendar, User, ExternalLink, Package, Receipt, CheckCircle, Clock, Loader2, FileText, LayoutDashboard, Paperclip } from 'lucide-react'
-import { StockUploadService, type BatchInvoiceDetail } from '../../services/stockUploadService'
+import { StockUploadService, type BatchInvoiceDetail, type UploadBatch } from '../../services/stockUploadService'
+import { InventoryService, type SiteDistribution } from '../../services/inventoryService'
+import { BillViewModal } from './BillViewModal'
 import toast from 'react-hot-toast'
+import { useState, useEffect } from 'react'
+import { Calendar, CheckCircle, ChevronLeft, ExternalLink, FileText, LayoutDashboard, Loader2, MapPin, Package, Paperclip, X } from 'lucide-react'
 
 interface BillDetailDrawerProps {
   id: number | null;
@@ -13,6 +15,14 @@ export function BillDetailDrawer({ id, isOpen, onClose }: BillDetailDrawerProps)
   const [data, setData] = useState<BatchInvoiceDetail | null>(null)
   const [isLoading, setIsLoading] = useState(false)
   const [activeTab, setActiveTab] = useState<'overview' | 'attachments'>('overview')
+
+  // Distribution Drill-down State
+  const [selectedProduct, setSelectedProduct] = useState<{ id: number; name: string; unit: string } | null>(null)
+  const [distData, setDistData] = useState<SiteDistribution | null>(null)
+  const [isDistLoading, setIsDistLoading] = useState(false)
+
+  // Bill View Modal State
+  const [isBillModalOpen, setIsBillModalOpen] = useState(false)
 
   const formatIndianCurrency = (num: number) => {
     return new Intl.NumberFormat('en-IN', {
@@ -26,8 +36,32 @@ export function BillDetailDrawer({ id, isOpen, onClose }: BillDetailDrawerProps)
     return new Date(dateStr).toLocaleDateString('en-GB', { day: '2-digit', month: 'short', year: 'numeric' })
   }
 
+  const handleProductClick = async (product: any) => {
+    setSelectedProduct({ id: product.inboundId, name: product.name, unit: product.unit })
+    setIsDistLoading(true)
+    try {
+      const res = await InventoryService.fetchSiteDistribution(product.inboundId)
+      if (res.success) {
+        setDistData(res.data)
+      } else {
+        toast.error(res.message || 'Failed to fetch site distribution')
+      }
+    } catch (err) {
+      console.error(err)
+      toast.error('Error fetching site distribution')
+    } finally {
+      setIsDistLoading(false)
+    }
+  }
+
+  const handleBackToMain = () => {
+    setSelectedProduct(null)
+    setDistData(null)
+  }
+
   useEffect(() => {
     if (id && isOpen) {
+      handleBackToMain() // Reset drill-down when opening new drawer
       const fetchDetail = async () => {
         setIsLoading(true)
         try {
@@ -77,9 +111,23 @@ export function BillDetailDrawer({ id, isOpen, onClose }: BillDetailDrawerProps)
               <X size={18} />
             </button>
           </div>
-          <span className="text-[11px] font-bold text-blue-600 dark:text-blue-500 bg-blue-500/10 px-2 py-0.5 rounded uppercase tracking-widest mb-6 inline-block">
-            Bill Overview
-          </span>
+          <div className="flex items-center gap-2 mb-6">
+            <button 
+              onClick={handleBackToMain}
+              disabled={!selectedProduct}
+              className={`text-[11px] font-extrabold uppercase tracking-widest px-2 py-1 rounded transition-all ${selectedProduct ? 'text-blue-500 hover:bg-blue-500/10' : 'text-blue-600 dark:text-blue-400 bg-blue-500/10 cursor-default'}`}
+            >
+              Bill Overview
+            </button>
+            {selectedProduct && (
+              <>
+                <ChevronRight size={10} className="text-muted-text/40 translate-y-[0.5px]" />
+                <span className="text-[11px] font-extrabold text-blue-600 dark:text-blue-400 bg-blue-500/10 px-2 py-1 rounded uppercase tracking-widest animate-in fade-in slide-in-from-left-2 duration-300">
+                  {selectedProduct.name} Timeline
+                </span>
+              </>
+            )}
+          </div>
 
           <div className="grid grid-cols-4 gap-4 mt-6">
             <div className="flex flex-col gap-1">
@@ -99,14 +147,12 @@ export function BillDetailDrawer({ id, isOpen, onClose }: BillDetailDrawerProps)
             </div>
             <div className="flex flex-col gap-1">
               <span className="text-[10px] font-black text-muted-text/60 uppercase tracking-tighter">Bill</span>
-              <a 
-                href={data?.billUrl} 
-                target="_blank" 
-                rel="noreferrer"
+              <button 
+                onClick={() => setIsBillModalOpen(true)}
                 className="text-[12px] font-black text-blue-600 dark:text-blue-500 hover:underline flex items-center gap-1"
               >
-                View Bill <ExternalLink size={12} strokeWidth={2.5} />
-              </a>
+                View Bill
+              </button>
             </div>
           </div>
         </div>
@@ -136,7 +182,7 @@ export function BillDetailDrawer({ id, isOpen, onClose }: BillDetailDrawerProps)
             </div>
           ) : data && (
             <div className="p-6 flex flex-col gap-8">
-              {activeTab === 'overview' && (
+              {activeTab === 'overview' && !selectedProduct && (
                 <>
                   {/* Summary Cards */}
                   <div className="grid grid-cols-3 gap-3">
@@ -161,34 +207,120 @@ export function BillDetailDrawer({ id, isOpen, onClose }: BillDetailDrawerProps)
                     </h3>
                     <div className="flex flex-col gap-2">
                       {data.products.map((p, i) => (
-                        <div key={i} className="group relative bg-card border border-border-main rounded-xl p-3 flex items-center gap-4 hover:shadow-lg hover:border-blue-500/40 transition-all cursor-default shadow-sm border-l-4 border-l-border-main/20 hover:border-l-blue-500">
-                          <div className="w-12 h-12 rounded-lg bg-surface border border-border-main/50 overflow-hidden flex items-center justify-center p-1.5 shrink-0 group-hover:scale-105 transition-transform">
+                        <div key={i} onClick={() => handleProductClick(p)}
+                          className="group relative bg-card border border-border-main rounded-2xl p-4 flex items-center gap-5 hover:shadow-lg hover:border-blue-500/40 transition-all cursor-pointer shadow-sm border-l-4 border-l-border-main/20 hover:border-l-blue-500">
+                          <div className="w-14 h-14 rounded-xl bg-surface border border-border-main/50 overflow-hidden flex items-center justify-center p-2 shrink-0 group-hover:scale-110 transition-transform duration-300">
                             {p.productUrl ? (
                               <img src={p.productUrl} alt="" className="w-full h-full object-contain" />
                             ) : (
-                              <Package size={24} className="text-muted-text/30" />
+                              <Package size={28} className="text-muted-text/30" />
                             )}
                           </div>
                           
-                          <div className="flex-1 min-w-0 flex flex-col gap-0.5">
-                            <span className="text-[14px] font-black text-primary-text truncate tracking-tight">{p.name}</span>
-                            <span className="text-[11px] font-bold text-muted-text/60">@ {formatIndianCurrency(p.price)} per {p.unit}</span>
+                          <div className="flex-1 min-w-0 flex flex-col gap-1">
+                            <span className="text-[15px] font-black text-primary-text truncate tracking-tight">{p.name}</span>
+                            <span className="text-[12px] font-bold text-muted-text/60">@ {formatIndianCurrency(p.price)} per {p.unit}</span>
                           </div>
 
-                          <div className="flex flex-col items-end gap-1 shrink-0">
-                            <span className="text-[10px] font-black text-muted-text/30 uppercase tracking-widest mb-0.5">Inbound</span>
-                            <div className="flex items-center gap-1.5 px-2 py-1 bg-emerald-500/10 rounded-lg">
-                               <span className="text-[12px] font-black text-emerald-600">{p.quantity} {p.unit}</span>
-                               <CheckCircle size={10} className="text-emerald-500" strokeWidth={3} />
+                          <div className="flex flex-col items-end gap-1.5 shrink-0 pr-6">
+                            <span className="text-[9px] font-black text-muted-text/30 uppercase tracking-[0.1em] mb-0.5">Inbound</span>
+                            <div className="flex items-center gap-2 px-3 py-1.5 bg-emerald-500/10 rounded-xl border border-emerald-500/10">
+                               <span className="text-[13px] font-black text-emerald-600">{p.quantity} {p.unit}</span>
+                               <CheckCircle size={12} className="text-emerald-500" strokeWidth={3} />
                             </div>
                           </div>
 
-                          <ChevronRight size={14} className="text-muted-text/20 absolute -right-0 group-hover:text-blue-500 transition-colors ml-1" />
+                          <ChevronRight size={16} className="text-muted-text/20 absolute right-4 group-hover:text-blue-500 group-hover:translate-x-1 transition-all" />
                         </div>
                       ))}
                     </div>
                   </div>
                 </>
+              )}
+
+              {activeTab === 'overview' && selectedProduct && (
+                <div className="flex flex-col gap-6 animate-in slide-in-from-right-4 duration-300">
+                  {/* Sub Header */}
+                  <div className="flex items-center gap-3 border-b border-border-main/50 pb-4">
+                    <button 
+                      onClick={handleBackToMain}
+                      className="p-2 bg-surface hover:bg-rose-500/10 text-muted-text hover:text-rose-500 rounded-lg transition-colors border border-border-main"
+                    >
+                      <ChevronLeft size={16} strokeWidth={2.5} />
+                    </button>
+                    <div className="flex flex-col">
+                      <span className="text-[10px] font-black text-muted-text uppercase tracking-widest pl-1">Site Distribution</span>
+                      <h4 className="text-[16px] font-black text-primary-text tracking-tight uppercase">{selectedProduct.name}</h4>
+                    </div>
+                  </div>
+
+                  {isDistLoading ? (
+                    <div className="flex flex-col items-center justify-center py-20 gap-4 text-muted-text/40">
+                      <Loader2 size={32} className="animate-spin" />
+                      <span className="text-[11px] font-black uppercase tracking-[0.2em]">Analyzing sites...</span>
+                    </div>
+                  ) : distData && (
+                    <>
+                      {/* Distribution Summary */}
+                      <div className="grid grid-cols-3 gap-3">
+                        <div className="bg-card border border-border-main p-4 rounded-xl shadow-sm flex flex-col gap-1.5 shadow-left">
+                          <span className="text-[10px] font-black text-muted-text/60 uppercase tracking-widest">Available</span>
+                          <span className="text-[20px] font-black text-emerald-600 dark:text-emerald-500">{distData.availableQty} <span className="text-[11px] font-bold text-muted-text uppercase">{selectedProduct.unit}</span></span>
+                        </div>
+                        <div className="bg-orange-500/5 border border-orange-500/20 p-4 rounded-xl shadow-sm flex flex-col gap-1.5 shadow-left">
+                          <span className="text-[10px] font-black text-orange-500 uppercase tracking-widest">In Transit</span>
+                          <span className="text-[20px] font-black text-orange-600 dark:text-orange-500">{distData.transitQty} <span className="text-[11px] font-bold text-muted-text uppercase">{selectedProduct.unit}</span></span>
+                        </div>
+                        <div className="bg-rose-500/5 border border-rose-500/20 p-4 rounded-xl shadow-sm flex flex-col gap-1.5 shadow-left">
+                          <span className="text-[10px] font-black text-rose-500 uppercase tracking-widest">Consumed</span>
+                          <span className="text-[20px] font-black text-rose-600 dark:text-rose-500">{distData.consumedQty} <span className="text-[11px] font-bold text-muted-text uppercase">{selectedProduct.unit}</span></span>
+                        </div>
+                      </div>
+
+                      {/* Site List */}
+                      <div>
+                        <h3 className="text-[13px] font-black text-primary-text uppercase tracking-widest mb-4 flex items-center gap-2">
+                          <MapPin size={14} className="text-secondary-text" /> Site Allocation ({distData.totalSites})
+                        </h3>
+                        <div className="flex flex-col gap-3">
+                          {distData.sites.map((site, i) => (
+                            <div key={i} className="bg-card border border-border-main rounded-2xl p-4 flex flex-col gap-4 hover:shadow-md transition-shadow cursor-default shadow-sm relative group overflow-hidden">
+                              <div className="flex items-start justify-between">
+                                <div className="flex items-center gap-3">
+                                  <div className="w-10 h-10 rounded-xl bg-surface flex items-center justify-center text-primary-text border border-border-main">
+                                    <MapPin size={18} />
+                                  </div>
+                                  <div className="flex flex-col">
+                                    <span className="text-[14px] font-black text-primary-text tracking-tight uppercase group-hover:text-blue-500 transition-colors">{site.name}</span>
+                                    <span className="text-[11px] font-bold text-muted-text/60 italic">{site.city}, {site.state}</span>
+                                  </div>
+                                </div>
+                                <div className="px-2.5 py-1 bg-blue-500/10 text-blue-600 rounded-lg text-[10px] font-black tracking-widest uppercase">
+                                  ID: {site.id}
+                                </div>
+                              </div>
+
+                              <div className="grid grid-cols-3 gap-2 mt-1">
+                                <div className="flex flex-col gap-0.5 bg-surface/50 p-2 rounded-xl">
+                                  <span className="text-[10px] font-black text-muted-text/40 uppercase tracking-tighter">Current At Site</span>
+                                  <span className="text-[14px] font-black text-emerald-600">{site.availableQty} {selectedProduct.unit}</span>
+                                </div>
+                                <div className="flex flex-col gap-0.5 bg-orange-500/5 p-2 rounded-xl">
+                                  <span className="text-[10px] font-black text-muted-text/40 uppercase tracking-tighter">Transit To Site</span>
+                                  <span className="text-[14px] font-black text-orange-600">{site.transitQty} {selectedProduct.unit}</span>
+                                </div>
+                                <div className="flex flex-col gap-0.5 bg-rose-500/5 p-2 rounded-xl">
+                                  <span className="text-[10px] font-black text-muted-text/40 uppercase tracking-tighter">Consumed Here</span>
+                                  <span className="text-[14px] font-black text-rose-600">{site.consumedQty} {selectedProduct.unit}</span>
+                                </div>
+                              </div>
+                            </div>
+                          ))}
+                        </div>
+                      </div>
+                    </>
+                  )}
+                </div>
               )}
 
               {activeTab === 'attachments' && (
@@ -243,6 +375,23 @@ export function BillDetailDrawer({ id, isOpen, onClose }: BillDetailDrawerProps)
           }
         `}</style>
       </div>
+
+      {data && id && (
+        <BillViewModal
+          isOpen={isBillModalOpen}
+          onClose={() => setIsBillModalOpen(false)}
+          batch={{
+            id: id,
+            supplierName: data.vendor.name,
+            refNo: data.invoiceNumber,
+            totalPrice: data.totalWithTax,
+            state: 'INBOUNDED',
+            siteNames: '',
+            createdAt: data.billDate,
+            billUrl: data.billUrl
+          }}
+        />
+      )}
     </div>
   )
 }

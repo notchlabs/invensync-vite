@@ -22,7 +22,7 @@ export default function DailyConsumptionPage() {
   // URL state with defaults from ENV
   const siteIdParam = searchParams.get('site') || ENV.DEFAULT_SITE_ID;
   const dateParam = searchParams.get('date');
-  const cuIdParam = searchParams.get('cuId') || ENV.DEFAULT_CUSTOMER_ID;
+  const cuIdParam = searchParams.get('cuId') || ENV.DEFAULT_CONSUMPTION_UNIT_ID;
 
   // Local component state resolving URL IDs
   const [selectedSite, setSelectedSite] = useState<Site | null>(null);

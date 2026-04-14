@@ -1,309 +1,384 @@
-import { useState, useCallback, useEffect, useRef } from 'react'
-import { useSearchParams, useNavigate } from 'react-router-dom'
-import { PackagePlus, LayoutGrid, ArrowRightLeft, PackageMinus, RotateCw } from 'lucide-react'
-import { SiteFilter } from '../../components/filters/SiteFilter'
-import { ProductFilter } from '../../components/filters/ProductFilter'
-import { VendorFilter } from '../../components/filters/VendorFilter'
-import { InfiniteScrollTable, type Column } from '../../components/common/InfiniteScrollTable'
-import { CustomSelect } from '../../components/common/CustomSelect'
-import { PageHeader } from '../../components/common/PageHeader'
-import { InventoryService } from '../../services/inventoryService'
-import { InventoryDetailModal } from '../../components/inventory/InventoryDetailModal'
-import { EditProductModal } from '../../components/inventory/EditProductModal'
-import { ConsumeStockModal } from '../../components/inventory/ConsumeStockModal'
-import { CreateCompositeModal } from '../../components/inventory/CreateCompositeModal'
-import { TransferStockModal } from '../../components/inventory/TransferStockModal'
-import type { Site, Product, Vendor, InventoryItem, InventoryFetchPayload } from '../../types/inventory'
-import { ShoppingBag } from 'lucide-react'
+import { useState, useCallback, useEffect, useRef } from "react";
+import { useSearchParams, useNavigate } from "react-router-dom";
+import {
+  LayoutGrid,
+  ArrowRightLeft,
+  RotateCw,
+} from "lucide-react";
+import { SiteFilter } from "../../components/filters/SiteFilter";
+import { ProductFilter } from "../../components/filters/ProductFilter";
+import { VendorFilter } from "../../components/filters/VendorFilter";
+import {
+  InfiniteScrollTable,
+  type Column,
+} from "../../components/common/InfiniteScrollTable";
+import { CustomSelect } from "../../components/common/CustomSelect";
+import { PageHeader } from "../../components/common/PageHeader";
+import { InventoryService } from "../../services/inventoryService";
+import { InventoryDetailModal } from "../../components/inventory/InventoryDetailModal";
+import { EditProductModal } from "../../components/inventory/EditProductModal";
+import { ConsumeStockModal } from "../../components/inventory/ConsumeStockModal";
+import { CreateCompositeModal } from "../../components/inventory/CreateCompositeModal";
+import { TransferStockModal } from "../../components/inventory/TransferStockModal";
+import type {
+  Site,
+  Product,
+  Vendor,
+  InventoryItem,
+  InventoryFetchPayload,
+} from "../../types/inventory";
+import { ShoppingBag } from "lucide-react";
+import { ENV } from "../../config/env";
 
 const LineChartIcon = () => (
-  <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-    <path d="M3 3v18h18"/>
-    <path d="m19 9-5 5-4-4-3 3"/>
+  <svg
+    xmlns="http://www.w3.org/2000/svg"
+    width="14"
+    height="14"
+    viewBox="0 0 24 24"
+    fill="none"
+    stroke="currentColor"
+    strokeWidth="2"
+    strokeLinecap="round"
+    strokeLinejoin="round"
+  >
+    <path d="M3 3v18h18" />
+    <path d="m19 9-5 5-4-4-3 3" />
   </svg>
-)
+);
 
 export default function InventoryPage() {
-  const [searchParams, setSearchParams] = useSearchParams()
-  const navigate = useNavigate()
-  
+  const [searchParams, setSearchParams] = useSearchParams();
+  const navigate = useNavigate();
+  const SITE_ID = Number(ENV.DEFAULT_SITE_ID)
   // States
-  const [selectedSites, setSelectedSites] = useState<Site[]>([])
-  const [selectedProducts, setSelectedProducts] = useState<Product[]>([])
-  const [selectedVendors, setSelectedVendors] = useState<Vendor[]>([])
-  const [search, setSearch] = useState(searchParams.get('q') || '')
-  const [searchType, setSearchType] = useState(searchParams.get('st') || 'Product Name')
-  
+  const [selectedSites, setSelectedSites] = useState<Site[]>([]);
+  const [selectedProducts, setSelectedProducts] = useState<Product[]>([]);
+  const [selectedVendors, setSelectedVendors] = useState<Vendor[]>([]);
+  const [search, setSearch] = useState(searchParams.get("q") || "");
+  const [searchType, setSearchType] = useState(
+    searchParams.get("st") || "Product Name"
+  );
+
   // Table state
-  const [tableData, setTableData] = useState<InventoryItem[]>([])
-  const [isLoading, setIsLoading] = useState(false)
-  const [hasMore, setHasMore] = useState(true)
-  const [totalElements, setTotalElements] = useState(0)
-  const [selectedKeys, setSelectedKeys] = useState<Set<string | number>>(new Set())
-  const [isHydrated, setIsHydrated] = useState(false)
-  
+  const [tableData, setTableData] = useState<InventoryItem[]>([]);
+  const [isLoading, setIsLoading] = useState(false);
+  const [hasMore, setHasMore] = useState(true);
+  const [totalElements, setTotalElements] = useState(0);
+  const [selectedKeys, setSelectedKeys] = useState<Set<string | number>>(
+    new Set()
+  );
+  const [isHydrated, setIsHydrated] = useState(false);
+
   // Detail Modal State
-  const [isDetailOpen, setIsDetailOpen] = useState(false)
-  const [detailItem, setDetailItem] = useState<InventoryItem | null>(null)
+  const [isDetailOpen, setIsDetailOpen] = useState(false);
+  const [detailItem, setDetailItem] = useState<InventoryItem | null>(null);
 
   // Edit Modal State
-  const [isEditOpen, setIsEditOpen] = useState(false)
-  const [editItem, setEditItem] = useState<InventoryItem | null>(null)
+  const [isEditOpen, setIsEditOpen] = useState(false);
+  const [editItem, setEditItem] = useState<InventoryItem | null>(null);
 
   // Consume Modal State
-  const [isConsumeOpen, setIsConsumeOpen] = useState(false)
-  const [consumeItems, setConsumeItems] = useState<InventoryItem[]>([])
+  const [isConsumeOpen, setIsConsumeOpen] = useState(false);
+  const [consumeItems, setConsumeItems] = useState<InventoryItem[]>([]);
 
   // Composite Modal State
-  const [isCompositeOpen, setIsCompositeOpen] = useState(false)
-  const [compositeItems, setCompositeItems] = useState<InventoryItem[]>([])
+  const [isCompositeOpen, setIsCompositeOpen] = useState(false);
+  const [compositeItems, setCompositeItems] = useState<InventoryItem[]>([]);
 
   // Transfer Modal State
-  const [isTransferOpen, setIsTransferOpen] = useState(false)
-  const [transferItems, setTransferItems] = useState<InventoryItem[]>([])
+  const [isTransferOpen, setIsTransferOpen] = useState(false);
+  const [transferItems, setTransferItems] = useState<InventoryItem[]>([]);
 
-  const getItemKey = (item: InventoryItem) => `${item.productId}-${item.siteId}`
+  const getItemKey = (item: InventoryItem) =>
+    `${item.productId}-${item.siteId}`;
 
-  const pageRef = useRef(0)
-  const isLoadingRef = useRef(false)
+  const pageRef = useRef(0);
+  const isLoadingRef = useRef(false);
 
   // 1. URL Sync Effect: Update browser URL when state changes
   useEffect(() => {
-    const params: Record<string, string> = {}
-    if (search) params.q = search
-    if (searchType !== 'Product Name') params.st = searchType
-    if (selectedSites.length > 0) params.sites = selectedSites.map(s => s.id).join(',')
-    if (selectedProducts.length > 0) params.products = selectedProducts.map(p => p.id).join(',')
-    if (selectedVendors.length > 0) params.vendors = selectedVendors.map(v => v.id).join(',')
-    
-    setSearchParams(params, { replace: true })
-  }, [search, searchType, selectedSites, selectedProducts, selectedVendors, setSearchParams])
+    const params: Record<string, string> = {};
+    if (search) params.q = search;
+    if (searchType !== "Product Name") params.st = searchType;
+    if (selectedSites.length > 0)
+      params.sites = selectedSites.map((s) => s.id).join(",");
+    if (selectedProducts.length > 0)
+      params.products = selectedProducts.map((p) => p.id).join(",");
+    if (selectedVendors.length > 0)
+      params.vendors = selectedVendors.map((v) => v.id).join(",");
+
+    setSearchParams(params, { replace: true });
+  }, [
+    search,
+    searchType,
+    selectedSites,
+    selectedProducts,
+    selectedVendors,
+    setSearchParams,
+  ]);
 
   // 2. Hydration Effect: Fetch full objects for IDs found in URL
   useEffect(() => {
     const hydrate = async () => {
-      const siteIds = searchParams.get('sites')?.split(',').map(Number).filter(Boolean) || []
-      const productIds = searchParams.get('products')?.split(',').map(Number).filter(Boolean) || []
-      const vendorIds = searchParams.get('vendors')?.split(',').map(Number).filter(Boolean) || []
+      const siteIds =
+        searchParams.get("sites")?.split(",").map(Number).filter(Boolean) || [];
+      const productIds =
+        searchParams.get("products")?.split(",").map(Number).filter(Boolean) ||
+        [];
+      const vendorIds =
+        searchParams.get("vendors")?.split(",").map(Number).filter(Boolean) ||
+        [];
 
-      if (siteIds.length === 0 && productIds.length === 0 && vendorIds.length === 0) {
-        setIsHydrated(true)
-        return
+      if (
+        siteIds.length === 0 &&
+        productIds.length === 0 &&
+        vendorIds.length === 0
+      ) {
+        setIsHydrated(true);
+        return;
       }
 
       try {
         if (siteIds.length > 0) {
-          const res = await InventoryService.fetchSitesByIds(siteIds)
-          setSelectedSites(res.data.content || [])
+          const res = await InventoryService.fetchSitesByIds(siteIds);
+          setSelectedSites(res.data.content || []);
         }
         if (productIds.length > 0) {
-          const res = await InventoryService.fetchProductsByIds(productIds)
-          setSelectedProducts(res.data.content || [])
+          const res = await InventoryService.fetchProductsByIds(productIds);
+          setSelectedProducts(res.data.content || []);
         }
         if (vendorIds.length > 0) {
-          const res = await InventoryService.fetchVendorsByIds(vendorIds)
-          setSelectedVendors(res.data.content || [])
+          const res = await InventoryService.fetchVendorsByIds(vendorIds);
+          setSelectedVendors(res.data.content || []);
         }
       } catch (e) {
-        console.error('Hydration failed', e)
+        console.error("Hydration failed", e);
       } finally {
-        setIsHydrated(true)
+        setIsHydrated(true);
       }
-    }
-    
+    };
+
     if (!isHydrated) {
-      hydrate()
+      hydrate();
     }
-  }, [searchParams, isHydrated])
+  }, [searchParams, isHydrated]);
 
-  const loadData = useCallback(async (reset: boolean = false) => {
-    if (isLoadingRef.current) return
-    isLoadingRef.current = true
-    setIsLoading(true)
+  const loadData = useCallback(
+    async (reset: boolean = false) => {
+      if (isLoadingRef.current) return;
+      isLoadingRef.current = true;
+      setIsLoading(true);
 
-    try {
-      if (reset) {
-        pageRef.current = 0
-        setHasMore(true)
+      try {
+        if (reset) {
+          pageRef.current = 0;
+          setHasMore(true);
+        }
+
+        const payload: InventoryFetchPayload = {
+          site: selectedSites.map((s) => s.id),
+          product: selectedProducts.map((p) => p.id),
+          vendor: selectedVendors.map((v) => v.id),
+          searchByProductName:
+            searchType === "Product Name" && search.length >= 3 ? search : null,
+          searchByBillNo:
+            searchType === "Invoice No" && search.length >= 3 ? search : null,
+          searchBySupplierName:
+            searchType === "Vendor Name" && search.length >= 3 ? search : null,
+        };
+
+        const res = await InventoryService.fetchInventory(
+          pageRef.current,
+          10,
+          payload
+        );
+        const items = res.data.content || [];
+
+        setTableData((prev) => (reset ? items : [...prev, ...items]));
+        setTotalElements(res.data.totalElements || 0);
+
+        pageRef.current += 1;
+        setHasMore(
+          res.data.last !== undefined ? !res.data.last : items.length === 10
+        );
+      } catch (e) {
+        console.error(e);
+      } finally {
+        isLoadingRef.current = false;
+        setIsLoading(false);
       }
-
-      const payload: InventoryFetchPayload = {
-        site: selectedSites.map(s => s.id),
-        product: selectedProducts.map(p => p.id),
-        vendor: selectedVendors.map(v => v.id),
-        searchByProductName: searchType === 'Product Name' && search.length >= 3 ? search : null,
-        searchByBillNo: searchType === 'Invoice No' && search.length >= 3 ? search : null,
-        searchBySupplierName: searchType === 'Vendor Name' && search.length >= 3 ? search : null,
-      }
-
-      const res = await InventoryService.fetchInventory(pageRef.current, 10, payload)
-      const items = res.data.content || []
-
-      setTableData(prev => reset ? items : [...prev, ...items])
-      setTotalElements(res.data.totalElements || 0)
-      
-      pageRef.current += 1
-      setHasMore(res.data.last !== undefined ? !res.data.last : items.length === 10)
-    } catch (e) {
-      console.error(e)
-    } finally {
-      isLoadingRef.current = false
-      setIsLoading(false)
-    }
-  }, [selectedSites, selectedProducts, selectedVendors, search, searchType])
+    },
+    [selectedSites, selectedProducts, selectedVendors, search, searchType]
+  );
 
   // Filter change effect
   useEffect(() => {
-    if (!isHydrated) return
+    if (!isHydrated) return;
 
     const timer = setTimeout(() => {
-      loadData(true)
-    }, 500)
-    return () => clearTimeout(timer)
-  }, [loadData, isHydrated])
+      loadData(true);
+    }, 500);
+    return () => clearTimeout(timer);
+  }, [loadData, isHydrated]);
 
   const handleLoadMore = useCallback(() => {
     if (hasMore && !isLoadingRef.current) {
-      loadData(false)
+      loadData(false);
     }
-  }, [hasMore, loadData])
+  }, [hasMore, loadData]);
 
   const handleClearFilters = () => {
-    setSearch('')
-    setSelectedSites([])
-    setSelectedProducts([])
-    setSelectedVendors([])
-    setSearchType('Product Name')
-  }
+    setSearch("");
+    setSelectedSites([]);
+    setSelectedProducts([]);
+    setSelectedVendors([]);
+    setSearchType("Product Name");
+  };
 
   const handleQtyClick = useCallback((item: InventoryItem) => {
-    setDetailItem(item)
-    setIsDetailOpen(true)
-  }, [])
+    setDetailItem(item);
+    setIsDetailOpen(true);
+  }, []);
 
   const handleEditClick = useCallback((item: InventoryItem) => {
-    setEditItem(item)
-    setIsEditOpen(true)
-  }, [])
+    setEditItem(item);
+    setIsEditOpen(true);
+  }, []);
 
-  const handleConsumeAction = useCallback((keys: Set<string | number>) => {
-    const selected = tableData.filter(item => keys.has(getItemKey(item)))
-    setConsumeItems(selected)
-    setIsConsumeOpen(true)
-  }, [tableData])
+  const handleConsumeAction = useCallback(
+    (keys: Set<string | number>) => {
+      const selected = tableData.filter((item) => keys.has(getItemKey(item)));
+      setConsumeItems(selected);
+      setIsConsumeOpen(true);
+    },
+    [tableData]
+  );
 
-  const handleCompositeAction = useCallback((keys: Set<string | number>) => {
-    const selected = tableData.filter(item => keys.has(getItemKey(item)))
-    setCompositeItems(selected)
-    setIsCompositeOpen(true)
-  }, [tableData])
+  const handleCompositeAction = useCallback(
+    (keys: Set<string | number>) => {
+      const selected = tableData.filter((item) => keys.has(getItemKey(item)));
+      setCompositeItems(selected);
+      setIsCompositeOpen(true);
+    },
+    [tableData]
+  );
 
-  const handleTransferAction = useCallback((keys: Set<string | number>) => {
-    const selected = tableData.filter(item => keys.has(getItemKey(item)))
-    setTransferItems(selected)
-    setIsTransferOpen(true)
-  }, [tableData])
+  const handleTransferAction = useCallback(
+    (keys: Set<string | number>) => {
+      const selected = tableData.filter((item) => keys.has(getItemKey(item)));
+      setTransferItems(selected);
+      setIsTransferOpen(true);
+    },
+    [tableData]
+  );
 
-  const hasActiveFilters = search.length > 0 || selectedSites.length > 0 || selectedProducts.length > 0 || selectedVendors.length > 0
+  const hasActiveFilters =
+    search.length > 0 ||
+    selectedSites.length > 0 ||
+    selectedProducts.length > 0 ||
+    selectedVendors.length > 0;
 
   const toggleSelect = (key: string | number) => {
-    const newSet = new Set(selectedKeys)
-    if (newSet.has(key)) newSet.delete(key)
-    else newSet.add(key)
-    setSelectedKeys(newSet)
-  }
+    const newSet = new Set(selectedKeys);
+    if (newSet.has(key)) newSet.delete(key);
+    else newSet.add(key);
+    setSelectedKeys(newSet);
+  };
 
   const toggleSelectAll = (selectAll: boolean) => {
-    if (selectAll) setSelectedKeys(new Set(tableData.slice(0, 150).map(getItemKey)))
-    else setSelectedKeys(new Set())
-  }
+    if (selectAll)
+      setSelectedKeys(new Set(tableData.slice(0, 150).map(getItemKey)));
+    else setSelectedKeys(new Set());
+  };
 
   const columns: Column<InventoryItem>[] = [
     {
-      header: 'Product Name',
-      key: 'productName',
-      width: '40%',
-      cellType: 'product',
-      dataMap: { image: 'imageUrl', title: 'productName', subtitle: 'vendorNames' }
+      header: "Product Name",
+      key: "productName",
+      width: "40%",
+      cellType: "product",
+      dataMap: {
+        image: "imageUrl",
+        title: "productName",
+        subtitle: "vendorNames",
+      },
     },
     {
-      header: 'Site',
-      key: 'site',
-      width: '15%',
-      cellType: 'location',
-      dataMap: { title: 'site', subtitle: 'siteCity' }
+      header: "Site",
+      key: "site",
+      width: "15%",
+      cellType: "location",
+      dataMap: { title: "site", subtitle: "siteCity" },
     },
     {
-      header: 'Available Qty',
-      key: 'quantity',
-      width: '16%',
-      className: 'text-right',
-      cellType: 'quantity',
-      dataMap: { value: 'quantity', unit: 'unit' },
-      onCellClick: handleQtyClick
+      header: "Available Qty",
+      key: "quantity",
+      width: "16%",
+      className: "text-right",
+      cellType: "quantity",
+      dataMap: { value: "quantity", unit: "unit" },
+      onCellClick: handleQtyClick,
     },
     {
-      header: 'Price / unit',
-      key: 'price',
-      width: '18%',
-      className: 'text-right',
-      cellType: 'currency',
-      dataMap: { 
-        value: 'price', 
-        unit: 'unit', 
-        computedTax: (row) => row.mrp ? (row.mrp - row.price) : 0 
-      }
+      header: "Price / unit",
+      key: "price",
+      width: "18%",
+      className: "text-right",
+      cellType: "currency",
+      dataMap: {
+        value: "price",
+        unit: "unit",
+        computedTax: (row) => (row.mrp ? row.mrp - row.price : 0),
+      },
     },
     {
-      header: 'Net Amount',
-      key: 'netAmount',
-      width: '15%',
-      className: 'text-right',
-      cellType: 'currency-net',
-      dataMap: { 
-        value: 'totalExcludingTax', 
-        computedTax: (row) => row.totalIncludingTax - row.totalExcludingTax 
-      }
-    }
-  ]
+      header: "Net Amount",
+      key: "netAmount",
+      width: "15%",
+      className: "text-right",
+      cellType: "currency-net",
+      dataMap: {
+        value: "totalExcludingTax",
+        computedTax: (row) => row.totalIncludingTax - row.totalExcludingTax,
+      },
+    },
+  ];
 
   const selectionActions = [
     {
-      label: 'Consume',
+      label: "Consume",
       icon: ShoppingBag,
-      onClick: handleConsumeAction
+      onClick: handleConsumeAction,
     },
     {
-      label: 'Create Final Product',
+      label: "Create Final Product",
       icon: LayoutGrid,
-      onClick: handleCompositeAction
+      onClick: handleCompositeAction,
     },
     {
-      label: 'Transfer',
+      label: "Transfer",
       icon: ArrowRightLeft,
-      onClick: handleTransferAction
-    }
-  ]
+      onClick: handleTransferAction,
+    },
+  ];
 
   return (
     <div className="p-4 md:p-6 max-w-[1400px] mx-auto w-full flex flex-col h-full transition-all">
       {/* Header Actions */}
       <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4 mb-6">
-        <PageHeader 
-          title="Inventory Management" 
-          description="Track and manage your stock across all sites" 
+        <PageHeader
+          title="Inventory Management"
+          description="Track and manage your stock across all sites"
         />
-        
+
         <div className="flex items-center gap-3 w-full sm:w-auto">
-          <button 
+          <button
             onClick={() => {
-              const url = new URLSearchParams()
-              if (selectedSites.length > 0) {
-                url.set('site', selectedSites[0].id.toString())
-              }
-              navigate(`/app/panel/inventory/consumption?${url.toString()}`)
+              const url = new URLSearchParams();
+              navigate(`/app/panel/inventory/consumption?siteId=${SITE_ID}`);
             }}
-            className="flex-1 sm:flex-none flex items-center justify-center gap-1.5 px-4 py-2 bg-btn-primary hover:opacity-90 text-btn-primary-fg text-[13px] font-semibold rounded-lg border border-border-main/50 transition-all shadow-sm tracking-wide"
+            className="flex-1 sm:flex-none flex items-center justify-center gap-1.5 px-4 py-2 bg-btn-primary hover:opacity-90 text-btn-primary-fg text-[13px] font-semibold rounded-lg border border-border-main/50 transition-all shadow-sm tracking-wide cursor-pointer"
           >
             <LineChartIcon />
             View Consumption
@@ -319,32 +394,44 @@ export default function InventoryPage() {
             <CustomSelect
               placeholder="Search by"
               options={[
-                { label: 'Product Name', value: 'Product Name' },
-                { label: 'Invoice No', value: 'Invoice No' },
-                { label: 'Vendor Name', value: 'Vendor Name' }
+                { label: "Product Name", value: "Product Name" },
+                { label: "Invoice No", value: "Invoice No" },
+                { label: "Vendor Name", value: "Vendor Name" },
               ]}
               value={searchType}
               onChange={(val) => setSearchType(val)}
             />
           </div>
-          <input 
-            type="text" 
-            placeholder="Search..." 
+          <input
+            type="text"
+            placeholder="Search..."
             value={search}
-            onChange={e => setSearch(e.target.value)}
+            onChange={(e) => setSearch(e.target.value)}
             className="flex-1 h-full px-3 text-[13px] text-primary-text placeholder:text-muted-text outline-none rounded-r-lg bg-transparent"
           />
         </div>
 
         {/* Multi-Select Filters */}
         <div className="flex items-center gap-3 w-full md:w-auto md:flex-1">
-          <SiteFilter selectedItems={selectedSites} onSelectionChange={setSelectedSites} className="w-full sm:w-[calc(50%-6px)] md:w-auto flex-1 md:min-w-[200px]" />
-          <ProductFilter selectedItems={selectedProducts} onSelectionChange={setSelectedProducts} className="w-full sm:w-[calc(50%-6px)] md:w-auto flex-1 md:min-w-[200px]" />
+          <SiteFilter
+            selectedItems={selectedSites}
+            onSelectionChange={setSelectedSites}
+            className="w-full sm:w-[calc(50%-6px)] md:w-auto flex-1 md:min-w-[200px]"
+          />
+          <ProductFilter
+            selectedItems={selectedProducts}
+            onSelectionChange={setSelectedProducts}
+            className="w-full sm:w-[calc(50%-6px)] md:w-auto flex-1 md:min-w-[200px]"
+          />
         </div>
-        <VendorFilter selectedItems={selectedVendors} onSelectionChange={setSelectedVendors} className="w-full sm:w-[calc(50%-6px)] md:w-auto flex-1 md:min-w-[200px]" />
-        
+        <VendorFilter
+          selectedItems={selectedVendors}
+          onSelectionChange={setSelectedVendors}
+          className="w-full sm:w-[calc(50%-6px)] md:w-auto flex-1 md:min-w-[200px]"
+        />
+
         {hasActiveFilters && (
-          <button 
+          <button
             onClick={handleClearFilters}
             className="flex items-center gap-2 px-3 py-1.5 text-[12px] font-bold text-red-500 hover:text-red-600 hover:bg-red-50 dark:hover:bg-red-500/10 rounded-lg transition-all active:scale-95 ml-auto"
           >
@@ -375,10 +462,10 @@ export default function InventoryPage() {
         />
       </div>
 
-      <InventoryDetailModal 
-        isOpen={isDetailOpen} 
-        onClose={() => setIsDetailOpen(false)} 
-        item={detailItem} 
+      <InventoryDetailModal
+        isOpen={isDetailOpen}
+        onClose={() => setIsDetailOpen(false)}
+        item={detailItem}
       />
 
       <EditProductModal
@@ -386,9 +473,9 @@ export default function InventoryPage() {
         onClose={() => setIsEditOpen(false)}
         item={editItem}
         onSuccess={() => {
-          setTableData([])
-          pageRef.current = 0
-          loadData(true)
+          setTableData([]);
+          pageRef.current = 0;
+          loadData(true);
         }}
       />
 
@@ -397,10 +484,10 @@ export default function InventoryPage() {
         onClose={() => setIsConsumeOpen(false)}
         items={consumeItems}
         onSuccess={() => {
-          setTableData([])
-          pageRef.current = 0
-          loadData(true)
-          setSelectedKeys(new Set())
+          setTableData([]);
+          pageRef.current = 0;
+          loadData(true);
+          setSelectedKeys(new Set());
         }}
       />
 
@@ -409,10 +496,10 @@ export default function InventoryPage() {
         onClose={() => setIsCompositeOpen(false)}
         rawItems={compositeItems}
         onSuccess={() => {
-          setTableData([])
-          pageRef.current = 0
-          loadData(true)
-          setSelectedKeys(new Set())
+          setTableData([]);
+          pageRef.current = 0;
+          loadData(true);
+          setSelectedKeys(new Set());
         }}
       />
 
@@ -421,14 +508,16 @@ export default function InventoryPage() {
         onClose={() => setIsTransferOpen(false)}
         items={transferItems}
         onSuccess={() => {
-          const keysToRemove = new Set(transferItems.map(getItemKey))
-          setTableData(prev => prev.filter(item => !keysToRemove.has(getItemKey(item))))
-          setTotalElements(prev => Math.max(0, prev - transferItems.length))
-          setSelectedKeys(new Set())
+          const keysToRemove = new Set(transferItems.map(getItemKey));
+          setTableData((prev) =>
+            prev.filter((item) => !keysToRemove.has(getItemKey(item)))
+          );
+          setTotalElements((prev) => Math.max(0, prev - transferItems.length));
+          setSelectedKeys(new Set());
           // Background reload to sync with server
-          loadData(true)
+          loadData(true);
         }}
       />
     </div>
-  )
+  );
 }

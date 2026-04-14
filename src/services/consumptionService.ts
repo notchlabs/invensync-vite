@@ -43,7 +43,24 @@ export interface ExistingSales {
   upiCollectedByManager: number;
 }
 
+export interface ConsumptionUnitInfo {
+  name: string;
+  description: string | null;
+  siteId: number;
+  managerName: string;
+  uniqueId: string;
+  unitId: number;
+  siteName: string;
+}
+
 export class ConsumptionService {
+  /**
+   * Fetch consumption unit info by site name and DSR number
+   */
+  static async fetchBySiteNameAndDsr(siteName: string, dsrNo: string): Promise<ApiResponse<ConsumptionUnitInfo>> {
+    return ApiService.post('/consumption/fetch-by-site-name-and-dsr', { siteName, dsrNo });
+  }
+
   /**
    * Check if sales/audit exists for a specific date and site
    */
