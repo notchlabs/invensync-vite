@@ -55,7 +55,7 @@ export function ProductDetailDialog({
         <div className="px-5 pb-4 flex flex-col sm:flex-row gap-5">
           {/* Image */}
           <div className="w-full sm:w-[170px] h-[160px] rounded-xl overflow-hidden bg-amber-50 dark:bg-amber-500/10 border border-border-main flex items-center justify-center shrink-0">
-            <ProductImage src={product.imageUrl} name={product.name} size={64} />
+            <ProductImage src={product.imageUrl} name={product.name} />
           </div>
 
           {/* Info */}

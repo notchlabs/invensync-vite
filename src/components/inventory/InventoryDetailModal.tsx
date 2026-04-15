@@ -92,7 +92,7 @@ export function InventoryDetailModal({ isOpen, onClose, item }: InventoryDetailM
       width: '30%',
       render: (row) => (
         <a 
-          href={row.billUrl} 
+          href={row.billUrl ?? undefined}
           target="_blank" 
           rel="noopener noreferrer"
           className="flex items-center gap-1.5 text-[13px] font-bold text-blue-500 hover:text-blue-600 transition-colors"

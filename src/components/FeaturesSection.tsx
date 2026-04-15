@@ -8,6 +8,8 @@ import { SitesMock } from './mocks/SitesMock'
 import { DailySalesMock } from './mocks/DailySalesMock'
 import { ProfitStoryMock } from './mocks/ProfitStoryMock'
 import { LedgerMock } from './mocks/LedgerMock'
+import { PurchaseOrderMock } from './mocks/PurchaseOrderMock'
+import { DashboardMock } from './mocks/DashboardMock'
 
 const featureBlocks = [
   {
@@ -40,7 +42,7 @@ const featureBlocks = [
   },
   {
     label: 'Multi-Site',
-    title: 'All Your Sites. One Dashboard.',
+    title: 'All Your Sites. One Portal.',
     desc: "Whether you manage 2 sites or 20 — see every location's inventory value, status, and activity in a single unified view.",
     bullets: ['Unified inventory view', 'Role-based access control', 'Per-site financial reports'],
     Mock: SitesMock,
@@ -51,6 +53,20 @@ const featureBlocks = [
     desc: 'Keep complete track of every vendor invoice, partial payment, and overdue balance. Easily reconcile statements with a single click, keeping your cash flow healthy.',
     bullets: ['Automated outstanding balance tracking', 'Partial payment handling', 'Detailed vendor history'],
     Mock: LedgerMock,
+  },
+  {
+    label: 'Smart Restocking',
+    title: 'Intelligent Restock Recommendations.',
+    desc: 'AI analyzes consumption patterns, current stock levels, lead times, and historical vendor performance to generate purchase order recommendations, optimizing for cost, delivery reliability, and project timelines.',
+    bullets: ['Consumption-driven reorder triggers', 'Vendor performance scoring', 'Budget-aware order generation'],
+    Mock: PurchaseOrderMock,
+  },
+  {
+    label: 'Capital & Profit',
+    title: 'Capital & Profit Clarity.',
+    desc: 'Understand exactly where your money is and how your business is performing—without digging through reports. Track total capital invested across fixed and working costs, monitor recovery through profits, and see how close you are to break-even.',
+    bullets: ['Capital tracking (fixed + working)', 'Break-even & recovery progress', 'Expense & burn monitoring'],
+    Mock: DashboardMock,
   },
 ]
 
@@ -76,10 +92,10 @@ export const FeaturesSection = () => {
   }, [])
 
   return (
-    <section className="py-24 max-md:py-16" id="features">
+    <section className="py-24 max-md:py-16 bg-white" id="features">
       <div className="max-w-[1200px] mx-auto px-6">
         <div className="text-center mb-20 max-md:mb-16">
-          <span className="inline-block text-[12px] font-bold tracking-[2.5px] uppercase text-neutral-700 mb-4 px-[18px] py-1.5 bg-neutral-50 border border-neutral-200 rounded-full">
+          <span className="inline-block text-[12px] font-bold tracking-[2.5px] uppercase text-neutral-700 mb-4 px-[18px] py-1.5  border border-neutral-200 rounded-full">
             Features
           </span>
           <h2 className="text-[48px] max-md:text-[32px] font-bold text-black tracking-tight mb-4 font-display">

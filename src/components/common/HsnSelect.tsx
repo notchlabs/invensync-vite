@@ -36,7 +36,7 @@ export function HsnSelect({ value, onChange, disabled, className, alignDropdown,
       }}
       keyExtractor={(item) => item.hsnCode}
       displayValue={(item) => item.hsnCode}
-      value={value ? ({ hsnCode: value.code, taxDetails: [] } as HsnItem) : null}
+      value={value ? ({ hsnCode: value.code, metaTitle: '', taxDetails: [] } as HsnItem) : null}
       onChange={handleSelect}
       disabled={disabled}
       className={className}

@@ -148,7 +148,7 @@ const Navbar = () => {
               <span className="text-[13px] font-medium text-neutral-500 max-lg:hidden">Already have an account?</span>
               <button
                 onClick={handleLogin}
-                className="inline-flex items-center gap-1.5 px-5 py-2 text-[14px] font-semibold text-neutral-700 bg-white border border-neutral-200 rounded-lg hover:border-neutral-300 hover:bg-neutral-50 hover:text-black transition-all shadow-sm"
+                className="inline-flex cursor-pointer items-center gap-1.5 px-5 py-2 text-[14px] font-semibold text-neutral-700 bg-white border border-neutral-200 rounded-lg hover:border-neutral-300 hover:bg-neutral-50 hover:text-black transition-all shadow-sm"
               >
                 <LogIn size={14} />
                 Log in

@@ -1,4 +1,3 @@
-import React from 'react';
 import { Coffee, Store, BarChart3, Receipt, FileText, CreditCard, Banknote, Crown, Clock, Calendar as CalendarIcon } from 'lucide-react';
 import { formatDateToDisplay } from '../../utils/dateUtils';
 import Skeleton from 'react-loading-skeleton';

@@ -1,5 +1,5 @@
 import { useNavigate } from 'react-router-dom'
-import { Compass, ArrowLeft } from 'lucide-react'
+import { Compass, Home } from 'lucide-react'
 
 export default function NotFoundPage() {
   const navigate = useNavigate()
@@ -33,11 +33,11 @@ export default function NotFoundPage() {
 
       {/* Action */}
       <button
-        onClick={() => navigate(-1)}
+        onClick={() => navigate('/')}
         className="flex items-center gap-2 px-5 py-2.5 bg-surface border border-border-main text-primary-text rounded-xl text-[13px] font-bold hover:bg-card active:scale-[0.98] transition-all cursor-pointer"
       >
-        <ArrowLeft size={14} />
-        Go back
+        <Home size={14} />
+        Go home
       </button>
     </div>
   )

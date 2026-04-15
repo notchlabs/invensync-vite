@@ -11,6 +11,7 @@ node_modules
 dist
 dist-ssr
 deploy.sh
+notchlabs.pem
 *.local
 
 # Editor directories and files

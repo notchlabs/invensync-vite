@@ -133,7 +133,7 @@ export function ProductPickerCell({ product, index, onUpdate }: ProductPickerCel
   const handleSelect = (p: Product) => {
     onUpdate(index, {
       name: p.name,
-      imageUrl: p.imageUrl || product.imageUrl,
+      imageUrl: p.imageUrl ?? product.imageUrl ?? null,
       _cacheId: p.id,
     });
     setIsOpen(false);

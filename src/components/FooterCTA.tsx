@@ -1,19 +1,19 @@
-import { useState, useEffect, useRef, useCallback } from 'react'
+import { useEffect, useCallback, useState } from 'react'
 import { ArrowRight, Mail, User, Phone, Briefcase, Package, CheckCircle, AlertCircle, Loader2 } from 'lucide-react'
 import { CustomSelect } from './common/CustomSelect'
 import { ContactService } from '../services/contact'
 import toast from 'react-hot-toast'
 
-interface ReCaptcha {
-  render: (container: HTMLElement, options: Record<string, unknown>) => number;
-  reset: (widgetId: number) => void;
-  getResponse: (widgetId: number) => string;
+const RECAPTCHA_SITE_KEY = '6LeDpK4sAAAAAK-2VMwMnn_MceJ_KRgVJTGRxyQW'
+
+interface ReCaptchaV3 {
+  ready: (cb: () => void) => void;
+  execute: (siteKey: string, options: { action: string }) => Promise<string>;
 }
 
 declare global {
   interface Window {
-    grecaptcha: ReCaptcha;
-    onRecaptchaLoad: () => void;
+    grecaptcha: ReCaptchaV3;
   }
 }
 
@@ -30,64 +30,17 @@ export const FooterCTA = () => {
   const [formStatus, setFormStatus] = useState<FormStatus>('idle')
   const [errorMessage, setErrorMessage] = useState("")
 
-  const [recaptchaSiteKey, setRecaptchaSiteKey] = useState<string | null>(null)
-  const [recaptchaReady, setRecaptchaReady] = useState(false)
-  const recaptchaContainerRef = useRef<HTMLDivElement>(null)
-  const recaptchaWidgetId = useRef<number | null>(null)
-
-  // 1. Fetch the reCAPTCHA site key from backend on mount
+  // Load the reCAPTCHA v3 script on mount
   useEffect(() => {
-    ContactService.getRecaptchaSiteKey()
-      .then(res => {
-        if (res.success && res.data) {
-          setRecaptchaSiteKey(res.data)
-        }
-      })
-      .catch(err => {
-        console.warn('Could not fetch reCAPTCHA site key:', err)
-      })
-  }, [])
-
-  // 2. Load the Google reCAPTCHA script once we have the site key
-  useEffect(() => {
-    if (!recaptchaSiteKey) return
-    // Don't load twice
-    if (document.getElementById('recaptcha-script')) {
-      if (window.grecaptcha?.render) {
-        // Defer state update to next tick to avoid cascading render warning
-        const timer = setTimeout(() => setRecaptchaReady(true), 0)
-        return () => clearTimeout(timer)
-      }
-      return
-    }
-
-    window.onRecaptchaLoad = () => {
-      setRecaptchaReady(true)
-    }
+    if (document.getElementById('recaptcha-script')) return
 
     const script = document.createElement('script')
     script.id = 'recaptcha-script'
-    script.src = 'https://www.google.com/recaptcha/api.js?onload=onRecaptchaLoad&render=explicit'
+    script.src = `https://www.google.com/recaptcha/api.js?render=${RECAPTCHA_SITE_KEY}`
     script.async = true
     script.defer = true
     document.head.appendChild(script)
-  }, [recaptchaSiteKey])
-
-  // 3. Render the reCAPTCHA widget once the script is loaded
-  useEffect(() => {
-    if (!recaptchaReady || !recaptchaSiteKey || !recaptchaContainerRef.current) return
-    if (recaptchaWidgetId.current !== null) return // Already rendered
-
-    try {
-      recaptchaWidgetId.current = window.grecaptcha.render(recaptchaContainerRef.current, {
-        sitekey: recaptchaSiteKey,
-        size: 'normal',
-        theme: 'light',
-      })
-    } catch (e) {
-      console.warn('reCAPTCHA render error:', e)
-    }
-  }, [recaptchaReady, recaptchaSiteKey])
+  }, [])
 
   const handleSubmit = useCallback(async (e: React.FormEvent) => {
     e.preventDefault()
@@ -130,15 +83,20 @@ export const FooterCTA = () => {
 
     setFormStatus('loading')
 
-    // Get the reCAPTCHA token
+    // Get reCAPTCHA v3 token invisibly
     let recaptchaToken = ''
-    if (recaptchaWidgetId.current !== null && window.grecaptcha) {
-      recaptchaToken = window.grecaptcha.getResponse(recaptchaWidgetId.current)
+    if (window.grecaptcha) {
+      try {
+        await new Promise<void>(resolve => window.grecaptcha.ready(resolve))
+        recaptchaToken = await window.grecaptcha.execute(RECAPTCHA_SITE_KEY, { action: 'submit' })
+      } catch (e) {
+        console.warn('reCAPTCHA execute error:', e)
+      }
     }
 
     if (!recaptchaToken) {
       setFormStatus('idle')
-      toast.error('Please complete the reCAPTCHA verification.')
+      toast.error('reCAPTCHA verification failed. Please try again.')
       return
     }
 
@@ -161,10 +119,6 @@ export const FooterCTA = () => {
         setPhone('')
         setUseCase('')
         setPlan('')
-        // Reset reCAPTCHA widget
-        if (window.grecaptcha && recaptchaWidgetId.current !== null) {
-          window.grecaptcha.reset(recaptchaWidgetId.current)
-        }
       } else {
         setFormStatus('error')
         const msg = res.message || 'Something went wrong. Please try again.'
@@ -329,16 +283,6 @@ export const FooterCTA = () => {
                   ]}
                 />
 
-                {/* reCAPTCHA Widget */}
-                <div className="flex justify-center">
-                  <div ref={recaptchaContainerRef} />
-                  {recaptchaSiteKey && !recaptchaReady && (
-                    <div className="flex items-center gap-2 py-3 text-[13px] text-neutral-400">
-                      <Loader2 size={14} className="animate-spin" />
-                      Loading verification...
-                    </div>
-                  )}
-                </div>
 
                 {/* Error Message */}
                 {formStatus === 'error' && errorMessage && (
