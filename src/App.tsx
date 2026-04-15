@@ -1,6 +1,13 @@
 import './App.css'
 import 'react-loading-skeleton/dist/skeleton.css'
-import { BrowserRouter, Routes, Route } from 'react-router-dom'
+import { BrowserRouter, Routes, Route, useLocation } from 'react-router-dom'
+import { useEffect } from 'react'
+
+function ScrollToTop() {
+  const { pathname } = useLocation()
+  useEffect(() => { window.scrollTo(0, 0) }, [pathname])
+  return null
+}
 import { Toaster } from 'react-hot-toast'
 import { SkeletonTheme } from 'react-loading-skeleton'
 
@@ -28,6 +35,8 @@ import PurchaseOrderPage from './pages/panel/PurchaseOrderPage'
 import RoleGuard from './guards/RoleGuard'
 import NotFoundPage from './pages/NotFoundPage'
 import UnauthorizedPage from './pages/UnauthorizedPage'
+import TermsPage from './pages/TermsPage'
+import PrivacyPage from './pages/PrivacyPage'
 
 function App() {
   return (
@@ -58,9 +67,12 @@ function App() {
           }}
         />
 
+        <ScrollToTop />
         <Routes>
           {/* Public Routes */}
           <Route path="/" element={<LandingPage />} />
+          <Route path="/terms" element={<TermsPage />} />
+          <Route path="/privacy" element={<PrivacyPage />} />
           <Route path="/unauthorized" element={<UnauthorizedPage />} />
 
           {/* Protected Routes — requires MSAL authentication */}

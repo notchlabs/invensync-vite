@@ -7,6 +7,8 @@ const pricingPlans = [
     desc: 'Perfect for small contractors managing a single project.',
     priceMonthly: '1,499',
     priceAnnually: '1,199',
+    annualTotal: '14,388',
+    annualSaving: '3,600',
     button: 'Start Free Trial',
     popular: false,
     features: [
@@ -23,6 +25,8 @@ const pricingPlans = [
     desc: 'The ideal plan for growing businesses with multiple sites.',
     priceMonthly: '3,499',
     priceAnnually: '2,799',
+    annualTotal: '33,588',
+    annualSaving: '8,400',
     button: 'Get Professional',
     popular: true,
     features: [
@@ -39,6 +43,8 @@ const pricingPlans = [
     desc: 'Advanced tools and limits for large-scale operations.',
     priceMonthly: '8,999',
     priceAnnually: '7,199',
+    annualTotal: '86,388',
+    annualSaving: '21,600',
     button: 'Talk to Sales',
     popular: false,
     features: [
@@ -109,11 +115,27 @@ const PricingSection = () => {
                 <p className={`text-[13px] leading-relaxed h-[40px] ${plan.popular ? 'text-neutral-400' : 'text-neutral-500'}`}>{plan.desc}</p>
               </div>
 
-              <div className="mb-8 flex items-end gap-1">
-                <span className={`text-[42px] font-bold font-display leading-[0.9] tracking-tight ${plan.popular ? 'text-white' : 'text-black'}`}>
-                  ₹{annual ? plan.priceAnnually : plan.priceMonthly}
-                </span>
-                <span className={`text-[13px] font-medium mb-1 ${plan.popular ? 'text-neutral-400' : 'text-neutral-500'}`}>/mo</span>
+              <div className="mb-8">
+                <div className="flex items-end gap-1 mb-1.5">
+                  <span className={`text-[42px] font-bold font-display leading-[0.9] tracking-tight ${plan.popular ? 'text-white' : 'text-black'}`}>
+                    ₹{annual ? plan.priceAnnually : plan.priceMonthly}
+                  </span>
+                  <span className={`text-[13px] font-medium mb-1 ${plan.popular ? 'text-neutral-400' : 'text-neutral-500'}`}>/mo</span>
+                </div>
+                {annual ? (
+                  <div className="flex items-center gap-2 flex-wrap">
+                    <span className={`text-[12px] font-medium ${plan.popular ? 'text-neutral-400' : 'text-neutral-500'}`}>
+                      ₹{plan.annualTotal} billed annually
+                    </span>
+                    <span className={`inline-block px-2 py-0.5 text-[10px] font-bold rounded-full uppercase tracking-wide ${plan.popular ? 'bg-blue-500/20 text-blue-300' : 'bg-emerald-50 text-emerald-700 border border-emerald-100'}`}>
+                      Save ₹{plan.annualSaving}
+                    </span>
+                  </div>
+                ) : (
+                  <span className={`text-[12px] font-medium ${plan.popular ? 'text-neutral-400' : 'text-neutral-500'}`}>
+                    billed monthly · save 20% annually
+                  </span>
+                )}
               </div>
 
               <a href="#contact" className={`w-full py-3.5 mb-8 rounded-xl text-[14px] font-semibold transition-all inline-flex justify-center items-center ${

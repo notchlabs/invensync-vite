@@ -63,7 +63,7 @@ const Navbar = () => {
       <div className="max-w-[1200px] mx-auto px-6 flex items-center justify-between">
         {/* Logo */}
         <a href="#" className="flex items-center gap-2.5 font-display text-[22px] font-bold text-black tracking-tight hover:opacity-85 transition-opacity">
-          <img src="/android-chrome-192x192.png" alt="InvenSync" className="w-8 h-8 rounded-lg object-contain" />
+          <img src="/inven_sync_dark.png" alt="InvenSync" className="w-8 h-8 rounded-lg object-contain" />
           <span>InvenSync</span>
         </a>
 
@@ -71,7 +71,7 @@ const Navbar = () => {
         <div className={`flex items-center gap-9 max-md:fixed max-md:top-16 max-md:left-0 max-md:right-0 max-md:flex-col max-md:bg-white/[0.97] max-md:backdrop-blur-xl max-md:p-6 max-md:gap-5 max-md:border-b max-md:border-neutral-200 max-md:transition-all max-md:duration-300 ${
           mobileOpen ? 'max-md:translate-y-0 max-md:opacity-100 max-md:pointer-events-auto' : 'max-md:-translate-y-[120%] max-md:opacity-0 max-md:pointer-events-none'
         }`}>
-          {['Features', 'Pricing', 'About', 'Contact'].map(link => (
+          {['Features', 'Problem', 'Pricing', 'Contact'].map(link => (
             <a
               key={link}
               href={`#${link.toLowerCase()}`}

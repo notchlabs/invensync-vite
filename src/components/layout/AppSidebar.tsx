@@ -25,7 +25,7 @@ function SidebarContent({
   
   // Get roles from claims
   const claims = accounts[0]?.idTokenClaims ?? {}
-  const tokenRoles: string[] = Array.isArray(claims['roles']) ? (claims['roles'] as string[]) : []
+  const tokenRoles: string[] = Array.isArray(claims['roles']) ? claims['roles'] : []
 
   // Filter visible items based on roles
   const visibleItems = NAV_ITEMS.filter(item => {
@@ -36,9 +36,10 @@ function SidebarContent({
   return (
     <>
       {/* Logo */}
-      <div
+      <NavLink
+        to="/"
         className={[
-          'px-4 py-4 border-b border-border-main/40 flex items-center gap-3 shrink-0',
+          'px-4 py-4 border-b border-border-main/40 flex items-center gap-3 shrink-0 hover:opacity-80 transition-opacity',
           isCollapsed ? 'lg:justify-center lg:px-2' : '',
         ].join(' ')}
       >
@@ -57,7 +58,7 @@ function SidebarContent({
             Smart inventory. Smarter Projects.
           </p>
         </div>
-      </div>
+      </NavLink>
 
       {/* Navigation */}
       <nav className={`flex-1 py-3 flex flex-col gap-0.5 overflow-y-auto ${isCollapsed ? 'lg:px-2 px-3' : 'px-3'}`}>

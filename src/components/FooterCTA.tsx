@@ -1,4 +1,5 @@
 import { useEffect, useCallback, useState } from 'react'
+import { Link } from 'react-router-dom'
 import { ArrowRight, Mail, User, Phone, Briefcase, Package, CheckCircle, AlertCircle, Loader2 } from 'lucide-react'
 import { CustomSelect } from './common/CustomSelect'
 import { ContactService } from '../services/contact'
@@ -169,7 +170,7 @@ export const FooterCTA = () => {
           {/* Right Form */}
           <div className="w-full max-w-[420px] bg-white border border-neutral-200 rounded-2xl p-8 max-md:p-6 shadow-[0_8px_30px_rgba(0,0,0,0.04)] relative transition-transform duration-500">
             <div className="text-center mb-6">
-              <h3 className="text-[20px] font-bold text-black font-display mb-1">Get Early Access</h3>
+              <h3 className="text-[20px] font-bold text-black font-display mb-1">Get Access</h3>
               <p className="text-[13px] text-neutral-500">No long forms. No friction.</p>
             </div>
             
@@ -322,8 +323,8 @@ export const FooterCTA = () => {
           <div className="flex items-center gap-6 text-[13px] text-neutral-500 font-medium">
             <span>© 2026 InvenSync. All rights reserved.</span>
             <div className="flex items-center gap-4">
-              <a href="#" className="hover:text-black transition-colors">Terms of Service</a>
-              <a href="#" className="hover:text-black transition-colors">Privacy Policy</a>
+              <Link to="/terms" className="hover:text-black transition-colors">Terms of Service</Link>
+              <Link to="/privacy" className="hover:text-black transition-colors">Privacy Policy</Link>
             </div>
           </div>
           
