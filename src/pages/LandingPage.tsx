@@ -6,6 +6,7 @@ import ProblemSection from '../components/ProblemSection'
 import PricingSection from '../components/PricingSection'
 import { FeaturesSection } from '../components/FeaturesSection'
 import { FooterCTA } from '../components/FooterCTA'
+import { QnASection } from '../components/QnASection'
 
 const LandingPage = () => {
   return (
@@ -17,6 +18,7 @@ const LandingPage = () => {
       <FeaturesSection />
       <ProblemSection />
       <PricingSection />
+      <QnASection />
       <FooterCTA />
     </div>
   )

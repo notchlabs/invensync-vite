@@ -343,7 +343,7 @@ export const FooterCTA = () => {
       <div className="border-t border-neutral-100 bg-[#fafafa]">
         <div className="max-w-[1200px] mx-auto px-6 py-6 flex flex-col md:flex-row justify-between items-center gap-4">
           <div className="flex items-center gap-6 text-[13px] text-neutral-500 font-medium">
-            <span>© 2026 InvenSync. All rights reserved.</span>
+            <span>© 2026 NotchLabs. All rights reserved.</span>
             <div className="flex items-center gap-4">
               <Link to="/terms" className="hover:text-black transition-colors">Terms of Service</Link>
               <Link to="/privacy" className="hover:text-black transition-colors">Privacy Policy</Link>
