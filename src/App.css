@@ -1,1 +1,6 @@
 /* empty — all styles use Tailwind */
+
+/* Hide reCAPTCHA badge globally — shown only while FooterCTA is mounted */
+.grecaptcha-badge {
+  visibility: hidden !important;
+}

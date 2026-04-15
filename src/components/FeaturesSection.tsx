@@ -1,15 +1,19 @@
-import { useEffect, useRef, useState } from 'react'
-import {
-  CheckCircle
-} from 'lucide-react'
-import { AddStockMock } from './mocks/AddStockMock'
-import { TransitMock } from './mocks/TransitMock'
-import { SitesMock } from './mocks/SitesMock'
-import { DailySalesMock } from './mocks/DailySalesMock'
-import { ProfitStoryMock } from './mocks/ProfitStoryMock'
-import { LedgerMock } from './mocks/LedgerMock'
-import { PurchaseOrderMock } from './mocks/PurchaseOrderMock'
-import { DashboardMock } from './mocks/DashboardMock'
+import { useEffect, useRef, useState, lazy, Suspense } from 'react'
+import { CheckCircle } from 'lucide-react'
+
+// ─── Lazy-load every mock — none are above the fold ──────────────────────────
+const AddStockMock      = lazy(() => import('./mocks/AddStockMock').then(m => ({ default: m.AddStockMock })))
+const DailySalesMock    = lazy(() => import('./mocks/DailySalesMock').then(m => ({ default: m.DailySalesMock })))
+const ProfitStoryMock   = lazy(() => import('./mocks/ProfitStoryMock').then(m => ({ default: m.ProfitStoryMock })))
+const TransitMock       = lazy(() => import('./mocks/TransitMock').then(m => ({ default: m.TransitMock })))
+const SitesMock         = lazy(() => import('./mocks/SitesMock').then(m => ({ default: m.SitesMock })))
+const LedgerMock        = lazy(() => import('./mocks/LedgerMock').then(m => ({ default: m.LedgerMock })))
+const PurchaseOrderMock = lazy(() => import('./mocks/PurchaseOrderMock').then(m => ({ default: m.PurchaseOrderMock })))
+const DashboardMock     = lazy(() => import('./mocks/DashboardMock').then(m => ({ default: m.DashboardMock })))
+
+const MockSkeleton = () => (
+  <div className="bg-[#fafafa] rounded-2xl border border-neutral-200 w-full h-[320px] animate-pulse" />
+)
 
 const featureBlocks = [
   {
@@ -95,7 +99,7 @@ export const FeaturesSection = () => {
     <section className="py-24 max-md:py-16 bg-white" id="features">
       <div className="max-w-[1200px] mx-auto px-6">
         <div className="text-center mb-20 max-md:mb-16">
-          <span className="inline-block text-[12px] font-bold tracking-[2.5px] uppercase text-neutral-700 mb-4 px-[18px] py-1.5  border border-neutral-200 rounded-full">
+          <span className="inline-block text-[12px] font-bold tracking-[2.5px] uppercase text-neutral-700 mb-4 px-[18px] py-1.5 border border-neutral-200 rounded-full">
             Features
           </span>
           <h2 className="text-[48px] max-md:text-[32px] font-bold text-black tracking-tight mb-4 font-display">
@@ -108,8 +112,8 @@ export const FeaturesSection = () => {
 
         <div className="flex flex-col gap-32 max-md:gap-20">
           {featureBlocks.map((block, i) => {
-            const isVisible = visible.has(i);
-            const isReversed = i % 2 !== 0;
+            const isVisible = visible.has(i)
+            const isReversed = i % 2 !== 0
             return (
               <div
                 key={i}
@@ -136,14 +140,17 @@ export const FeaturesSection = () => {
                     ))}
                   </ul>
                 </div>
-                {/* Mock */}
+
+                {/* Mock — only fetched when the block enters the viewport */}
                 <div className={`transition-all duration-1000 ease-out delay-150 ${isReversed ? 'max-lg:order-2 lg:order-1 min-w-0' : 'min-w-0'} ${
                   isVisible ? 'opacity-100 translate-x-0 translate-y-0 scale-100 rotate-0 blur-none' : `opacity-0 blur-md scale-95 translate-y-8 ${isReversed ? '-translate-x-12 -rotate-2' : 'translate-x-12 rotate-2'}`
                 }`}>
                   <div className="relative group">
                     <div className={`absolute -inset-4 bg-gradient-to-r from-blue-500/0 via-neutral-300/20 to-purple-500/0 rounded-[2rem] blur-2xl transition-opacity duration-1000 delay-300 ${isVisible ? 'opacity-100' : 'opacity-0'}`} />
                     <div className="relative z-10 w-full h-full transform-gpu transition-transform duration-700 hover:scale-[1.02]">
-                      <block.Mock />
+                      <Suspense fallback={<MockSkeleton />}>
+                        <block.Mock />
+                      </Suspense>
                     </div>
                   </div>
                 </div>

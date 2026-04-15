@@ -31,16 +31,31 @@ export const FooterCTA = () => {
   const [formStatus, setFormStatus] = useState<FormStatus>('idle')
   const [errorMessage, setErrorMessage] = useState("")
 
-  // Load the reCAPTCHA v3 script on mount
+  // Load the reCAPTCHA v3 script on mount, show badge while mounted
   useEffect(() => {
-    if (document.getElementById('recaptcha-script')) return
+    if (!document.getElementById('recaptcha-script')) {
+      const script = document.createElement('script')
+      script.id = 'recaptcha-script'
+      script.src = `https://www.google.com/recaptcha/api.js?render=${RECAPTCHA_SITE_KEY}`
+      script.async = true
+      script.defer = true
+      document.head.appendChild(script)
+    }
 
-    const script = document.createElement('script')
-    script.id = 'recaptcha-script'
-    script.src = `https://www.google.com/recaptcha/api.js?render=${RECAPTCHA_SITE_KEY}`
-    script.async = true
-    script.defer = true
-    document.head.appendChild(script)
+    // Show the badge while this component is visible
+    const showBadge = () => {
+      const badge = document.querySelector('.grecaptcha-badge') as HTMLElement | null
+      if (badge) badge.style.visibility = 'visible'
+    }
+    // Badge may not exist yet if script just loaded — poll briefly
+    const timer = setTimeout(showBadge, 500)
+    showBadge()
+
+    return () => {
+      clearTimeout(timer)
+      const badge = document.querySelector('.grecaptcha-badge') as HTMLElement | null
+      if (badge) badge.style.visibility = 'hidden'
+    }
   }, [])
 
   const handleSubmit = useCallback(async (e: React.FormEvent) => {
@@ -310,6 +325,13 @@ export const FooterCTA = () => {
                     </>
                   )}
                 </button>
+
+                <p className="text-center text-[11px] text-neutral-400 leading-relaxed">
+                  Protected by reCAPTCHA —{' '}
+                  <a href="https://policies.google.com/privacy" target="_blank" rel="noopener noreferrer" className="underline hover:text-neutral-600 transition-colors">Privacy</a>
+                  {' & '}
+                  <a href="https://policies.google.com/terms" target="_blank" rel="noopener noreferrer" className="underline hover:text-neutral-600 transition-colors">Terms</a>
+                </p>
               </form>
             )}
           </div>
