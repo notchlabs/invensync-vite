@@ -30,6 +30,14 @@ const fmtDate = (iso: string) =>
 const fmtTime = (iso: string) =>
   new Date(iso).toLocaleTimeString('en-US', { hour: '2-digit', minute: '2-digit', hour12: true })
 
+// "piyush.singh@invensync.in" → "Piyush Singh"
+const emailToName = (email: string): string =>
+  email
+    .split('@')[0]
+    .split('.')
+    .map(p => p.charAt(0).toUpperCase() + p.slice(1))
+    .join(' ')
+
 async function exportToExcel(rows: TransferRecord[], filename = 'transfers.xlsx') {
   const ExcelJS = (await import('exceljs')).default
   const wb = new ExcelJS.Workbook()
@@ -305,18 +313,20 @@ export default function TransitPage() {
       ),
     },
     {
-      header: 'Transfer Date & Time',
+      header: 'Transfer Date',
       key: 'date',
-      width: '12%',
+      width: '14%',
       render: row => (
         <div className="flex flex-col gap-0.5">
           <span className="text-[12px] font-bold text-primary-text">{fmtDate(row.billDate)}</span>
-          <span className="text-[11px] text-muted-text">{fmtTime(row.billDate)}</span>
+          <span className="text-[11px] text-muted-text">
+            {row.createdBy ? emailToName(row.createdBy) : fmtTime(row.billDate)}
+          </span>
         </div>
       ),
     },
     {
-      header: 'Total Amount (Inc. Tax)',
+      header: 'Amt (Inc. Tax)',
       key: 'amount',
       width: '15%',
       className: 'text-right',
@@ -373,7 +383,7 @@ export default function TransitPage() {
         <button
           onClick={handleExport}
           disabled={isExporting || data.length === 0}
-          className="flex items-center gap-2 px-4 py-2.5 bg-emerald-600 hover:bg-emerald-700 disabled:opacity-50 text-white text-[13px] font-black rounded-xl transition-colors cursor-pointer disabled:cursor-not-allowed shrink-0"
+          className="flex items-center gap-2 px-4 py-2.5 bg-emerald-500/10 hover:bg-emerald-500/20 text-emerald-600 dark:text-emerald-500 text-[13px] font-black rounded-xl transition-all cursor-pointer disabled:opacity-50 disabled:cursor-not-allowed shrink-0 border border-emerald-500/10"
         >
           {isExporting
             ? <><Download size={14} className="animate-bounce" /> Exporting...</>

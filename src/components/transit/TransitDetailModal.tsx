@@ -1,13 +1,13 @@
 import { useState, useEffect } from 'react'
 import { X, ExternalLink, Loader2, AlertTriangle, Check } from 'lucide-react'
+import Skeleton from 'react-loading-skeleton'
+import 'react-loading-skeleton/dist/skeleton.css'
 import toast from 'react-hot-toast'
 import { TransferService, type TransferRecord, type TransferItem } from '../../services/transferService'
+import { formatIndianCurrency } from '../../utils/numberFormat'
 
-// ── helpers ───────────────────────────────────────────────────────────────────
-
-const fmt = (n: number) =>
-  new Intl.NumberFormat('en-IN', { style: 'currency', currency: 'INR', maximumFractionDigits: 2 })
-    .format(n).replace('INR', '₹')
+const emailToName = (email: string): string =>
+  email.split('@')[0].split('.').map(p => p.charAt(0).toUpperCase() + p.slice(1)).join(' ')
 
 const fmtDate = (iso: string) =>
   new Date(iso).toLocaleDateString('en-GB', { day: '2-digit', month: 'short', year: 'numeric', hour: '2-digit', minute: '2-digit' })
@@ -35,9 +35,17 @@ export function TransitDetailModal({ transfer, onClose, onStatusChange }: Props)
   const [isSaving, setIsSaving]   = useState(false)
 
   useEffect(() => {
+    setIsLoading(true)
     TransferService.fetchTransferItems(transfer.id)
       .then(res => setItems(res.data ?? []))
-      .catch(console.error)
+      .catch((err: unknown) => {
+        if (!navigator.onLine) {
+        } else if (
+          (err instanceof Response && err.status === 502) ||
+          (err && typeof err === 'object' && 'status' in err && (err as { status: number }).status === 502) ||
+          (err instanceof Error && err.message.includes('502'))
+        ) {}
+      })
       .finally(() => setIsLoading(false))
   }, [transfer.id])
 
@@ -135,16 +143,57 @@ export function TransitDetailModal({ transfer, onClose, onStatusChange }: Props)
               <span className="text-[10px] font-black text-white/30 uppercase tracking-widest">Total Items</span>
               <span className="text-[13px] font-bold text-white">{transfer.totalItems}</span>
             </div>
+            {transfer.createdBy && (
+              <div className="flex flex-col gap-0.5 col-span-2">
+                <span className="text-[10px] font-black text-white/30 uppercase tracking-widest">Created By</span>
+                <div className="flex items-center gap-2">
+                  <span className="w-6 h-6 rounded-full bg-white/10 border border-white/15 flex items-center justify-center shrink-0 text-[10px] font-black text-white/70">
+                    {emailToName(transfer.createdBy).split(' ').map(w => w[0]).join('').slice(0, 2)}
+                  </span>
+                  <span className="text-[13px] font-bold text-white">{emailToName(transfer.createdBy)}</span>
+                </div>
+              </div>
+            )}
           </div>
         </div>
 
         {/* ── Items table ──────────────────────────────────────────── */}
         <div className="flex-1 overflow-y-auto min-h-0">
           {isLoading ? (
-            <div className="flex flex-col items-center justify-center py-16 gap-3">
-              <Loader2 size={28} className="animate-spin text-muted-text/30" />
-              <span className="text-[12px] font-bold text-muted-text uppercase tracking-widest">Loading items…</span>
-            </div>
+            <table className="w-full text-left table-fixed" style={{ minWidth: 600 }}>
+              <colgroup>
+                <col className="w-10" />
+                <col />
+                <col className="w-[150px]" />
+                <col className="w-[90px]" />
+                <col className="w-[90px]" />
+                <col className="w-[100px]" />
+              </colgroup>
+              <thead className="bg-table-head border-b border-border-main/60">
+                <tr>
+                  {['No.', 'Product Name', 'Bill Details', 'Qty (Unit)', 'Price/Unit', 'Total'].map((h, i) => (
+                    <th key={h} className={`px-3 py-2.5 text-[10px] font-black text-muted-text uppercase tracking-widest ${i >= 3 ? 'text-right' : ''}`}>
+                      {h}
+                    </th>
+                  ))}
+                </tr>
+              </thead>
+              <tbody className="divide-y divide-border-main/30">
+                {(['sk-1', 'sk-2', 'sk-3', 'sk-4']).map((k) => (
+                  <tr key={k}>
+                    <td className="px-3 py-3"><Skeleton width={16} height={14} borderRadius={4} /></td>
+                    <td className="px-3 py-3"><Skeleton width="80%" height={14} borderRadius={4} /></td>
+                    <td className="px-3 py-3">
+                      <Skeleton width="70%" height={12} borderRadius={4} className="mb-1" />
+                      <Skeleton width="50%" height={10} borderRadius={4} />
+                    </td>
+                    <td className="px-3 py-3 text-right"><Skeleton width={48} height={14} borderRadius={4} /></td>
+                    <td className="px-3 py-3 text-right"><Skeleton width={56} height={14} borderRadius={4} /></td>
+                    <td className="px-3 py-3 text-right"><Skeleton width={56} height={14} borderRadius={4} /></td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
           ) : (
             <table className="w-full text-left table-fixed" style={{ minWidth: 600 }}>
               <colgroup>
@@ -193,10 +242,10 @@ export function TransitDetailModal({ transfer, onClose, onStatusChange }: Props)
                         {item.qty} {item.unit}
                       </td>
                       <td className="px-3 py-3 text-right text-[12px] font-bold text-primary-text">
-                        {fmt(item.pricePerUnit)}
+                        {formatIndianCurrency(item.pricePerUnit)}
                       </td>
                       <td className="px-3 py-3 text-right">
-                        <p className="text-[12px] font-black text-primary-text">{fmt(lineGross)}</p>
+                        <p className="text-[12px] font-black text-primary-text">{formatIndianCurrency(lineGross)}</p>
                       </td>
                     </tr>
                   )
@@ -211,15 +260,15 @@ export function TransitDetailModal({ transfer, onClose, onStatusChange }: Props)
           <div className="shrink-0 border-t border-border-main/50 px-5 py-3 flex flex-col gap-1.5 bg-surface/30">
             <div className="flex items-center justify-between text-[12px]">
               <span className="text-muted-text font-medium">Total Amount (Excl. Tax)</span>
-              <span className="font-bold text-primary-text">{fmt(totalExcl)}</span>
+              <span className="font-bold text-primary-text">{formatIndianCurrency(totalExcl)}</span>
             </div>
             <div className="flex items-center justify-between text-[12px]">
               <span className="text-muted-text font-medium">Total Tax</span>
-              <span className="font-bold text-primary-text">{fmt(totalTax)}</span>
+              <span className="font-bold text-primary-text">{formatIndianCurrency(totalTax)}</span>
             </div>
             <div className="flex items-center justify-between text-[14px] pt-1 border-t border-border-main/40 mt-0.5">
               <span className="font-black text-primary-text">Grand Total (Incl. Tax)</span>
-              <span className="font-black text-primary-text">{fmt(grandTotal)}</span>
+              <span className="font-black text-primary-text">{formatIndianCurrency(grandTotal)}</span>
             </div>
           </div>
         )}

@@ -79,16 +79,19 @@ const AppLayout = () => {
   const currentNav = NAV_ITEMS.find(item => location.pathname.startsWith(item.path)) || 
     (location.pathname.startsWith('/app/panel/consumption') ? NAV_ITEMS.find(i => i.label === 'Inventory') || NAV_ITEMS[0] : NAV_ITEMS[0])
 
+  const toTitleCase = (s: string) =>
+    s.replace(/\w\S*/g, w => w.charAt(0).toUpperCase() + w.slice(1))
+
   const getBreadcrumbLabel = () => {
     const name = searchParams.get('name') || ''
     if (location.pathname.includes('/sites/edit')) {
-      return name ? `edit / ${name}` : 'edit'
+      return name ? toTitleCase(`Edit / ${name}`) : 'Edit'
     }
     if (location.pathname.includes('/sites/detail')) {
-      return name || 'detail'
+      return toTitleCase(name || 'Detail')
     }
     if (location.pathname.includes('/vendors/detail')) {
-      return name || 'detail'
+      return toTitleCase(name || 'Detail')
     }
     // /app/panel/sites/:siteName/consumption/:unitLabel (logs page)
     const siteConsumptionLogsMatch = location.pathname.match(/\/sites\/([^/]+)\/consumption\/([^/]+)/)
@@ -99,14 +102,14 @@ const AppLayout = () => {
       return (
         <>
           <Link to={`/app/panel/sites/detail?id=${siteIdParam}&name=${encodeURIComponent(decodedSiteName)}`} className="text-blue-600 dark:text-blue-500 hover:underline transition-all">
-            {decodedSiteName}
+            {toTitleCase(decodedSiteName)}
           </Link>
           <span className="text-muted-text/40 font-normal mx-1">/</span>
           <Link to={`/app/panel/sites/consumption?id=${siteIdParam}&name=${encodeURIComponent(decodedSiteName)}`} className="text-blue-600 dark:text-blue-500 hover:underline transition-all">
-            consumption
+            Consumption
           </Link>
           <span className="text-muted-text/40 font-normal mx-1">/</span>
-          {decodedUnitLabel}
+          {toTitleCase(decodedUnitLabel)}
         </>
       )
     }
@@ -115,23 +118,23 @@ const AppLayout = () => {
       return name ? (
         <>
           <Link to={`/app/panel/sites/detail?id=${id}&name=${encodeURIComponent(name)}`} className="text-blue-600 dark:text-blue-500 hover:underline transition-all">
-            {name}
+            {toTitleCase(name)}
           </Link>
-          {' / consumption'}
+          {' / Consumption'}
         </>
-      ) : 'consumption'
+      ) : 'Consumption'
     }
     if (location.pathname.startsWith(currentNav.path)) {
       return location.pathname
         .slice(currentNav.path.length)
         .split('/')
         .filter(Boolean)
-        .map(p => p.replace(/-/g, ' '))
+        .map(p => toTitleCase(p.replace(/-/g, ' ')))
         .join(' / ')
     }
-    
+
     // Fallback: extract last segment
-    return location.pathname.split('/').pop()?.replace(/-/g, ' ') || ''
+    return toTitleCase(location.pathname.split('/').pop()?.replace(/-/g, ' ') || '')
   }
 
   return (
@@ -171,7 +174,7 @@ const AppLayout = () => {
                     {currentNav.label}
                   </Link>
                   <span className="text-muted-text/40 font-normal">/</span>
-                  <h1 className="text-primary-text m-0 p-0 lowercase">
+                  <h1 className="text-primary-text m-0 p-0">
                     {getBreadcrumbLabel()}
                   </h1>
                 </>

@@ -1,5 +1,6 @@
 import { authenticatedFetch } from './apiClient';
 import { ENV } from '../../config/env';
+import toast from 'react-hot-toast';
 
 export class ApiService {
   /**
@@ -33,7 +34,25 @@ export class ApiService {
       config.body = body instanceof FormData ? body : JSON.stringify(body);
     }
 
-    const response = await authenticatedFetch(url, config);
+    let response: Response;
+    try {
+      response = await authenticatedFetch(url, config);
+    } catch {
+      // Network failure / no internet
+      toast.error('No internet connection. Please check your network.', {
+        id: 'network-error',
+        duration: 4000,
+      });
+      throw new Error('NETWORK_ERROR');
+    }
+
+    if (response.status === 502) {
+      toast.error('Server is starting up — please wait 2–3 min and try again.', {
+        id: 'server-deploying',
+        duration: 6000,
+      });
+      throw new Error('SERVER_DEPLOYING');
+    }
 
     if (!response.ok) {
       // Try to parse error response

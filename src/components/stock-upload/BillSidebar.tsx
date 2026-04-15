@@ -84,12 +84,27 @@ export function BillSidebar({
       </div>
 
       {/* Duplicates */}
-      <div className="flex flex-col bg-[#2e1515] rounded-xl overflow-hidden border border-[#4a2222]">
-        <button onClick={() => setDuplicatesOpen(!duplicatesOpen)} className="w-full p-4 flex justify-between items-center bg-[#3a1a1a] hover:bg-[#4a2222] transition-colors">
-          <div className="flex items-center gap-2.5 text-[12px] font-black uppercase tracking-widest text-[#ff6b6b]">
-            <AlertCircle size={14} className="opacity-80" /> Duplicates ({duplicateBills.length})
+      <div className={`flex flex-col rounded-xl overflow-hidden border ${
+        duplicateBills.length > 0 
+          ? 'bg-[#2e1515] border-[#4a2222]' 
+          : 'bg-[#1a1a1a] border-[#2a2a2a] opacity-80'
+      }`}>
+        <button 
+          onClick={() => setDuplicatesOpen(!duplicatesOpen)} 
+          className={`w-full p-4 flex justify-between items-center transition-colors ${
+            duplicateBills.length > 0
+              ? 'bg-[#3a1a1a] hover:bg-[#4a2222]'
+              : 'bg-[#222222] hover:bg-[#2a2a2a]'
+          }`}
+        >
+          <div className={`flex items-center gap-2.5 text-[12px] font-black uppercase tracking-widest ${
+            duplicateBills.length > 0 ? 'text-[#ff6b6b]' : 'text-white'
+          }`}>
+            <AlertCircle size={14} className={duplicateBills.length > 0 ? 'opacity-80' : 'text-white/60'} /> Duplicates ({duplicateBills.length})
           </div>
-          <ChevronDown size={14} className={`text-[#ff6b6b]/60 transition-transform duration-300 ${duplicatesOpen ? 'rotate-180' : ''}`} />
+          <ChevronDown size={14} className={`transition-transform duration-300 ${
+            duplicateBills.length > 0 ? 'text-[#ff6b6b]/60' : 'text-white/40'
+          } ${duplicatesOpen ? 'rotate-180' : ''}`} />
         </button>
         {duplicatesOpen && duplicateBills.length > 0 && (
           <div className="flex flex-col p-2 gap-1 bg-[#221010]">

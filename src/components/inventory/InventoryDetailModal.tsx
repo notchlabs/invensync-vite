@@ -8,9 +8,10 @@ interface InventoryDetailModalProps {
   isOpen: boolean
   onClose: () => void
   item: InventoryItem | null
+  hideTabs?: boolean
 }
 
-export function InventoryDetailModal({ isOpen, onClose, item }: InventoryDetailModalProps) {
+export function InventoryDetailModal({ isOpen, onClose, item, hideTabs = false }: InventoryDetailModalProps) {
   const [activeTab, setActiveTab] = useState<'bills' | 'audit'>('bills')
   const [billsData, setBillsData] = useState<PurchaseRecord[]>([])
   const [auditData, setAuditData] = useState<AuditLogItem[]>([])
@@ -232,7 +233,7 @@ export function InventoryDetailModal({ isOpen, onClose, item }: InventoryDetailM
               </div>
               <div className="flex items-center gap-1.5 px-2 py-0.5 bg-card border border-border-main rounded text-primary-text font-bold">
                 <Box size={12} className="text-primary-text" />
-                Total Qty: <span className="text-secondary-text font-medium">{item.quantity} {item.unit}</span>
+                Total Qty: <span className={`font-medium ${item.quantity === 0 ? 'text-rose-500' : 'text-secondary-text'}`}>{item.quantity === 0 ? 'No Stock' : `${item.quantity} ${item.unit}`}</span>
               </div>
             </div>
           </div>
@@ -245,30 +246,32 @@ export function InventoryDetailModal({ isOpen, onClose, item }: InventoryDetailM
         </div>
 
         {/* Tab Navigation */}
-        <div className="flex px-4 bg-header border-b border-border-main shrink-0">
-          <button
-            onClick={() => setActiveTab('bills')}
-            className={`flex items-center gap-2 px-4 py-3 text-[13px] font-bold border-b-2 transition-all ${
-              activeTab === 'bills' 
-                ? 'border-primary-text text-primary-text' 
-                : 'border-transparent text-secondary-text hover:text-primary-text'
-            }`}
-          >
-            <FileText size={16} className={activeTab === 'bills' ? 'text-primary-text' : 'text-secondary-text'} />
-            Bills
-          </button>
-          <button
-            onClick={() => setActiveTab('audit')}
-            className={`flex items-center gap-2 px-4 py-3 text-[13px] font-bold border-b-2 transition-all ${
-              activeTab === 'audit' 
-                ? 'border-primary-text text-primary-text' 
-                : 'border-transparent text-secondary-text hover:text-primary-text'
-            }`}
-          >
-            <History size={16} className={activeTab === 'audit' ? 'text-primary-text' : 'text-secondary-text'} />
-            Audit History
-          </button>
-        </div>
+        {!hideTabs && (
+          <div className="flex px-4 bg-header border-b border-border-main shrink-0">
+            <button
+              onClick={() => setActiveTab('bills')}
+              className={`flex items-center gap-2 px-4 py-3 text-[13px] font-bold border-b-2 transition-all ${
+                activeTab === 'bills'
+                  ? 'border-primary-text text-primary-text'
+                  : 'border-transparent text-secondary-text hover:text-primary-text'
+              }`}
+            >
+              <FileText size={16} className={activeTab === 'bills' ? 'text-primary-text' : 'text-secondary-text'} />
+              Bills
+            </button>
+            <button
+              onClick={() => setActiveTab('audit')}
+              className={`flex items-center gap-2 px-4 py-3 text-[13px] font-bold border-b-2 transition-all ${
+                activeTab === 'audit'
+                  ? 'border-primary-text text-primary-text'
+                  : 'border-transparent text-secondary-text hover:text-primary-text'
+              }`}
+            >
+              <History size={16} className={activeTab === 'audit' ? 'text-primary-text' : 'text-secondary-text'} />
+              Audit History
+            </button>
+          </div>
+        )}
 
         {/* Content Area */}
         <div className="flex-1 overflow-hidden flex flex-col bg-surface/30">

@@ -385,19 +385,19 @@ export function ConfirmStockModal({ isOpen, onClose, queue, onSuccess }: Confirm
                                 <tr key={`${selectedItem?.id || 'x'}-${i}`} className="hover:bg-surface/50 transition-colors group">
                                   <td className="px-2 py-2 text-[11px] font-bold text-muted-text text-center">{i + 1}</td>
                                   <td className="px-2 py-2 overflow-hidden">
-                                    <ProductPickerCell product={p} index={i} onUpdate={handleProductUpdate} />
+                                    <ProductPickerCell product={p} index={i} onUpdate={handleProductUpdate} disabled={isDuplicate} />
                                   </td>
                                   <td className="px-2 py-2">
-                                    <input type="number" className="w-full bg-card border border-border-main hover:border-secondary-text/50 focus:border-secondary-text rounded-md px-1.5 py-1 text-[11px] font-bold text-primary-text text-center outline-none" value={rawQty} onChange={e => handleProductChange(i, 'quantity', e.target.value)} />
+                                    <input type="number" disabled={isDuplicate} className={`w-full bg-card border border-border-main ${isDuplicate ? 'opacity-50 cursor-not-allowed' : 'hover:border-secondary-text/50 focus:border-secondary-text'} rounded-md px-1.5 py-1 text-[11px] font-bold text-primary-text text-center outline-none`} value={rawQty} onChange={e => handleProductChange(i, 'quantity', e.target.value)} />
                                   </td>
                                   <td className="px-2 py-2">
-                                    <input className="w-full bg-card border border-border-main hover:border-secondary-text/50 focus:border-secondary-text rounded-md px-1 py-1 text-[10px] font-bold text-muted-text text-center uppercase outline-none" value={p.unit || 'EA'} onChange={e => handleProductChange(i, 'unit', e.target.value)} />
+                                    <input disabled={isDuplicate} className={`w-full bg-card border border-border-main ${isDuplicate ? 'opacity-50 cursor-not-allowed' : 'hover:border-secondary-text/50 focus:border-secondary-text'} rounded-md px-1 py-1 text-[10px] font-bold text-muted-text text-center uppercase outline-none`} value={p.unit || 'EA'} onChange={e => handleProductChange(i, 'unit', e.target.value)} />
                                   </td>
                                   <td className="px-2 py-2">
-                                    <input type="number" step="0.01" className="w-full bg-card border border-border-main hover:border-secondary-text/50 focus:border-secondary-text rounded-md px-1.5 py-1 text-[11px] font-bold text-primary-text text-right outline-none" value={rawPrice} onChange={e => handleProductChange(i, 'price', e.target.value)} />
+                                    <input type="number" step="0.01" disabled={isDuplicate} className={`w-full bg-card border border-border-main ${isDuplicate ? 'opacity-50 cursor-not-allowed' : 'hover:border-secondary-text/50 focus:border-secondary-text'} rounded-md px-1.5 py-1 text-[11px] font-bold text-primary-text text-right outline-none`} value={rawPrice} onChange={e => handleProductChange(i, 'price', e.target.value)} />
                                   </td>
                                   <td className="px-2 py-2">
-                                    <input type="number" step="0.5" className="w-full bg-card border border-border-main hover:border-secondary-text/50 focus:border-secondary-text rounded-md px-1 py-1 text-[11px] font-bold text-primary-text text-center outline-none" value={rawTaxPerc} onChange={e => {
+                                    <input type="number" step="0.5" disabled={isDuplicate} className={`w-full bg-card border border-border-main ${isDuplicate ? 'opacity-50 cursor-not-allowed' : 'hover:border-secondary-text/50 focus:border-secondary-text'} rounded-md px-1 py-1 text-[11px] font-bold text-primary-text text-center outline-none`} value={rawTaxPerc} onChange={e => {
                                       const val = e.target.value;
                                       const num = Number(val);
                                       handleProductUpdate(i, { 
@@ -417,13 +417,15 @@ export function ConfirmStockModal({ isOpen, onClose, queue, onSuccess }: Confirm
                                     </div>
                                   </td>
                                   <td className="px-2 py-2">
-                                    <button 
-                                      onClick={() => handleRemoveProduct(i)} 
-                                      className="p-1.5 text-muted-text hover:text-rose-500 hover:bg-rose-500/10 rounded-lg transition-colors flex items-center justify-center shrink-0"
-                                      title="Remove Item"
-                                    >
-                                      <Trash2 size={14} />
-                                    </button>
+                                    {!isDuplicate && (
+                                      <button 
+                                        onClick={() => handleRemoveProduct(i)} 
+                                        className="p-1.5 text-muted-text hover:text-rose-500 hover:bg-rose-500/10 rounded-lg transition-colors flex items-center justify-center shrink-0"
+                                        title="Remove Item"
+                                      >
+                                        <Trash2 size={14} />
+                                      </button>
+                                    )}
                                   </td>
                                 </tr>
                               );
@@ -434,7 +436,8 @@ export function ConfirmStockModal({ isOpen, onClose, queue, onSuccess }: Confirm
 
                       <button
                         onClick={handleAddProduct}
-                        className="mt-3 flex items-center justify-center gap-2 w-full py-2.5 border-2 border-dashed border-border-main hover:border-secondary-text/50 hover:bg-surface/30 rounded-xl text-[11px] font-black text-muted-text hover:text-primary-text uppercase tracking-widest transition-all"
+                        disabled={isDuplicate}
+                        className={`mt-3 flex items-center justify-center gap-2 w-full py-2.5 border-2 border-dashed border-border-main ${isDuplicate ? 'opacity-30 cursor-not-allowed' : 'hover:border-secondary-text/50 hover:bg-surface/30'} rounded-xl text-[11px] font-black text-muted-text hover:text-primary-text uppercase tracking-widest transition-all`}
                       >
                         <Plus size={14} strokeWidth={3} /> Add Product
                       </button>

@@ -13,6 +13,7 @@ export interface TransferRecord {
   totalAmountIncTax: number;
   totalItems: number;
   status: string;
+  createdBy?: string;
 }
 
 export interface TransferListPayload {

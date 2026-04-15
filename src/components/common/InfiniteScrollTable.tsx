@@ -1,5 +1,5 @@
 import { Loader2, Building2, Box, RotateCw, X, Check } from 'lucide-react'
-import { useEffect, useRef } from 'react'
+import { useEffect, useRef, useState } from 'react'
 
 // SVG icons natively integrated so we don't need to pass JSX
 const EditPencilIcon = ({ onClick }: { onClick?: (e: React.MouseEvent) => void }) => (
@@ -96,6 +96,40 @@ export function InfiniteScrollTable<T>({
   useEffect(() => { isLoadingRef.current  = isLoading }, [isLoading])
   useEffect(() => { onLoadMoreRef.current = onLoadMore }, [onLoadMore])
 
+  // ── Error-loop guard ────────────────────────────────────────────────────────
+  // If a load was triggered by the observer but data didn't grow (API error),
+  // block further triggers until the parent resets (data goes back to empty).
+  const [loadBlocked, setLoadBlocked] = useState(false)
+  const loadBlockedRef   = useRef(false)
+  const pendingLoadRef   = useRef(false)   // true while we're waiting for a load we triggered
+  const dataLenAtLoad    = useRef(0)       // data.length when we last triggered a load
+  const dataLenRef       = useRef(data.length)  // always-fresh data.length for observer
+
+  // Sync blocked state + data length to refs so the observer reads fresh values
+  useEffect(() => { loadBlockedRef.current = loadBlocked }, [loadBlocked])
+  useEffect(() => { dataLenRef.current = data.length }, [data.length])
+
+  // When data resets to empty (filter change / fresh search) → unblock
+  useEffect(() => {
+    if (data.length === 0) {
+      setLoadBlocked(false)
+      pendingLoadRef.current = false
+    }
+  }, [data.length])
+
+  // When isLoading transitions false → check if the load we triggered produced data
+  useEffect(() => {
+    if (!isLoading && pendingLoadRef.current) {
+      pendingLoadRef.current = false
+      if (hasMore && data.length === dataLenAtLoad.current) {
+        // Load finished but data didn't grow and hasMore is still true → error
+        setLoadBlocked(true)
+      }
+    }
+  }, [isLoading]) // eslint-disable-line react-hooks/exhaustive-deps
+  // ^ intentionally omit hasMore/data.length — we only want this to react to
+  //   the loading→done transition, not to data changes mid-flight.
+
   // Observer is created once on mount and never recreated.
   // Recreating it on dep changes was the bug: when hasMore flipped false→true
   // after a filter reset, the newly-attached observer would fire immediately
@@ -103,7 +137,9 @@ export function InfiniteScrollTable<T>({
   useEffect(() => {
     const observer = new IntersectionObserver(
       entries => {
-        if (entries[0].isIntersecting && hasMoreRef.current && !isLoadingRef.current) {
+        if (entries[0].isIntersecting && hasMoreRef.current && !isLoadingRef.current && !loadBlockedRef.current) {
+          pendingLoadRef.current = true
+          dataLenAtLoad.current = dataLenRef.current
           onLoadMoreRef.current()
         }
       },

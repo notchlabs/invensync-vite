@@ -69,6 +69,7 @@ export interface BucketItem {
   vendorNames: string;
   vendorIds: string;
   price: number;
+  tax: number;
   qty: number;
   consumedByEmail: string;
   unit: string;

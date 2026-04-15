@@ -1,4 +1,4 @@
-import { useState } from 'react'
+import { useState, useEffect } from 'react'
 import { useNavigate } from 'react-router-dom'
 import { X, Calendar, CheckCircle2, AlertCircle, Trash2, Package, LayoutGrid, ChevronRight, RotateCw, Loader2, FileText, ExternalLink } from 'lucide-react'
 import { toast } from 'react-hot-toast'
@@ -18,7 +18,6 @@ export function TransferStockModal({ isOpen, onClose, items, onSuccess }: Transf
   const navigate = useNavigate()
   // Local state for items being transferred
   const [localItems, setLocalItems] = useState<(InventoryItem & { transferQty: number })[]>([])
-  const [prevIsOpen, setPrevIsOpen] = useState(isOpen)
   const [destinationSite, setDestinationSite] = useState<Site | null>(null)
   const [billDate, setBillDate] = useState(() => {
     const d = new Date();
@@ -29,18 +28,17 @@ export function TransferStockModal({ isOpen, onClose, items, onSuccess }: Transf
   const [isCorrectionLoading, setIsCorrectionLoading] = useState(false)
   const [successData, setSuccessData] = useState<{ url: string; type: string } | null>(null)
 
-  // Adjusting state during render
-  if (isOpen && !prevIsOpen) {
-    setPrevIsOpen(true)
-    setLocalItems(items.map(item => ({ ...item, transferQty: 1 })))
-    setDestinationSite(null)
-    const d = new Date();
-    const dateStr = `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-${String(d.getDate()).padStart(2, '0')}`;
-    setBillDate(dateStr)
-    setSuccessData(null)
-  } else if (!isOpen && prevIsOpen) {
-    setPrevIsOpen(false)
-  }
+  // Sync items from props when modal opens
+  useEffect(() => {
+    if (isOpen) {
+      setLocalItems(items.map(item => ({ ...item, transferQty: 1 })))
+      setDestinationSite(null)
+      const d = new Date()
+      setBillDate(`${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-${String(d.getDate()).padStart(2, '0')}`)
+      setSuccessData(null)
+    }
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [isOpen])
 
   // Validation: Check for unique "From Site"
   const fromSites = Array.from(new Set(localItems.map(item => item.siteId)))

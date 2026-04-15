@@ -1,13 +1,15 @@
 import { useState, useEffect, useCallback, useRef } from 'react'
 import { useParams, useSearchParams } from 'react-router-dom'
 import { format } from 'date-fns'
-import { ChevronDown, ChevronLeft, ChevronRight, Search, Undo2, Building2, User, Box, Loader2 } from 'lucide-react'
+import { ChevronDown, ChevronLeft, ChevronRight, Search, Undo2, Building2, User, Box, Loader2, MoreVertical } from 'lucide-react'
 import { AnimatePresence, motion } from 'framer-motion'
 import toast from 'react-hot-toast'
 import Skeleton from 'react-loading-skeleton'
 import { SalesService, type ConsumptionBucket } from '../../services/salesService'
 import { ConsumptionService, type BucketItem, type ConsumptionUnitInfo } from '../../services/consumptionService'
 import { formatIndianCurrency } from '../../utils/numberFormat'
+import { InventoryDetailModal } from '../../components/inventory/InventoryDetailModal'
+import type { InventoryItem } from '../../types/inventory'
 
 const MONTHS = ['January', 'February', 'March', 'April', 'May', 'June', 'July', 'August', 'September', 'October', 'November', 'December']
 
@@ -17,19 +19,6 @@ const getDayInfo = (dateStr: string) => {
     day: format(d, 'EEE').toUpperCase(),
     display: format(d, 'dd MMM, yyyy'),
   }
-}
-
-const formatCompactCurrency = (v: number) => {
-  if (!v) return '₹0'
-  if (v >= 100_000) {
-    const stringVal = (v / 100_000).toFixed(2)
-    return `₹${stringVal.replace(/\.00$/, '')} L`
-  }
-  if (v >= 1_000) {
-    const stringVal = (v / 1_000).toFixed(2)
-    return `₹${stringVal.replace(/\.00$/, '')} K`
-  }
-  return `₹${v.toFixed(2)}`
 }
 
 export default function ConsumptionLogsPage() {
@@ -55,6 +44,33 @@ export default function ConsumptionLogsPage() {
   const [loadingDates, setLoadingDates] = useState<Set<string>>(new Set())
   const [searchTerm, setSearchTerm] = useState('')
 
+  // Inventory detail modal
+  const [modalItem, setModalItem] = useState<InventoryItem | null>(null)
+  const [openMenuId, setOpenMenuId] = useState<number | null>(null)
+
+  const openInventoryModal = (item: BucketItem) => {
+    const inv: InventoryItem = {
+      productId: item.productId,
+      siteId,
+      productName: item.productName,
+      imageUrl: item.imageUrl || null,
+      unit: item.unit,
+      quantity: 0,
+      vendorNames: item.vendorNames || null,
+      site: unitInfo?.siteName ?? siteName,
+      siteAddress: '', siteCity: '', siteState: '',
+      mrp: 0, hsnCode: 0, hsnName: '',
+      cgstInPerc: 0, sgstInPerc: 0,
+      price: item.price,
+      transitQty: 0,
+      billNos: null,
+      totalExcludingTax: 0,
+      totalIncludingTax: 0,
+      latestUpdate: '',
+    }
+    setModalItem(inv)
+  }
+
   // Month picker init
   const now = new Date()
   let initialYear = now.getFullYear()
@@ -71,7 +87,7 @@ export default function ConsumptionLogsPage() {
 
   const [selectedYear, setSelectedYear] = useState(initialYear)
   const [selectedMonth, setSelectedMonth] = useState(initialMonth)
-  
+
   // Custom Date Picker State
   const [isDatePickerOpen, setIsDatePickerOpen] = useState(false)
   const [pickerYear, setPickerYear] = useState(selectedYear)
@@ -91,6 +107,14 @@ export default function ConsumptionLogsPage() {
     }
     return () => document.removeEventListener('mousedown', handleClickOutside)
   }, [isDatePickerOpen])
+
+  // Close row menu on outside click
+  useEffect(() => {
+    if (openMenuId === null) return
+    const close = () => setOpenMenuId(null)
+    document.addEventListener('mousedown', close)
+    return () => document.removeEventListener('mousedown', close)
+  }, [openMenuId])
 
   // Resolve siteId & cuId from URL path params via API
   useEffect(() => {
@@ -206,28 +230,32 @@ export default function ConsumptionLogsPage() {
     return () => clearTimeout(timer)
   }, [searchTerm]) // eslint-disable-line react-hooks/exhaustive-deps
 
-  // Revert item
-  const handleRevert = async (cuBillId: number, date: string) => {
-    if (!window.confirm('Revert this item back to inventory?')) return
-    try {
-      await ConsumptionService.revertConsumedItem({ consumptionUnitId: cuBillId, siteId })
-      toast.success('Item reverted to inventory')
-      setExpandedItems(prev => {
-        const m = new Map(prev)
-        const items = m.get(date) || []
-        m.set(date, items.filter(i => i.cuBillId !== cuBillId))
-        return m
-      })
-      setBuckets(prev =>
-        prev.map(b =>
-          b.consumptionDate === date
-            ? { ...b, itemsCount: Math.max(0, b.itemsCount - 1) }
-            : b
+  const handleRevert = (cuBillId: number, date: string) => {
+    if (!window.confirm('Are you sure you want to revert this item back to inventory?')) return
+
+    const toastId = toast.loading('Reverting item...')
+
+    ConsumptionService.revertConsumedItem({ consumptionUnitId: cuBillId, siteId })
+      .then(() => {
+        toast.success('Item reverted to inventory', { id: toastId })
+        setExpandedItems(prev => {
+          const m = new Map(prev)
+          const itemsArr = m.get(date) || []
+          m.set(date, itemsArr.filter(i => i.cuBillId !== cuBillId))
+          return m
+        })
+        setBuckets(prev =>
+          prev.map(b =>
+            b.consumptionDate === date
+              ? { ...b, itemsCount: Math.max(0, b.itemsCount - 1) }
+              : b
+          )
         )
-      )
-    } catch {
-      toast.error('Failed to revert item')
-    }
+      })
+      .catch((err) => {
+        console.error('Revert failed:', err)
+        toast.error('Failed to revert item', { id: toastId })
+      })
   }
 
   return (
@@ -283,7 +311,7 @@ export default function ConsumptionLogsPage() {
               className="w-full h-[38px] pl-9 pr-4 bg-card border border-border-main rounded-lg text-[12px] font-bold text-primary-text outline-none focus:border-secondary-text transition-all"
             />
           </div>
-          
+
           <div className="relative w-full sm:w-auto" ref={monthPickerRef}>
             <button
               onClick={() => {
@@ -341,12 +369,12 @@ export default function ConsumptionLogsPage() {
                               </div>
                               <Skeleton width={42} height={18} borderRadius={10} />
                             </div>
-                            
+
                             <div className="flex flex-col w-full mb-3 gap-1.5">
                               <Skeleton width={80} height={22} borderRadius={4} />
                               <Skeleton width={50} height={9} borderRadius={2} />
                             </div>
-                            
+
                             <div className="flex items-center gap-1.5 mt-auto">
                               <Skeleton width={6} height={6} borderRadius={3} inline className="mb-0.5" />
                               <Skeleton width={60} height={9} borderRadius={2} inline />
@@ -358,17 +386,17 @@ export default function ConsumptionLogsPage() {
                           const data = monthlyBuckets[idx]
                           const isSelected = selectedYear === pickerYear && selectedMonth === idx
                           const hasData = !!data && data.items > 0
-                          
+
                           const total = data?.total || 0
                           const items = data?.items || 0
-                          
-                          const bgClass = isSelected 
-                            ? 'bg-[#111827] border-[#111827] dark:bg-zinc-100 dark:border-zinc-100 shadow-md transform scale-[1.02]' 
+
+                          const bgClass = isSelected
+                            ? 'bg-[#111827] border-[#111827] dark:bg-zinc-100 dark:border-zinc-100 shadow-md transform scale-[1.02]'
                             : 'bg-card border-border-main hover:border-secondary-text hover:shadow-sm'
-                          
+
                           const textPri = isSelected ? 'text-white dark:text-zinc-900' : 'text-primary-text'
                           const textSec = isSelected ? 'text-zinc-400 dark:text-zinc-500' : 'text-muted-text'
-                          
+
                           return (
                             <button
                               key={idx}
@@ -391,30 +419,28 @@ export default function ConsumptionLogsPage() {
                                   <span className={`text-[15px] font-black tracking-tight mb-0.5 ${textPri}`}>{monthName.slice(0, 3)}</span>
                                   <span className={`text-[10px] font-bold ${textSec}`}>{pickerYear}</span>
                                 </div>
-                                <div className={`px-2 py-0.5 rounded-full text-[9px] font-bold whitespace-nowrap leading-tight flex items-center justify-center ${
-                                  isSelected 
+                                <div className={`px-2 py-0.5 rounded-full text-[9px] font-bold whitespace-nowrap leading-tight flex items-center justify-center ${isSelected
                                     ? 'bg-zinc-800 text-zinc-300 dark:bg-zinc-200 dark:text-zinc-600'
-                                    : hasData 
-                                      ? 'bg-blue-500/10 text-blue-600 dark:bg-blue-500/20 dark:text-blue-400' 
+                                    : hasData
+                                      ? 'bg-blue-500/10 text-blue-600 dark:bg-blue-500/20 dark:text-blue-400'
                                       : 'bg-surface text-muted-text'
-                                }`}>
+                                  }`}>
                                   {hasData ? `${items} items` : 'No items'}
                                 </div>
                               </div>
-                              
+
                               <div className="flex flex-col w-full mb-3">
                                 <span className={`text-[18px] md:text-[22px] font-black tracking-tight leading-none mb-1 ${textPri}`}>
-                                  {formatCompactCurrency(total)}
+                                  {formatIndianCurrency(total)}
                                 </span>
                                 <span className={`text-[9px] font-black uppercase tracking-widest ${textSec}`}>
                                   Total Value
                                 </span>
                               </div>
-                              
+
                               <div className="flex items-center gap-1.5 mt-auto">
-                                <div className={`w-1.5 h-1.5 shrink-0 rounded-full ${
-                                  isSelected ? 'bg-blue-400' : hasData ? 'bg-emerald-500' : 'bg-slate-300 dark:bg-zinc-600'
-                                }`} />
+                                <div className={`w-1.5 h-1.5 shrink-0 rounded-full ${isSelected ? 'bg-blue-400' : hasData ? 'bg-emerald-500' : 'bg-slate-300 dark:bg-zinc-600'
+                                  }`} />
                                 <span className={`text-[9px] font-bold ${textSec}`}>
                                   {hasData ? 'Active month' : 'No activity recorded'}
                                 </span>
@@ -431,6 +457,13 @@ export default function ConsumptionLogsPage() {
           </div>
         </div>
       </div>
+
+      <InventoryDetailModal
+        isOpen={modalItem !== null}
+        onClose={() => setModalItem(null)}
+        item={modalItem}
+        hideTabs
+      />
 
       {/* ── Accordion List ───────────────────────────────────────── */}
       <div className="flex-1 overflow-y-auto px-4 md:px-6 pb-8">
@@ -522,120 +555,106 @@ export default function ConsumptionLogsPage() {
                               No items found for this date.
                             </div>
                           ) : (
-                            <div className="overflow-x-auto">
+                            <div className="overflow-x-auto custom-scrollbar">
                               <table
                                 className="w-full text-left border-collapse table-fixed"
-                                style={{ minWidth: '820px' }}
+                                style={{ minWidth: '720px' }}
                               >
                                 <colgroup>
-                                  <col style={{ width: '50px' }} />
-                                  <col style={{ width: '30%' }} />
-                                  <col style={{ width: '20%' }} />
-                                  <col style={{ width: '80px' }} />
-                                  <col style={{ width: '120px' }} />
-                                  <col style={{ width: '180px' }} />
+                                  <col style={{ width: '44px' }} />
+                                  <col />
+                                  <col style={{ width: '22%' }} />
+                                  <col style={{ width: '100px' }} />
+                                  <col style={{ width: '150px' }} />
                                 </colgroup>
                                 <thead>
                                   <tr className="bg-surface/60">
-                                    <th className="px-4 py-3 text-[11px] font-black text-muted-text uppercase tracking-wider">
-                                      S. No
-                                    </th>
-                                    <th className="px-4 py-3 text-[11px] font-black text-muted-text uppercase tracking-wider">
-                                      Item
-                                    </th>
-                                    <th className="px-4 py-3 text-[11px] font-black text-muted-text uppercase tracking-wider">
-                                      Consumed by
-                                    </th>
-                                    <th className="px-4 py-3 text-[11px] font-black text-muted-text uppercase tracking-wider text-center">
-                                      Quantity
-                                    </th>
-                                    <th className="px-4 py-3 text-[11px] font-black text-muted-text uppercase tracking-wider">
-                                      Amount ↑↓
-                                    </th>
-                                    <th className="px-4 py-3 text-[11px] font-black text-muted-text uppercase tracking-wider text-right">
-                                      Action
-                                    </th>
+                                    <th className="px-4 py-3 text-[11px] font-black text-muted-text uppercase tracking-wider">S. No</th>
+                                    <th className="px-4 py-3 text-[11px] font-black text-muted-text uppercase tracking-wider">Item</th>
+                                    <th className="px-4 py-3 text-[11px] font-black text-muted-text uppercase tracking-wider">Consumed by</th>
+                                    <th className="px-4 py-3 text-[11px] font-black text-muted-text uppercase tracking-wider text-center">Quantity</th>
+                                    <th className="px-4 py-3 text-[11px] font-black text-muted-text uppercase tracking-wider text-right">Amount</th>
                                   </tr>
                                 </thead>
                                 <tbody className="divide-y divide-border-main/30">
                                   {items.map((item, idx) => {
-                                    const baseAmount = item.price * item.qty
-                                    const tax = Math.max(0, item.amountIncTax - baseAmount)
-                                    const emailName =
-                                      item.consumedByEmail?.split('@')[0] || 'Unknown'
+                                    const emailName = item.consumedByEmail?.split('@')[0] || 'Unknown'
+                                    const isMenuOpen = openMenuId === item.cuBillId
 
                                     return (
                                       <tr
                                         key={item.cuBillId}
-                                        className="hover:bg-surface/30 transition-colors"
+                                        onClick={() => openInventoryModal(item)}
+                                        className="hover:bg-surface/40 transition-colors cursor-pointer group"
                                       >
-                                        <td className="px-4 py-3.5 text-[13px] font-bold text-muted-text align-middle">
+                                        <td className="px-4 py-5 text-[13px] font-bold text-muted-text align-middle">
                                           {idx + 1}
                                         </td>
-                                        <td className="px-4 py-3.5 align-middle">
+                                        <td className="px-4 py-5 align-middle">
                                           <div className="flex items-center gap-3">
-                                            <div className="w-10 h-10 bg-card border border-border-main rounded-lg shrink-0 overflow-hidden flex items-center justify-center p-0.5">
+                                            <div className="w-10 h-10 bg-card border border-border-main rounded-xl shrink-0 overflow-hidden flex items-center justify-center p-0.5">
                                               {item.imageUrl ? (
-                                                <img
-                                                  src={item.imageUrl}
-                                                  alt=""
-                                                  className="w-full h-full object-contain"
-                                                />
+                                                <img src={item.imageUrl} alt="" className="w-full h-full object-contain" />
                                               ) : (
-                                                <Box className="text-muted-text w-5 h-5" />
+                                                <Box className="text-muted-text w-4 h-4" />
                                               )}
                                             </div>
                                             <div className="flex flex-col min-w-0">
-                                              <span className="text-[13px] font-bold text-primary-text leading-tight truncate">
-                                                {item.productName}
-                                              </span>
-                                              <span className="text-[11px] font-medium text-muted-text mt-0.5 truncate">
-                                                {item.vendorNames || 'No vendor'}
-                                              </span>
+                                              <span className="text-[13px] font-bold text-primary-text leading-tight truncate">{item.productName}</span>
+                                              <span className="text-[11px] font-medium text-muted-text mt-0.5 truncate">{item.vendorNames || 'No vendor'}</span>
                                             </div>
                                           </div>
                                         </td>
-                                        <td className="px-4 py-3.5 align-middle">
+                                        <td className="px-4 py-5 align-middle">
                                           <div className="flex flex-col min-w-0">
-                                            <span className="text-[13px] font-bold text-primary-text capitalize truncate">
-                                              {emailName}
-                                            </span>
-                                            <span className="text-[11px] font-medium text-muted-text truncate">
-                                              {item.consumedByEmail}
-                                            </span>
+                                            <span className="text-[13px] font-bold text-primary-text capitalize truncate">{emailName}</span>
+                                            <span className="text-[11px] font-medium text-muted-text truncate">{item.consumedByEmail}</span>
                                           </div>
                                         </td>
-                                        <td className="px-4 py-3.5 text-center align-middle">
+                                        <td className="px-4 py-5 text-center align-middle">
                                           <div className="flex flex-col items-center">
-                                            <span className="text-[13px] font-bold text-primary-text">
-                                              {item.qty}
-                                            </span>
-                                            <span className="text-[11px] font-medium text-muted-text">
-                                              {item.unit}
-                                            </span>
+                                            <span className="text-[14px] font-bold text-primary-text">{item.qty}</span>
+                                            <span className="text-[11px] font-medium text-muted-text uppercase tracking-tighter">{item.unit}</span>
                                           </div>
                                         </td>
-                                        <td className="px-4 py-3.5 align-middle">
-                                          <div className="flex flex-col">
-                                            <span className="text-[14px] font-black text-primary-text">
-                                              ₹{baseAmount.toFixed(2)}
-                                            </span>
-                                            {tax > 0 && (
-                                              <span className="text-[11px] font-medium text-emerald-600 mt-0.5">
-                                                + ₹{tax.toFixed(2)} tax
-                                              </span>
-                                            )}
+                                        <td
+                                          className="px-4 py-5 text-right align-middle"
+                                          onClick={e => e.stopPropagation()}
+                                          onMouseDown={e => e.stopPropagation()}
+                                        >
+                                          <div className="flex items-center justify-end gap-2">
+                                            <div className="flex flex-col items-end">
+                                              <span className="text-[15px] font-black text-primary-text tracking-tight">₹{item.amountIncTax.toFixed(2)}</span>
+                                              {item.tax > 0 && (
+                                                <span className="text-[9px] font-bold text-emerald-600 mt-1">₹{item.tax.toFixed(2)} tax</span>
+                                              )}
+                                            </div>
+                                            <div className="relative">
+                                              <button
+                                                onClick={() => setOpenMenuId(isMenuOpen ? null : item.cuBillId)}
+                                                className={`w-9 h-9 flex items-center justify-center rounded-xl text-muted-text transition-all cursor-pointer ${isMenuOpen ? 'bg-surface text-primary-text shadow-sm' : 'hover:bg-surface hover:text-primary-text'}`}
+                                              >
+                                                <MoreVertical size={18} />
+                                              </button>
+                                              {isMenuOpen && (
+                                                <div className="absolute right-0 top-[calc(100%+8px)] z-[110] bg-card border border-border-main rounded-2xl shadow-[0_12px_40px_rgba(0,0,0,0.2)] overflow-hidden min-w-[220px]">
+                                                  <div className="p-1.5">
+                                                    <button
+                                                      type="button"
+                                                      onClick={() => {
+                                                        handleRevert(item.cuBillId, bucket.consumptionDate)
+                                                        setOpenMenuId(null)
+                                                      }}
+                                                      className="w-full flex items-center gap-3 px-4 py-3.5 rounded-xl text-[13px] font-black text-rose-500 hover:bg-rose-500/10 transition-colors cursor-pointer whitespace-nowrap"
+                                                    >
+                                                      <Undo2 size={16} strokeWidth={3} />
+                                                      Revert to Inventory
+                                                    </button>
+                                                  </div>
+                                                </div>
+                                              )}
+                                            </div>
                                           </div>
-                                        </td>
-                                        <td className="px-4 py-3.5 text-right align-middle">
-                                          <button
-                                            onClick={() =>
-                                              handleRevert(item.cuBillId, bucket.consumptionDate)
-                                            }
-                                            className="inline-flex items-center gap-1.5 px-3 py-1.5 border border-emerald-500/30 text-emerald-500 text-[12px] font-bold rounded-full hover:bg-emerald-500/10 transition-colors cursor-pointer whitespace-nowrap"
-                                          >
-                                            Revert to Inventory <Undo2 size={11} />
-                                          </button>
                                         </td>
                                       </tr>
                                     )

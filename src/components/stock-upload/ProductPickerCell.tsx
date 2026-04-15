@@ -8,9 +8,10 @@ interface ProductPickerCellProps {
   product: NonNullable<UploadQueueItem['extractedData']>['products'][number];
   index: number;
   onUpdate: (index: number, fields: Record<string, string | number | null>) => void;
+  disabled?: boolean;
 }
 
-export function ProductPickerCell({ product, index, onUpdate }: ProductPickerCellProps) {
+export function ProductPickerCell({ product, index, onUpdate, disabled }: ProductPickerCellProps) {
   const [isOpen, setIsOpen] = useState(false);
   const [search, setSearch] = useState('');
   const [items, setItems] = useState<Product[]>([]);
@@ -64,6 +65,7 @@ export function ProductPickerCell({ product, index, onUpdate }: ProductPickerCel
 
   // Toggle open + position
   const handleOpen = () => {
+    if (disabled) return;
     if (!isOpen) {
       updatePosition();
       setIsOpen(true);
@@ -145,7 +147,8 @@ export function ProductPickerCell({ product, index, onUpdate }: ProductPickerCel
       <button
         ref={triggerRef}
         onClick={handleOpen}
-        className={`w-full text-left bg-card border ${isNew ? 'border-amber-400/40' : 'border-border-main'} hover:border-secondary-text/40 rounded-md px-2 py-1 text-[12px] font-bold text-primary-text transition-all outline-none flex items-center gap-1.5 min-w-0`}
+        disabled={disabled}
+        className={`w-full text-left bg-card border ${isNew ? 'border-amber-400/40' : 'border-border-main'} ${disabled ? 'opacity-50 cursor-not-allowed' : 'hover:border-secondary-text/40'} rounded-md px-2 py-1 text-[12px] font-bold text-primary-text transition-all outline-none flex items-center gap-1.5 min-w-0`}
         title={product.name}
       >
         <div className="w-5 h-5 bg-white border border-border-main/30 rounded shrink-0 overflow-hidden flex items-center justify-center">
