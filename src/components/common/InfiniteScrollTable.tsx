@@ -1,5 +1,11 @@
-import { Loader2, Building2, Box, RotateCw, X, Check } from 'lucide-react'
+import { Loader2, Building2, Box, RotateCw, X, Check, ArrowUp, ArrowDown, ArrowUpDown } from 'lucide-react'
 import { useEffect, useRef, useState } from 'react'
+
+const formatAmount = (val: number): string => {
+  if (val >= 100_000) return `${(val / 100_000).toFixed(2)} L`
+  if (val >= 1_000)   return `${(val / 1_000).toFixed(2)} K`
+  return val.toFixed(2)
+}
 
 // SVG icons natively integrated so we don't need to pass JSX
 const EditPencilIcon = ({ onClick }: { onClick?: (e: React.MouseEvent) => void }) => (
@@ -41,6 +47,8 @@ export interface Column<T> {
   className?: string
   width?: string | number
   onCellClick?: (row: T) => void
+  sortable?: boolean
+  sortField?: string  // backend field name; falls back to key if omitted
 }
 
 interface InfiniteScrollTableProps<T> {
@@ -64,6 +72,9 @@ interface InfiniteScrollTableProps<T> {
   onClearFilters?: () => void
   onEdit?: (row: T) => void
   minWidth?: string
+  sortBy?: string | null
+  sortDir?: 'asc' | 'desc'
+  onSort?: (field: string) => void
 }
 
 export function InfiniteScrollTable<T>({
@@ -82,7 +93,10 @@ export function InfiniteScrollTable<T>({
   selectionActions = [],
   onClearFilters,
   onEdit,
-  minWidth = '900px'
+  minWidth = '900px',
+  sortBy,
+  sortDir,
+  onSort,
 }: InfiniteScrollTableProps<T>) {
   const observerTarget = useRef<HTMLTableRowElement>(null)
 
@@ -217,11 +231,28 @@ export function InfiniteScrollTable<T>({
                     </div>
                   </th>
                 )}
-                {columns.map((col) => (
-                  <th key={col.key} className={`px-4 py-3.5 text-[12px] font-bold tracking-tight ${col.className || ''}`} style={{ width: col.width }}>
-                    {col.header}
-                  </th>
-                ))}
+                {columns.map((col) => {
+                  const field = col.sortField ?? col.key
+                  const isActive = sortBy === field
+                  return (
+                    <th key={col.key} className={`px-4 py-3.5 text-[12px] font-bold tracking-tight ${col.className || ''}`} style={{ width: col.width }}>
+                      {col.sortable ? (
+                        <button
+                          onClick={() => onSort?.(field)}
+                          className={`inline-flex items-center gap-1 hover:text-primary-text transition-colors ${isActive ? 'text-primary-text' : 'text-secondary-text'}`}
+                        >
+                          {col.header}
+                          {isActive
+                            ? sortDir === 'asc'
+                              ? <ArrowUp size={12} strokeWidth={2.5} />
+                              : <ArrowDown size={12} strokeWidth={2.5} />
+                            : <ArrowUpDown size={12} strokeWidth={2} className="opacity-40" />
+                          }
+                        </button>
+                      ) : col.header}
+                    </th>
+                  )
+                })}
               </tr>
             </thead>
             <tbody className="divide-y divide-border-main/50">
@@ -296,7 +327,8 @@ export function InfiniteScrollTable<T>({
                       } else if (col.cellType === 'currency' || col.cellType === 'currency-net') {
                         const taxAmt = Number(col.dataMap.computedTax ? col.dataMap.computedTax(row) : (r[col.dataMap.taxValue as string] || 0));
                         const baseVal = Number(r[value as string] || 0);
-                        const displayVal = col.cellType === 'currency-net' ? (baseVal / 1000).toFixed(2) + ' K' : baseVal.toFixed(2);
+                        const displayVal = formatAmount(baseVal);
+                        const taxDisplay = formatAmount(taxAmt);
                         const unitStr = r[unit as string] ? ` / ${r[unit as string] as React.ReactNode}` : '';
 
                         content = (
@@ -304,7 +336,7 @@ export function InfiniteScrollTable<T>({
                             <div className="text-[13px] font-bold text-primary-text">
                               ₹{displayVal} <span className="text-[11px] text-secondary-text font-medium">{unitStr}</span>
                             </div>
-                            <span className="text-[10px] text-muted-text mt-0.5">+ ₹{taxAmt.toFixed(2)} tax</span>
+                            <span className="text-[10px] text-muted-text mt-0.5">+ ₹{taxDisplay} tax</span>
                           </div>
                         )
                       }

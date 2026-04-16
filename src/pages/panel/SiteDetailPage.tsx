@@ -6,6 +6,7 @@ import { format } from 'date-fns'
 import { SitesService, type SiteDetail } from '../../services/sitesService'
 import { StockUploadService, type BatchDetail, type UploadBatch } from '../../services/stockUploadService'
 import { BillViewModal } from '../../components/stock-upload/BillViewModal'
+import { HsnBreakupChart } from '../../components/sites/HsnBreakupChart'
 
 interface Stats {
   totalValue: number
@@ -103,8 +104,14 @@ export default function SiteDetailPage() {
 
         {/* Edit button */}
         <button
-          onClick={() => navigate(`/app/panel/sites/edit?name=${encodeURIComponent(siteName)}`)}
-          className="absolute top-4 right-4 z-10 flex items-center gap-1.5 px-3 py-1.5 bg-white/10 hover:bg-white/20 text-white text-[12px] font-bold rounded-lg transition-colors backdrop-blur-sm border border-white/10"
+          onClick={() => {
+            const nameToUse = site?.name || siteName;
+            if (nameToUse) {
+              navigate(`/app/panel/sites/edit?name=${encodeURIComponent(nameToUse)}`);
+            }
+          }}
+          className="absolute top-4 right-4 z-30 flex items-center gap-1.5 px-3 py-1.5 bg-white/10 hover:bg-white/20 text-white text-[12px] font-bold rounded-lg transition-colors backdrop-blur-sm border border-white/10 disabled:opacity-50"
+          disabled={!site && !siteName}
         >
           <Pencil size={12} /> Edit
         </button>
@@ -183,7 +190,7 @@ export default function SiteDetailPage() {
               </div>
             )}
             <button
-              onClick={() => navigate('/app/panel/inventory')}
+              onClick={() => navigate(`/app/panel/inventory?sites=${siteId}`)}
               className="mt-3 flex items-center gap-1.5 text-[12px] font-bold text-blue-600 dark:text-blue-400 hover:underline"
             >
               View Inventory <ArrowRight size={12} />
@@ -215,6 +222,9 @@ export default function SiteDetailPage() {
             </button>
           </div>
         </div>
+
+        {/* ── HSN Breakup ────────────────────────────────────────── */}
+        {siteId > 0 && <HsnBreakupChart siteId={siteId} />}
 
         {/* ── Purchase Bills ─────────────────────────────────────── */}
         <div>

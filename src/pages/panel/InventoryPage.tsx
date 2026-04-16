@@ -71,10 +71,12 @@ export default function InventoryPage() {
   const [isLoading, setIsLoading] = useState(false);
   const [hasMore, setHasMore] = useState(true);
   const [totalElements, setTotalElements] = useState(0);
-  const [selectedKeys, setSelectedKeys] = useState<Set<string | number>>(
-    new Set()
-  );
+  const [sortBy, setSortBy] = useState<string | null>(null);
+  const [sortDir, setSortDir] = useState<'asc' | 'desc'>('asc');
+  const [selectedItems, setSelectedItems] = useState<Map<string, InventoryItem>>(new Map());
+  const selectedKeys = new Set(selectedItems.keys());
   const [isHydrated, setIsHydrated] = useState(false);
+  const [hsnSubHeading, setHsnSubHeading] = useState<string | null>(searchParams.get("hsnSubHeading") || null);
 
   // Detail Modal State
   const [isDetailOpen, setIsDetailOpen] = useState(false);
@@ -101,6 +103,10 @@ export default function InventoryPage() {
 
   const pageRef = useRef(0);
   const isLoadingRef = useRef(false);
+  // Keys from URL that haven't been resolved to full items yet
+  const pendingSelKeys = useRef<Set<string>>(
+    new Set((searchParams.get("sel") ?? "").split(",").filter(Boolean))
+  );
 
   // 1. URL Sync Effect: Update browser URL when state changes
   useEffect(() => {
@@ -113,6 +119,9 @@ export default function InventoryPage() {
       params.products = selectedProducts.map((p) => p.id).join(",");
     if (selectedVendors.length > 0)
       params.vendors = selectedVendors.map((v) => v.id).join(",");
+    if (selectedItems.size > 0)
+      params.sel = Array.from(selectedItems.keys()).join(",");
+    if (hsnSubHeading) params.hsnSubHeading = hsnSubHeading;
 
     setSearchParams(params, { replace: true });
   }, [
@@ -121,6 +130,8 @@ export default function InventoryPage() {
     selectedSites,
     selectedProducts,
     selectedVendors,
+    selectedItems,
+    hsnSubHeading,
     setSearchParams,
   ]);
 
@@ -193,6 +204,9 @@ export default function InventoryPage() {
             searchType === "Invoice No" && search.length >= 3 ? search : null,
           searchBySupplierName:
             searchType === "Vendor Name" && search.length >= 3 ? search : null,
+          sortBy: sortBy,
+          sortDir: sortBy ? sortDir : null,
+          hsnSubHeading: hsnSubHeading,
         };
 
         const res = await InventoryService.fetchInventory(
@@ -216,8 +230,26 @@ export default function InventoryPage() {
         setIsLoading(false);
       }
     },
-    [selectedSites, selectedProducts, selectedVendors, search, searchType]
+    [selectedSites, selectedProducts, selectedVendors, search, searchType, sortBy, sortDir, hsnSubHeading]
   );
+
+  // Auto-select items that were pending from URL (resolved as pages load in)
+  useEffect(() => {
+    if (pendingSelKeys.current.size === 0) return;
+    setSelectedItems(prev => {
+      const next = new Map(prev);
+      let changed = false;
+      tableData.forEach(item => {
+        const key = getItemKey(item);
+        if (pendingSelKeys.current.has(key) && !next.has(key)) {
+          next.set(key, item);
+          pendingSelKeys.current.delete(key);
+          changed = true;
+        }
+      });
+      return changed ? next : prev;
+    });
+  }, [tableData]);
 
   // Filter change effect
   useEffect(() => {
@@ -241,6 +273,7 @@ export default function InventoryPage() {
     setSelectedProducts([]);
     setSelectedVendors([]);
     setSearchType("Product Name");
+    setHsnSubHeading(null);
   };
 
   const handleQtyClick = useCallback((item: InventoryItem) => {
@@ -253,50 +286,61 @@ export default function InventoryPage() {
     setIsEditOpen(true);
   }, []);
 
-  const handleConsumeAction = useCallback(
-    (keys: Set<string | number>) => {
-      const selected = tableData.filter((item) => keys.has(getItemKey(item)));
-      setConsumeItems(selected);
-      setIsConsumeOpen(true);
-    },
-    [tableData]
-  );
+  const handleConsumeAction = useCallback((_keys: Set<string | number>) => {
+    setConsumeItems(Array.from(selectedItems.values()));
+    setIsConsumeOpen(true);
+  }, [selectedItems]);
 
-  const handleCompositeAction = useCallback(
-    (keys: Set<string | number>) => {
-      const selected = tableData.filter((item) => keys.has(getItemKey(item)));
-      setCompositeItems(selected);
-      setIsCompositeOpen(true);
-    },
-    [tableData]
-  );
+  const handleCompositeAction = useCallback((_keys: Set<string | number>) => {
+    setCompositeItems(Array.from(selectedItems.values()));
+    setIsCompositeOpen(true);
+  }, [selectedItems]);
 
-  const handleTransferAction = useCallback(
-    (keys: Set<string | number>) => {
-      const selected = tableData.filter((item) => keys.has(getItemKey(item)));
-      setTransferItems(selected);
-      setIsTransferOpen(true);
-    },
-    [tableData]
-  );
+  const handleTransferAction = useCallback((_keys: Set<string | number>) => {
+    setTransferItems(Array.from(selectedItems.values()));
+    setIsTransferOpen(true);
+  }, [selectedItems]);
+
+  const handleSort = (field: string) => {
+    if (sortBy === field) {
+      setSortDir(prev => prev === 'asc' ? 'desc' : 'asc');
+    } else {
+      setSortBy(field);
+      setSortDir('asc');
+    }
+  };
 
   const hasActiveFilters =
     search.length > 0 ||
     selectedSites.length > 0 ||
     selectedProducts.length > 0 ||
-    selectedVendors.length > 0;
+    selectedVendors.length > 0 ||
+    !!hsnSubHeading;
 
   const toggleSelect = (key: string | number) => {
-    const newSet = new Set(selectedKeys);
-    if (newSet.has(key)) newSet.delete(key);
-    else newSet.add(key);
-    setSelectedKeys(newSet);
+    const strKey = String(key);
+    setSelectedItems(prev => {
+      const next = new Map(prev);
+      if (next.has(strKey)) {
+        next.delete(strKey);
+      } else {
+        const item = tableData.find(i => getItemKey(i) === strKey);
+        if (item) next.set(strKey, item);
+      }
+      return next;
+    });
   };
 
   const toggleSelectAll = (selectAll: boolean) => {
-    if (selectAll)
-      setSelectedKeys(new Set(tableData.slice(0, 150).map(getItemKey)));
-    else setSelectedKeys(new Set());
+    if (selectAll) {
+      setSelectedItems(prev => {
+        const next = new Map(prev);
+        tableData.slice(0, 150).forEach(item => next.set(getItemKey(item), item));
+        return next;
+      });
+    } else {
+      setSelectedItems(new Map());
+    }
   };
 
   const columns: Column<InventoryItem>[] = [
@@ -332,6 +376,8 @@ export default function InventoryPage() {
       key: "price",
       width: "18%",
       className: "text-right",
+      sortable: true,
+      sortField: "price",
       cellType: "currency",
       dataMap: {
         value: "price",
@@ -350,6 +396,8 @@ export default function InventoryPage() {
       key: "netAmount",
       width: "15%",
       className: "text-right",
+      sortable: true,
+      sortField: "totalExcludingTax",
       cellType: "currency-net",
       dataMap: {
         value: "totalExcludingTax",
@@ -477,6 +525,9 @@ export default function InventoryPage() {
           itemName="products"
           selectionActions={selectionActions}
           onEdit={handleEditClick}
+          sortBy={sortBy}
+          sortDir={sortDir}
+          onSort={handleSort}
         />
       </div>
 
@@ -510,7 +561,7 @@ export default function InventoryPage() {
             setTableData([]);
             pageRef.current = 0;
             loadData(true);
-            setSelectedKeys(new Set());
+            setSelectedItems(new Map());
           }}
         />
       )}
@@ -524,7 +575,7 @@ export default function InventoryPage() {
             setTableData([]);
             pageRef.current = 0;
             loadData(true);
-            setSelectedKeys(new Set());
+            setSelectedItems(new Map());
           }}
         />
       )}
@@ -540,7 +591,7 @@ export default function InventoryPage() {
               prev.filter((item) => !keysToRemove.has(getItemKey(item)))
             );
             setTotalElements((prev) => Math.max(0, prev - transferItems.length));
-            setSelectedKeys(new Set());
+            setSelectedItems(new Map());
             // Background reload to sync with server
             loadData(true);
           }}

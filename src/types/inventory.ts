@@ -76,4 +76,7 @@ export interface InventoryFetchPayload {
   searchByBillNo: string | null;
   searchBySupplierName: string | null;
   showZeroStock: boolean;
+  sortBy?: string | null;
+  sortDir?: 'asc' | 'desc' | null;
+  hsnSubHeading?: string | null;
 }

@@ -1,7 +1,6 @@
 import { useEffect, useRef, useState, lazy, Suspense } from 'react'
 import { CheckCircle } from 'lucide-react'
 
-// ─── Lazy-load every mock — none are above the fold ──────────────────────────
 const AddStockMock      = lazy(() => import('./mocks/AddStockMock').then(m => ({ default: m.AddStockMock })))
 const DailySalesMock    = lazy(() => import('./mocks/DailySalesMock').then(m => ({ default: m.DailySalesMock })))
 const ProfitStoryMock   = lazy(() => import('./mocks/ProfitStoryMock').then(m => ({ default: m.ProfitStoryMock })))
@@ -12,7 +11,7 @@ const PurchaseOrderMock = lazy(() => import('./mocks/PurchaseOrderMock').then(m 
 const DashboardMock     = lazy(() => import('./mocks/DashboardMock').then(m => ({ default: m.DashboardMock })))
 
 const MockSkeleton = () => (
-  <div className="bg-[#fafafa] rounded-2xl border border-neutral-200 w-full h-[320px] animate-pulse" />
+  <div className="bg-app rounded-2xl border border-border-main w-full h-[320px] animate-pulse" />
 )
 
 const featureBlocks = [
@@ -74,7 +73,6 @@ const featureBlocks = [
   },
 ]
 
-/* ===== Component ===== */
 export const FeaturesSection = () => {
   const [visible, setVisible] = useState<Set<number>>(new Set())
   const refs = useRef<(HTMLDivElement | null)[]>([])
@@ -96,23 +94,23 @@ export const FeaturesSection = () => {
   }, [])
 
   return (
-    <section className="py-24 max-md:py-16 bg-white overflow-hidden" id="features">
+    <section className="py-24 max-md:py-16 bg-card overflow-hidden" id="features">
       <div className="max-w-[1200px] mx-auto px-6">
         <div className="text-center mb-20 max-md:mb-16">
-          <span className="inline-block text-[12px] font-bold tracking-[2.5px] uppercase text-neutral-700 mb-4 px-[18px] py-1.5 border border-neutral-200 rounded-full">
+          <span className="inline-block text-[12px] font-bold tracking-[2.5px] uppercase text-secondary-text mb-4 px-[18px] py-1.5 border border-border-main rounded-full">
             Features
           </span>
-          <h2 className="text-[48px] max-md:text-[32px] font-bold text-black tracking-tight mb-4 font-display">
+          <h2 className="text-[48px] max-md:text-[32px] font-bold text-primary-text tracking-tight mb-4 font-display">
             Built for How You Actually Work
           </h2>
-          <p className="text-lg max-md:text-base text-neutral-600 max-w-[540px] mx-auto leading-relaxed">
+          <p className="text-lg max-md:text-base text-secondary-text max-w-[540px] mx-auto leading-relaxed">
             Every feature is designed for Indian businesses dealing with real-world inventory complexity.
           </p>
         </div>
 
         <div className="flex flex-col gap-32 max-md:gap-20">
           {featureBlocks.map((block, i) => {
-            const isVisible = visible.has(i)
+            const isVisible  = visible.has(i)
             const isReversed = i % 2 !== 0
             return (
               <div
@@ -123,34 +121,34 @@ export const FeaturesSection = () => {
               >
                 {/* Text */}
                 <div className={`flex flex-col gap-5 max-w-[480px] transition-all duration-1000 ease-out ${isReversed ? 'lg:order-2 lg:ml-auto' : 'lg:order-1'} ${
-                  isVisible 
-                    ? 'opacity-100 translate-x-0 blur-none' 
+                  isVisible
+                    ? 'opacity-100 translate-x-0 blur-none'
                     : `opacity-0 blur-md ${isReversed ? 'translate-x-12 max-md:translate-x-6' : '-translate-x-12 max-md:-translate-x-6'}`
                 }`}>
-                  <span className="inline-flex self-start text-[11px] font-bold tracking-[2px] uppercase text-neutral-600 px-3 py-1 bg-neutral-100 border border-neutral-200 rounded-full">
+                  <span className="inline-flex self-start text-[11px] font-bold tracking-[2px] uppercase text-secondary-text px-3 py-1 bg-header border border-border-main rounded-full">
                     {block.label}
                   </span>
-                  <h3 className="text-[36px] max-md:text-[28px] font-bold text-black tracking-tight leading-tight font-display">
+                  <h3 className="text-[36px] max-md:text-[28px] font-bold text-primary-text tracking-tight leading-tight font-display">
                     {block.title}
                   </h3>
-                  <p className="text-[15px] text-neutral-600 leading-relaxed mb-1">{block.desc}</p>
+                  <p className="text-[15px] text-secondary-text leading-relaxed mb-1">{block.desc}</p>
                   <ul className="flex flex-col gap-3">
                     {block.bullets.map((b, j) => (
-                      <li key={j} className="flex items-center gap-2.5 text-[14px] text-neutral-800 font-medium tracking-wide">
+                      <li key={j} className="flex items-center gap-2.5 text-[14px] text-primary-text font-medium tracking-wide">
                         <CheckCircle size={16} strokeWidth={2.5} className="text-blue-600 shrink-0" /> {b}
                       </li>
                     ))}
                   </ul>
                 </div>
 
-                {/* Mock — only fetched when the block enters the viewport */}
+                {/* Mock */}
                 <div className={`transition-all duration-1000 ease-out delay-150 ${isReversed ? 'lg:order-1' : 'lg:order-2'} min-w-0 ${
-                  isVisible 
-                    ? 'opacity-100 translate-x-0 translate-y-0 scale-100 rotate-0 blur-none' 
+                  isVisible
+                    ? 'opacity-100 translate-x-0 translate-y-0 scale-100 rotate-0 blur-none'
                     : `opacity-0 blur-md scale-95 translate-y-8 ${isReversed ? '-translate-x-12 max-md:-translate-x-6 -rotate-2' : 'translate-x-12 max-md:translate-x-6 rotate-2'}`
                 }`}>
                   <div className="relative group">
-                    <div className={`absolute -inset-4 bg-gradient-to-r from-blue-500/0 via-neutral-300/20 to-purple-500/0 rounded-[2rem] blur-2xl transition-opacity duration-1000 delay-300 ${isVisible ? 'opacity-100' : 'opacity-0'}`} />
+                    <div className={`absolute -inset-4 bg-gradient-to-r from-blue-500/0 via-border-main/30 to-purple-500/0 rounded-[2rem] blur-2xl transition-opacity duration-1000 delay-300 ${isVisible ? 'opacity-100' : 'opacity-0'}`} />
                     <div className="relative z-10 w-full h-full transform-gpu transition-transform duration-700 hover:scale-[1.02]">
                       <Suspense fallback={<MockSkeleton />}>
                         <block.Mock />
