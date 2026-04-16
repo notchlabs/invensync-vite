@@ -96,7 +96,7 @@ export const FeaturesSection = () => {
   }, [])
 
   return (
-    <section className="py-24 max-md:py-16 bg-white" id="features">
+    <section className="py-24 max-md:py-16 bg-white overflow-hidden" id="features">
       <div className="max-w-[1200px] mx-auto px-6">
         <div className="text-center mb-20 max-md:mb-16">
           <span className="inline-block text-[12px] font-bold tracking-[2.5px] uppercase text-neutral-700 mb-4 px-[18px] py-1.5 border border-neutral-200 rounded-full">
@@ -119,11 +119,13 @@ export const FeaturesSection = () => {
                 key={i}
                 ref={el => { refs.current[i] = el }}
                 data-index={i}
-                className={`grid grid-cols-2 max-lg:grid-cols-1 gap-14 max-lg:gap-8 items-center ${isReversed ? 'direction-rtl' : ''}`}
+                className="grid grid-cols-2 max-lg:grid-cols-1 gap-14 max-lg:gap-8 items-center"
               >
                 {/* Text */}
-                <div className={`flex flex-col gap-5 max-w-[480px] transition-all duration-1000 ease-out ${isReversed ? 'max-lg:order-1 lg:order-2 lg:ml-auto' : ''} ${
-                  isVisible ? 'opacity-100 translate-x-0 blur-none' : `opacity-0 blur-md ${isReversed ? 'translate-x-12' : '-translate-x-12'}`
+                <div className={`flex flex-col gap-5 max-w-[480px] transition-all duration-1000 ease-out ${isReversed ? 'lg:order-2 lg:ml-auto' : 'lg:order-1'} ${
+                  isVisible 
+                    ? 'opacity-100 translate-x-0 blur-none' 
+                    : `opacity-0 blur-md ${isReversed ? 'translate-x-12 max-md:translate-x-6' : '-translate-x-12 max-md:-translate-x-6'}`
                 }`}>
                   <span className="inline-flex self-start text-[11px] font-bold tracking-[2px] uppercase text-neutral-600 px-3 py-1 bg-neutral-100 border border-neutral-200 rounded-full">
                     {block.label}
@@ -142,8 +144,10 @@ export const FeaturesSection = () => {
                 </div>
 
                 {/* Mock — only fetched when the block enters the viewport */}
-                <div className={`transition-all duration-1000 ease-out delay-150 ${isReversed ? 'max-lg:order-2 lg:order-1 min-w-0' : 'min-w-0'} ${
-                  isVisible ? 'opacity-100 translate-x-0 translate-y-0 scale-100 rotate-0 blur-none' : `opacity-0 blur-md scale-95 translate-y-8 ${isReversed ? '-translate-x-12 -rotate-2' : 'translate-x-12 rotate-2'}`
+                <div className={`transition-all duration-1000 ease-out delay-150 ${isReversed ? 'lg:order-1' : 'lg:order-2'} min-w-0 ${
+                  isVisible 
+                    ? 'opacity-100 translate-x-0 translate-y-0 scale-100 rotate-0 blur-none' 
+                    : `opacity-0 blur-md scale-95 translate-y-8 ${isReversed ? '-translate-x-12 max-md:-translate-x-6 -rotate-2' : 'translate-x-12 max-md:translate-x-6 rotate-2'}`
                 }`}>
                   <div className="relative group">
                     <div className={`absolute -inset-4 bg-gradient-to-r from-blue-500/0 via-neutral-300/20 to-purple-500/0 rounded-[2rem] blur-2xl transition-opacity duration-1000 delay-300 ${isVisible ? 'opacity-100' : 'opacity-0'}`} />

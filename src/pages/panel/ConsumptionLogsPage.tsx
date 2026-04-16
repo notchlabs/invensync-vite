@@ -1,4 +1,5 @@
 import { useState, useEffect, useCallback, useRef } from 'react'
+import { createPortal } from 'react-dom'
 import { useParams, useSearchParams } from 'react-router-dom'
 import { format } from 'date-fns'
 import { ChevronDown, ChevronLeft, ChevronRight, Search, Undo2, Building2, User, Box, Loader2, MoreVertical } from 'lucide-react'
@@ -46,7 +47,7 @@ export default function ConsumptionLogsPage() {
 
   // Inventory detail modal
   const [modalItem, setModalItem] = useState<InventoryItem | null>(null)
-  const [openMenuId, setOpenMenuId] = useState<number | null>(null)
+  const [openMenu, setOpenMenu] = useState<{ id: number; date: string; top: number; right: number } | null>(null)
 
   const openInventoryModal = (item: BucketItem) => {
     const inv: InventoryItem = {
@@ -110,11 +111,11 @@ export default function ConsumptionLogsPage() {
 
   // Close row menu on outside click
   useEffect(() => {
-    if (openMenuId === null) return
-    const close = () => setOpenMenuId(null)
+    if (openMenu === null) return
+    const close = () => setOpenMenu(null)
     document.addEventListener('mousedown', close)
     return () => document.removeEventListener('mousedown', close)
-  }, [openMenuId])
+  }, [openMenu])
 
   // Resolve siteId & cuId from URL path params via API
   useEffect(() => {
@@ -558,14 +559,14 @@ export default function ConsumptionLogsPage() {
                             <div className="overflow-x-auto custom-scrollbar">
                               <table
                                 className="w-full text-left border-collapse table-fixed"
-                                style={{ minWidth: '720px' }}
+                                style={{ minWidth: '760px' }}
                               >
                                 <colgroup>
                                   <col style={{ width: '44px' }} />
                                   <col />
                                   <col style={{ width: '22%' }} />
                                   <col style={{ width: '100px' }} />
-                                  <col style={{ width: '150px' }} />
+                                  <col style={{ width: '180px' }} />
                                 </colgroup>
                                 <thead>
                                   <tr className="bg-surface/60">
@@ -579,7 +580,7 @@ export default function ConsumptionLogsPage() {
                                 <tbody className="divide-y divide-border-main/30">
                                   {items.map((item, idx) => {
                                     const emailName = item.consumedByEmail?.split('@')[0] || 'Unknown'
-                                    const isMenuOpen = openMenuId === item.cuBillId
+                                    const isMenuOpen = openMenu?.id === item.cuBillId
 
                                     return (
                                       <tr
@@ -618,7 +619,7 @@ export default function ConsumptionLogsPage() {
                                           </div>
                                         </td>
                                         <td
-                                          className="px-4 py-5 text-right align-middle"
+                                          className="pl-3 pr-2 py-5 text-right align-middle"
                                           onClick={e => e.stopPropagation()}
                                           onMouseDown={e => e.stopPropagation()}
                                         >
@@ -629,30 +630,20 @@ export default function ConsumptionLogsPage() {
                                                 <span className="text-[9px] font-bold text-emerald-600 mt-1">₹{item.tax.toFixed(2)} tax</span>
                                               )}
                                             </div>
-                                            <div className="relative">
+                                            <div>
                                               <button
-                                                onClick={() => setOpenMenuId(isMenuOpen ? null : item.cuBillId)}
+                                                onClick={(e) => {
+                                                  if (isMenuOpen) {
+                                                    setOpenMenu(null)
+                                                  } else {
+                                                    const rect = e.currentTarget.getBoundingClientRect()
+                                                    setOpenMenu({ id: item.cuBillId, date: bucket.consumptionDate, top: rect.bottom + 8, right: window.innerWidth - rect.right })
+                                                  }
+                                                }}
                                                 className={`w-9 h-9 flex items-center justify-center rounded-xl text-muted-text transition-all cursor-pointer ${isMenuOpen ? 'bg-surface text-primary-text shadow-sm' : 'hover:bg-surface hover:text-primary-text'}`}
                                               >
                                                 <MoreVertical size={18} />
                                               </button>
-                                              {isMenuOpen && (
-                                                <div className="absolute right-0 top-[calc(100%+8px)] z-[110] bg-card border border-border-main rounded-2xl shadow-[0_12px_40px_rgba(0,0,0,0.2)] overflow-hidden min-w-[220px]">
-                                                  <div className="p-1.5">
-                                                    <button
-                                                      type="button"
-                                                      onClick={() => {
-                                                        handleRevert(item.cuBillId, bucket.consumptionDate)
-                                                        setOpenMenuId(null)
-                                                      }}
-                                                      className="w-full flex items-center gap-3 px-4 py-3.5 rounded-xl text-[13px] font-black text-rose-500 hover:bg-rose-500/10 transition-colors cursor-pointer whitespace-nowrap"
-                                                    >
-                                                      <Undo2 size={16} strokeWidth={3} />
-                                                      Revert to Inventory
-                                                    </button>
-                                                  </div>
-                                                </div>
-                                              )}
                                             </div>
                                           </div>
                                         </td>
@@ -673,6 +664,32 @@ export default function ConsumptionLogsPage() {
           )}
         </div>
       </div>
+
+      {/* ── Kebab dropdown portal (escapes overflow containers) ── */}
+      {openMenu !== null && createPortal(
+        <div
+          style={{ position: 'fixed', top: openMenu.top, right: openMenu.right, zIndex: 9999 }}
+          onMouseDown={e => e.stopPropagation()}
+          onClick={e => e.stopPropagation()}
+        >
+          <div className="bg-card border border-border-main rounded-2xl shadow-[0_12px_40px_rgba(0,0,0,0.2)] overflow-hidden min-w-[220px]">
+            <div className="p-1.5">
+              <button
+                type="button"
+                onClick={() => {
+                  handleRevert(openMenu.id, openMenu.date)
+                  setOpenMenu(null)
+                }}
+                className="w-full flex items-center gap-3 px-4 py-3.5 rounded-xl text-[13px] font-black text-rose-500 hover:bg-rose-500/10 transition-colors cursor-pointer whitespace-nowrap"
+              >
+                <Undo2 size={16} strokeWidth={3} />
+                Revert to Inventory
+              </button>
+            </div>
+          </div>
+        </div>,
+        document.body
+      )}
     </div>
   )
 }

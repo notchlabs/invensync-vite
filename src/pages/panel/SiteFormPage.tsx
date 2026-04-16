@@ -13,6 +13,7 @@ import toast from 'react-hot-toast'
 import Skeleton from 'react-loading-skeleton'
 import { PageHeader } from '../../components/common/PageHeader'
 import { CustomSelect } from '../../components/common/CustomSelect'
+import { DatePicker } from '../../components/common/DatePicker'
 import { MultiSelectUser, type SelectedUser } from '../../components/common/MultiSelectUser'
 import { ApiService } from '../../services/common/apiService'
 import { SitesService, type SiteCreatePayload, type SiteUpdatePayload } from '../../services/sitesService'
@@ -750,15 +751,13 @@ export default function SiteFormPage() {
 
             {/* Start Date */}
             <div>
-              <label htmlFor="start-date" className="block text-[12px] font-semibold text-secondary-text mb-1.5">
+              <label className="block text-[12px] font-semibold text-secondary-text mb-1.5">
                 Start Date <span className="text-rose-500">*</span>
               </label>
-              <input
-                id="start-date"
-                type="date"
+              <DatePicker
                 value={startDate}
-                onChange={e => setStartDate(e.target.value)}
-                className="w-full h-[42px] px-4 bg-surface border border-border-main rounded-lg text-[13px] font-semibold text-primary-text outline-none focus:border-secondary-text focus:ring-2 focus:ring-accent/5 transition-all"
+                onChange={setStartDate}
+                placeholder="Select start date"
               />
             </div>
 
@@ -800,16 +799,14 @@ export default function SiteFormPage() {
             {/* End Date — only when not in progress */}
             {!isInProgress && (
               <div>
-                <label htmlFor="end-date" className="block text-[12px] font-semibold text-secondary-text mb-1.5">
+                <label className="block text-[12px] font-semibold text-secondary-text mb-1.5">
                   End Date
                 </label>
-                <input
-                  id="end-date"
-                  type="date"
+                <DatePicker
                   value={endDate}
+                  onChange={setEndDate}
+                  placeholder="Select end date"
                   min={startDate || undefined}
-                  onChange={e => setEndDate(e.target.value)}
-                  className="w-full h-[42px] px-4 bg-surface border border-border-main rounded-lg text-[13px] font-semibold text-primary-text outline-none focus:border-secondary-text focus:ring-2 focus:ring-accent/5 transition-all"
                 />
               </div>
             )}

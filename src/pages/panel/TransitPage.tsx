@@ -407,24 +407,21 @@ export default function TransitPage() {
 
         {/* Date range */}
         <div className="min-w-[220px]">
-          <p className="text-[10px] font-black text-muted-text uppercase tracking-widest mb-1 pl-1">Bill Date</p>
           <AdvancedDateRangePicker
             selectedRange={dateRange}
             onRangeChange={setDateRange}
-            placeholder="Select range"
+            placeholder="Select transfer range"
           />
         </div>
 
         {/* From site */}
         <div className="min-w-[190px]">
-          <p className="text-[10px] font-black text-muted-text uppercase tracking-widest mb-1">From Site</p>
-          <SiteFilter selectedItems={fromSites} onSelectionChange={setFromSites} />
+          <SiteFilter selectedItems={fromSites} placeholder="Select From site" onSelectionChange={setFromSites} />
         </div>
 
         {/* To site */}
         <div className="min-w-[190px]">
-          <p className="text-[10px] font-black text-muted-text uppercase tracking-widest mb-1">To Site</p>
-          <SiteFilter selectedItems={toSites} onSelectionChange={setToSites} />
+          <SiteFilter selectedItems={toSites} placeholder="Select To site"  onSelectionChange={setToSites} />
         </div>
 
 

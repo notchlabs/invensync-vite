@@ -6,17 +6,18 @@ import type { Site } from '../../types/inventory'
 interface SiteFilterProps {
   selectedItems: Site[]
   onSelectionChange: (selectedSites: Site[]) => void
-  className?: string
+  className?: string,
+  placeholder?: string
 }
 
-export function SiteFilter({ selectedItems, onSelectionChange, className }: SiteFilterProps) {
+export function SiteFilter({ selectedItems, onSelectionChange, className, placeholder }: SiteFilterProps) {
   const handleChange = (items: Site[]) => {
     onSelectionChange(items)
   }
 
   return (
     <InfiniteScrollMultiSelect<Site>
-      placeholder="Select Site(s)"
+      placeholder={placeholder || "Select Site(s)"}
       fetchData={(page, size, search) => InventoryService.fetchSites(page, size, search)}
       keyExtractor={(site) => site.id}
       renderLabel={(site) => (

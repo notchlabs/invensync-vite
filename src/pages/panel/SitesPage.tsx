@@ -194,7 +194,7 @@ export default function SitesPage() {
                   </h3>
                   <button
                     onClick={e => { e.stopPropagation(); navigate(`/app/panel/sites/edit?name=${encodeURIComponent(site.name)}`) }}
-                    className="p-1.5 hover:bg-surface rounded-lg transition-colors text-muted-text hover:text-secondary-text ml-2 shrink-0 relative z-10"
+                    className="p-1.5 hover:bg-surface rounded-lg transition-colors cursor-pointer text-muted-text hover:text-secondary-text ml-2 shrink-0 relative z-10"
                   >
                     <Pencil size={13} />
                   </button>

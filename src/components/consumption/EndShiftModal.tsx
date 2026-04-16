@@ -50,7 +50,7 @@ export const EndShiftModal = ({ isOpen, onClose, onConfirm, isLoading }: EndShif
     }
   };
 
-  const isReadyToConfirm = mopExtractedValue !== null && posExtractedValue !== null && !isExtractingMop && !isExtractingPos;
+  const isReadyToConfirm = !isExtractingMop && !isExtractingPos;
 
   if (!isOpen) return null;
 
@@ -205,7 +205,7 @@ export const EndShiftModal = ({ isOpen, onClose, onConfirm, isLoading }: EndShif
             Cancel
           </button>
           <button 
-            onClick={() => isReadyToConfirm && onConfirm(mopExtractedValue, posExtractedValue)}
+            onClick={() => onConfirm(mopExtractedValue ?? 0, posExtractedValue ?? 0)}
             disabled={isLoading || !isReadyToConfirm}
             className="w-full md:w-auto px-8 py-2.5 bg-primary-text text-card text-[13px] font-bold rounded-xl hover:opacity-90 disabled:opacity-50 transition-all shadow-lg flex items-center justify-center gap-2"
           >
