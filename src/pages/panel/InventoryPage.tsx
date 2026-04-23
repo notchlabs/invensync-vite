@@ -216,7 +216,20 @@ export default function InventoryPage() {
         );
         const items = res.data.content || [];
 
-        setTableData((prev) => (reset ? items : [...prev, ...items]));
+        setTableData((prev) => {
+          const merged = reset ? items : [...prev, ...items]
+          const seen = new Map<string, InventoryItem>()
+          for (const item of merged) {
+            const key = `${item.productId}-${item.siteId}`
+            const existing = seen.get(key)
+            if (existing) {
+              seen.set(key, { ...existing, quantity: existing.quantity + item.quantity })
+            } else {
+              seen.set(key, item)
+            }
+          }
+          return Array.from(seen.values())
+        });
         setTotalElements(res.data.totalElements || 0);
 
         pageRef.current += 1;
@@ -286,17 +299,17 @@ export default function InventoryPage() {
     setIsEditOpen(true);
   }, []);
 
-  const handleConsumeAction = useCallback((_keys: Set<string | number>) => {
+  const handleConsumeAction = useCallback(() => {
     setConsumeItems(Array.from(selectedItems.values()));
     setIsConsumeOpen(true);
   }, [selectedItems]);
 
-  const handleCompositeAction = useCallback((_keys: Set<string | number>) => {
+  const handleCompositeAction = useCallback(() => {
     setCompositeItems(Array.from(selectedItems.values()));
     setIsCompositeOpen(true);
   }, [selectedItems]);
 
-  const handleTransferAction = useCallback((_keys: Set<string | number>) => {
+  const handleTransferAction = useCallback(() => {
     setTransferItems(Array.from(selectedItems.values()));
     setIsTransferOpen(true);
   }, [selectedItems]);

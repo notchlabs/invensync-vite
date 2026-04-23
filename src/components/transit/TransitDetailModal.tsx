@@ -40,11 +40,14 @@ export function TransitDetailModal({ transfer, onClose, onStatusChange }: Props)
       .then(res => setItems(res.data ?? []))
       .catch((err: unknown) => {
         if (!navigator.onLine) {
+          // Silently handle offline
         } else if (
           (err instanceof Response && err.status === 502) ||
           (err && typeof err === 'object' && 'status' in err && (err as { status: number }).status === 502) ||
           (err instanceof Error && err.message.includes('502'))
-        ) {}
+        ) {
+          // Silently handle 502
+        }
       })
       .finally(() => setIsLoading(false))
   }, [transfer.id])

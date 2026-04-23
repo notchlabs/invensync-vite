@@ -263,47 +263,24 @@ export default function ConsumptionPage() {
                 <Package size={32} className="text-muted-text/30 mb-3" />
                 <p className="text-[13px] font-bold text-muted-text">No inventory found</p>
               </div>
-            ) : (
-              <>
-                {/* IN STOCK */}
-                <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3">
-                  {invItems.filter(i => i.quantity > 0).map(item => {
-                    const cartEntry = cart.get(item.productId)
-                    return (
-                      <ProductCard
-                        key={`${item.productId}-${item.siteId}`}
-                        productName={item.productName}
-                        vendorName={item.vendorNames}
-                        price={item.mrp}
-                        unit={item.unit}
-                        imageUrl={item.imageUrl}
-                        cartQty={cartEntry?.qty ?? 0}
-                        onAdd={() => addToCart({ productId: item.productId, productName: item.productName, unit: item.unit, price: item.mrp, imageUrl: item.imageUrl, source: 'inventory' })}
-                        onRemove={() => removeFromCart(item.productId)}
-                        isOutOfStock={false}
-                      />
-                    )
-                  })}
-                </div>
-
-                {/* OUT OF STOCK SEPARATOR & GRID */}
-                {invItems.some(i => i.quantity <= 0) && (
+            ) : (() => {
+                const seen = new Map<number, InventoryItem>()
+                for (const item of invItems) {
+                  const existing = seen.get(item.productId)
+                  if (!existing || item.quantity > existing.quantity) seen.set(item.productId, item)
+                }
+                const deduped = Array.from(seen.values())
+                const inStock = deduped.filter(i => i.quantity > 0)
+                const outOfStock = deduped.filter(i => i.quantity <= 0)
+                return (
                   <>
-                    <div className="flex items-center gap-4 my-8 max-w-[800px] mx-auto opacity-80">
-                      <hr className="flex-1 border-border-main" />
-                      <div className="px-4 py-1.5 rounded-full border border-rose-500/20 bg-rose-500/5 text-rose-600 text-[11px] font-black tracking-wide flex items-center gap-1.5 shrink-0 shadow-sm">
-                        <span className="w-1.5 h-1.5 rounded-full bg-rose-500" />
-                        Out of Stock • {invItems.filter(i => i.quantity <= 0).length} items
-                      </div>
-                      <hr className="flex-1 border-border-main" />
-                    </div>
-
+                    {/* IN STOCK */}
                     <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3">
-                      {invItems.filter(i => i.quantity <= 0).map(item => {
+                      {inStock.map(item => {
                         const cartEntry = cart.get(item.productId)
                         return (
                           <ProductCard
-                            key={`${item.productId}-${item.siteId}`}
+                            key={item.productId}
                             productName={item.productName}
                             vendorName={item.vendorNames}
                             price={item.mrp}
@@ -312,15 +289,49 @@ export default function ConsumptionPage() {
                             cartQty={cartEntry?.qty ?? 0}
                             onAdd={() => addToCart({ productId: item.productId, productName: item.productName, unit: item.unit, price: item.mrp, imageUrl: item.imageUrl, source: 'inventory' })}
                             onRemove={() => removeFromCart(item.productId)}
-                            isOutOfStock={true}
+                            isOutOfStock={false}
                           />
                         )
                       })}
                     </div>
+
+                    {/* OUT OF STOCK SEPARATOR & GRID */}
+                    {outOfStock.length > 0 && (
+                      <>
+                        <div className="flex items-center gap-4 my-8 max-w-[800px] mx-auto opacity-80">
+                          <hr className="flex-1 border-border-main" />
+                          <div className="px-4 py-1.5 rounded-full border border-rose-500/20 bg-rose-500/5 text-rose-600 text-[11px] font-black tracking-wide flex items-center gap-1.5 shrink-0 shadow-sm">
+                            <span className="w-1.5 h-1.5 rounded-full bg-rose-500" />
+                            Out of Stock • {outOfStock.length} items
+                          </div>
+                          <hr className="flex-1 border-border-main" />
+                        </div>
+
+                        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3">
+                          {outOfStock.map(item => {
+                            const cartEntry = cart.get(item.productId)
+                            return (
+                              <ProductCard
+                                key={item.productId}
+                                productName={item.productName}
+                                vendorName={item.vendorNames}
+                                price={item.mrp}
+                                unit={item.unit}
+                                imageUrl={item.imageUrl}
+                                cartQty={cartEntry?.qty ?? 0}
+                                onAdd={() => addToCart({ productId: item.productId, productName: item.productName, unit: item.unit, price: item.mrp, imageUrl: item.imageUrl, source: 'inventory' })}
+                                onRemove={() => removeFromCart(item.productId)}
+                                isOutOfStock={true}
+                              />
+                            )
+                          })}
+                        </div>
+                      </>
+                    )}
                   </>
-                )}
-              </>
-            )}
+                )
+              })()
+            }
             <div ref={invSentinel} className="h-4" />
             {invLoading && invItems.length > 0 && (
               <div className="py-4 flex justify-center">

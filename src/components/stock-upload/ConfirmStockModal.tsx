@@ -51,22 +51,6 @@ export function ConfirmStockModal({ isOpen, onClose, queue, onSuccess }: Confirm
           } else {
             unique.push(item);
           }
-          // Fetch product images + mark new vs existing
-          if (item.extractedData.products && Array.isArray(item.extractedData.products)) {
-            await Promise.all(
-              item.extractedData.products.map(async (p) => {
-                if (p.name) {
-                  try {
-                    const imgRes = await StockUploadService.searchProductCache(p.name);
-                    if (imgRes.data) {
-                      p.imageUrl = imgRes.data.imageUrl || p.imageUrl;
-                      p._cacheId = imgRes.data.id;
-                    }
-                  } catch { /* leave as new */ }
-                }
-              })
-            );
-          }
         } catch { unique.push(item); }
       }
     }
@@ -163,6 +147,8 @@ export function ConfirmStockModal({ isOpen, onClose, queue, onSuccess }: Confirm
         taxPerc: 0,
         hsnCode: 0, 
         hsnName: '',
+        existingProduct: false,
+        productId: null,
         discountPercentage: 0 
       }
     ]);
@@ -252,8 +238,7 @@ export function ConfirmStockModal({ isOpen, onClose, queue, onSuccess }: Confirm
             totalIncludingTax: qty * price + totalTaxLine,
             imageUrl: p.imageUrl || null,
           };
-          // Only include productId for existing (mapped) products
-          if (p._cacheId) product.productId = p._cacheId;
+          if (p.productId) product.productId = p.productId;
           return product;
         }),
         invoiceNumber: data.invoiceNumber || null,

@@ -27,7 +27,7 @@ export function ProductPickerCell({ product, index, onUpdate, disabled }: Produc
   const loadingRef = useRef(false);
   const hasMoreRef = useRef(true);
 
-  const isNew = !product._cacheId;
+  const isNew = !product.existingProduct;
 
   // Position dropdown using fixed coords relative to trigger
   const updatePosition = useCallback(() => {
@@ -136,7 +136,8 @@ export function ProductPickerCell({ product, index, onUpdate, disabled }: Produc
     onUpdate(index, {
       name: p.name,
       imageUrl: p.imageUrl ?? product.imageUrl ?? null,
-      _cacheId: p.id,
+      existingProduct: 'true',
+      productId: p.id,
     });
     setIsOpen(false);
   };
@@ -191,7 +192,7 @@ export function ProductPickerCell({ product, index, onUpdate, disabled }: Produc
           {/* List */}
           <div className="flex-1 overflow-y-auto">
             {items.map(item => {
-              const isSelected = product._cacheId === item.id;
+              const isSelected = product.productId === item.id;
               return (
                 <button
                   key={item.id}

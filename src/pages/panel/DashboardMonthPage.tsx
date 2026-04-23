@@ -3,8 +3,20 @@ import { useParams } from 'react-router-dom'
 import { ChevronDown, Clock, AlertTriangle, TrendingUp, TrendingDown } from 'lucide-react'
 import Skeleton from 'react-loading-skeleton'
 import { SalesService, type MonthlySummary, type MonthlySummaryData, type ConsumptionBucket } from '../../services/salesService'
+import { ConsumptionService, type BucketItem } from '../../services/consumptionService'
 import { ENV } from '../../config/env'
 import { formatIndianNumber } from '../../utils/numberFormat'
+
+const fmtTime = (iso?: string) => {
+  if (!iso) return null
+  const match = iso.match(/T(\d{2}):(\d{2})/)
+  if (!match) return null
+  let h = parseInt(match[1])
+  const m = match[2]
+  const ampm = h >= 12 ? 'PM' : 'AM'
+  h = h % 12 || 12
+  return `${h}:${m} ${ampm}`
+}
 
 const SITE_ID = Number(ENV.DEFAULT_SITE_ID)
 const CU_ID   = Number(ENV.DEFAULT_CONSUMPTION_UNIT_ID)
@@ -153,6 +165,35 @@ export default function DashboardMonthPage() {
   const [buckets, setBuckets] = useState<ConsumptionBucket[]>([])
   const [loading, setLoading] = useState(true)
   const [expandedDate, setExpandedDate] = useState<string | null>(null)
+  const [dayItems, setDayItems] = useState<Record<string, BucketItem[]>>({})
+  const [dayItemsLoading, setDayItemsLoading] = useState<Record<string, boolean>>({})
+
+  const handleToggleDate = (date: string) => {
+    if (expandedDate === date) {
+      setExpandedDate(null)
+      return
+    }
+    setExpandedDate(date)
+    if (dayItems[date] !== undefined) return
+    setDayItemsLoading(prev => ({ ...prev, [date]: true }))
+    ConsumptionService.fetchBucketItems({
+      siteId: SITE_ID,
+      consumptionUnitId: CU_ID,
+      fromDate: date,
+      toDate: date,
+      sortDir: 'ASC',
+      productName: '',
+    })
+      .then(res => {
+        setDayItems(prev => ({ ...prev, [date]: res.data ?? [] }))
+      })
+      .catch(() => {
+        setDayItems(prev => ({ ...prev, [date]: [] }))
+      })
+      .finally(() => {
+        setDayItemsLoading(prev => ({ ...prev, [date]: false }))
+      })
+  }
 
   // Adjusting state during render to avoid cascading renders in useEffect
   const [prevMonthYear, setPrevMonthYear] = useState(monthYear)
@@ -354,26 +395,33 @@ export default function DashboardMonthPage() {
               return (
                 <div key={b.consumptionDate} className="bg-card border border-border-main rounded-2xl overflow-hidden">
                   <button
-                    onClick={() => setExpandedDate(isOpen ? null : b.consumptionDate)}
-                    className="w-full flex items-center gap-4 px-4 py-3.5 hover:bg-surface transition-colors cursor-pointer"
+                    onClick={() => handleToggleDate(b.consumptionDate)}
+                    className="w-full flex flex-col sm:flex-row sm:items-center gap-2 sm:gap-4 px-4 py-3.5 hover:bg-surface transition-colors cursor-pointer text-left"
                   >
-                    <div className="text-left min-w-[110px]">
-                      <p className="text-[13px] font-black text-primary-text leading-tight">{b.label}</p>
-                      <p className="text-[11px] font-medium text-muted-text mt-0.5">{dayName(b.consumptionDate)}</p>
+                    {/* Date + chevron row (mobile only collapses chevron to top-right) */}
+                    <div className="flex items-center justify-between sm:block sm:min-w-[110px]">
+                      <div>
+                        <p className="text-[13px] font-black text-primary-text leading-tight">{b.label}</p>
+                        <p className="text-[11px] font-medium text-muted-text mt-0.5">{dayName(b.consumptionDate)}</p>
+                      </div>
+                      <ChevronDown
+                        size={15}
+                        className={`sm:hidden text-muted-text shrink-0 transition-transform duration-200 ${isOpen ? 'rotate-180' : ''}`}
+                      />
                     </div>
 
                     <div className="flex-1 grid grid-cols-3 gap-2">
-                      <div className="text-left">
+                      <div>
                         <p className="text-[10px] font-bold text-muted-text uppercase tracking-wider">Sale</p>
-                        <p className="text-[13px] font-black text-primary-text">₹{formatIndianNumber(b.totalSales)}</p>
+                        <p className="text-[12px] sm:text-[13px] font-black text-primary-text">₹{formatIndianNumber(b.totalSales)}</p>
                       </div>
-                      <div className="text-left">
+                      <div>
                         <p className="text-[10px] font-bold text-muted-text uppercase tracking-wider">Purchase</p>
-                        <p className="text-[13px] font-black text-primary-text">₹{formatIndianNumber(b.totalAmountIncTax)}</p>
+                        <p className="text-[12px] sm:text-[13px] font-black text-primary-text">₹{formatIndianNumber(b.totalAmountIncTax)}</p>
                       </div>
-                      <div className="text-left">
+                      <div>
                         <p className="text-[10px] font-bold text-muted-text uppercase tracking-wider">Profit</p>
-                        <p className={`text-[13px] font-black ${isProfit ? 'text-emerald-600 dark:text-emerald-400' : 'text-rose-500'}`}>
+                        <p className={`text-[12px] sm:text-[13px] font-black ${isProfit ? 'text-emerald-600 dark:text-emerald-400' : 'text-rose-500'}`}>
                           ₹{formatIndianNumber(Math.abs(profit))}
                         </p>
                         <p className={`text-[10px] font-bold ${isProfit ? 'text-emerald-500' : 'text-rose-500'}`}>
@@ -384,18 +432,66 @@ export default function DashboardMonthPage() {
 
                     <ChevronDown
                       size={15}
-                      className={`text-muted-text shrink-0 transition-transform duration-200 ${isOpen ? 'rotate-180' : ''}`}
+                      className={`hidden sm:block text-muted-text shrink-0 transition-transform duration-200 ${isOpen ? 'rotate-180' : ''}`}
                     />
                   </button>
 
                   {isOpen && (
-                    <div className="px-4 pb-3.5 border-t border-border-main/60 pt-3 flex items-center justify-between">
-                      <span className="text-[12px] font-medium text-secondary-text">
-                        {b.itemsCount} item{b.itemsCount !== 1 ? 's' : ''} consumed
-                      </span>
-                      <span className="text-[11px] font-bold text-muted-text">
-                        {b.consumptionDate}
-                      </span>
+                    <div className="border-t border-border-main/60">
+                      <div className="px-4 py-3 flex items-center justify-between">
+                        <span className="text-[11px] font-black text-muted-text uppercase tracking-widest">
+                          Products Sold ({dayItemsLoading[b.consumptionDate] ? '…' : (dayItems[b.consumptionDate]?.length ?? b.itemsCount)})
+                        </span>
+                      </div>
+                      {dayItemsLoading[b.consumptionDate] ? (
+                        <div className="px-4 pb-4 flex flex-col gap-2">
+                          <Skeleton height={56} borderRadius={12} />
+                          <Skeleton height={56} borderRadius={12} />
+                        </div>
+                      ) : (dayItems[b.consumptionDate] ?? []).length === 0 ? (
+                        <p className="px-4 pb-4 text-[13px] text-muted-text font-medium text-center">No items found</p>
+                      ) : (
+                        <div className="flex flex-col divide-y divide-border-main/50 pb-1">
+                          {(dayItems[b.consumptionDate] ?? []).map((item) => {
+                            const saleTotal = item.cash + item.upi + item.noBill + item.loyalty
+                            const time = fmtTime(item.consumedDate)
+                            return (
+                              <div key={item.cuBillId} className="flex items-start gap-3 px-4 py-2.5">
+                                <div className="relative shrink-0 mt-0.5">
+                                  <div className="w-10 h-10 rounded-xl border border-border-main bg-surface flex items-center justify-center overflow-hidden">
+                                    {item.imageUrl
+                                      ? <img src={item.imageUrl} alt={item.productName} className="w-full h-full object-contain" />
+                                      : <span className="text-[12px] font-black text-muted-text/50">{item.productName.charAt(0)}</span>
+                                    }
+                                  </div>
+                                  {item.qty > 1 && (
+                                    <span className="absolute -top-1 -right-1 w-4 h-4 rounded-full bg-primary-text text-card text-[9px] font-black flex items-center justify-center">
+                                      {item.qty}
+                                    </span>
+                                  )}
+                                </div>
+                                <div className="flex-1 min-w-0">
+                                  <div className="flex items-baseline justify-between gap-2">
+                                    <p className="text-[13px] font-bold text-primary-text truncate">{item.productName}</p>
+                                    <p className="text-[14px] font-black text-primary-text shrink-0">₹{formatIndianNumber(saleTotal)}</p>
+                                  </div>
+                                  <div className="flex items-center justify-between gap-2 mt-0.5 flex-wrap">
+                                    <p className="text-[11px] text-muted-text font-medium">
+                                      Cash ₹{item.cash} · UPI ₹{item.upi} · No Bill ₹{item.noBill}
+                                    </p>
+                                    {time && (
+                                      <p className="text-[11px] text-muted-text font-medium flex items-center gap-1 shrink-0">
+                                        <Clock size={10} className="text-muted-text/50" />{time}
+                                      </p>
+                                    )}
+                                  </div>
+                                  <p className="text-[10px] text-muted-text/60 font-medium mt-0.5">Purchase ₹{item.amountIncTax.toFixed(2)}</p>
+                                </div>
+                              </div>
+                            )
+                          })}
+                        </div>
+                      )}
                     </div>
                   )}
                 </div>

@@ -3,6 +3,23 @@ import { formatDateToDisplay } from '../../utils/dateUtils';
 import Skeleton from 'react-loading-skeleton';
 import { motion, AnimatePresence } from 'framer-motion';
 
+const fmtTime = (iso?: string) => {
+  if (!iso) return null
+  // Bare "T14:30" constant (no timezone) → parse directly
+  const bare = iso.match(/^T(\d{2}):(\d{2})/)
+  if (bare) {
+    let h = parseInt(bare[1])
+    const m = bare[2]
+    const ampm = h >= 12 ? 'PM' : 'AM'
+    h = h % 12 || 12
+    return `${h}:${m} ${ampm}`
+  }
+  // Real UTC ISO string → append Z if no offset present so browser applies local +5:30
+  const normalized = /(Z|[+-]\d{2}:?\d{2})$/.test(iso) ? iso : iso + 'Z'
+  const d = new Date(normalized)
+  return d.toLocaleTimeString('en-US', { hour: 'numeric', minute: '2-digit', hour12: true })
+}
+
 interface ReportCardProps {
   type: 'shift' | 'day';
   title: string;
@@ -18,9 +35,11 @@ interface ReportCardProps {
     loyaltyTotal?: number;
   };
   isLoading?: boolean;
+  lastUpdated?: string;
+  isConcluded?: boolean;
 }
 
-export const ReportCard = ({ type, title, date, data, isLoading }: ReportCardProps) => {
+export const ReportCard = ({ type, title, date, data, isLoading, lastUpdated, isConcluded }: ReportCardProps) => {
   const isDayReport = type === 'day';
   const isNightShift = title?.toLowerCase().includes('shift b') || title?.toLowerCase().includes('night');
   const isOrangeShift = !isDayReport && !isNightShift;
@@ -104,6 +123,19 @@ export const ReportCard = ({ type, title, date, data, isLoading }: ReportCardPro
                 {isDayReport ? <CalendarIcon size={16} /> : <Clock size={16} />}
                 {title} - {formatDateToDisplay(date)}
               </div>
+              {fmtTime(lastUpdated) && (
+                <div className="flex flex-col items-end gap-0.5">
+                  <span className={`flex items-center gap-1 text-[11px] font-semibold ${headerText} opacity-70`}>
+                    <Clock size={11} />
+                    {fmtTime(lastUpdated)}
+                  </span>
+                  {isDayReport && !isConcluded && (
+                    <span className="text-[9px] font-bold uppercase tracking-wider text-amber-500">
+                      Last updated
+                    </span>
+                  )}
+                </div>
+              )}
             </div>
 
             <div className="p-5 flex flex-col gap-6">

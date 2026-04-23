@@ -2,6 +2,8 @@
 import { ReportCard } from './ReportCard';
 import type { Shift } from '../../services/consumptionService';
 
+const DAY_SHIFT_END_TIME = 'T14:30'
+
 interface ConsumptionSummaryProps {
   shifts: Shift[];
   selectedDate: string;
@@ -16,6 +18,8 @@ interface ConsumptionSummaryProps {
     loyaltyTotal: number;
   };
   isLoading?: boolean;
+  lastUpdated?: string;
+  isConcluded?: boolean;
 }
 
 export const ConsumptionSummary = ({
@@ -23,6 +27,8 @@ export const ConsumptionSummary = ({
   selectedDate,
   dayAggr,
   isLoading,
+  lastUpdated,
+  isConcluded,
 }: ConsumptionSummaryProps) => {
   const gridClasses = `grid grid-cols-1 gap-6 ${shifts.length <= 1 ? 'md:grid-cols-2' : 'md:grid-cols-3 lg:grid-cols-3'}`;
 
@@ -38,32 +44,37 @@ export const ConsumptionSummary = ({
 
   return (
     <div className={gridClasses}>
-      {shifts.map(shift => (
-        <ReportCard 
-          key={shift.id}
-          type="shift"
-          title={`Shift ${shift.shiftType}`}
-          date={selectedDate}
-          data={{
-            wbcSale: shift.wbcSale,
-            wStoreSale: shift.wstoreSale,
-            totalSale: shift.totalSale,
-            billedMop: shift.billedAmount,
-            nonBilled: shift.nonBilledAmount,
-            upiTotal: shift.upiAndCardAmount,
-            cashTotal: shift.cashAmount,
-            loyaltyTotal: shift.loyalty,
-          }}
-          isLoading={isLoading}
-        />
-      ))}
-      
-      <ReportCard 
+      {shifts.map(shift => {
+        return (
+          <ReportCard
+            key={shift.id}
+            type="shift"
+            title={`Shift ${shift.shiftType}`}
+            date={selectedDate}
+            data={{
+              wbcSale: shift.wbcSale,
+              wStoreSale: shift.wstoreSale,
+              totalSale: shift.totalSale,
+              billedMop: shift.billedAmount,
+              nonBilled: shift.nonBilledAmount,
+              upiTotal: shift.upiAndCardAmount,
+              cashTotal: shift.cashAmount,
+              loyaltyTotal: shift.loyalty,
+            }}
+            isLoading={isLoading}
+            lastUpdated={shift.shiftType === 'DAY' ? DAY_SHIFT_END_TIME : lastUpdated}
+          />
+        )
+      })}
+
+      <ReportCard
         type="day"
         title="Day Report"
         date={selectedDate}
         data={dayAggr}
         isLoading={isLoading}
+        lastUpdated={lastUpdated}
+        isConcluded={isConcluded}
       />
     </div>
   );

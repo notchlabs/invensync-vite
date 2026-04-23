@@ -13,10 +13,22 @@ export function ConfirmConsumptionModal({
     cart: Map<number, CartEntry>
     onClose: () => void
     onRemove: (id: number) => void
-    onConfirm: (settings: Map<number, ItemSettings>) => void
+    onConfirm: (settings: Map<number, ItemSettings>) => void | Promise<void>
   }) {
     const entries = Array.from(cart.values())
   
+    const [isConfirming, setIsConfirming] = useState(false)
+
+    const handleConfirm = async () => {
+      if (isConfirming) return
+      setIsConfirming(true)
+      try {
+        await onConfirm(settings)
+      } finally {
+        setIsConfirming(false)
+      }
+    }
+
     // Per-item settings — initialised from cart
     const [settings, setSettings] = useState<Map<number, ItemSettings>>(() => {
       const m = new Map<number, ItemSettings>()
@@ -186,10 +198,14 @@ export function ConfirmConsumptionModal({
               Cancel
             </button>
             <button
-              onClick={() => onConfirm(settings)}
-              className="py-3.5 rounded-2xl bg-primary-text text-card text-[14px] font-black hover:opacity-90 transition-opacity cursor-pointer"
+              onClick={handleConfirm}
+              disabled={isConfirming}
+              className="py-3.5 rounded-2xl bg-primary-text text-card text-[14px] font-black hover:opacity-90 transition-opacity cursor-pointer disabled:opacity-60 disabled:cursor-not-allowed flex items-center justify-center gap-2"
             >
-              Confirm
+              {isConfirming && (
+                <span className="w-4 h-4 border-2 border-card/40 border-t-card rounded-full animate-spin shrink-0" />
+              )}
+              {isConfirming ? 'Confirming…' : 'Confirm'}
             </button>
           </div>
         </motion.div>

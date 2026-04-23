@@ -78,6 +78,7 @@ export interface BucketItem {
   cash: number;
   upi: number;
   noBill: number;
+  consumedDate?: string;
 }
 
 export interface ExistingSales {
@@ -86,6 +87,7 @@ export interface ExistingSales {
   recordedPosAmountByManager: number;
   cashCollectedByManager: number;
   upiCollectedByManager: number;
+  createdAt?: string;
 }
 
 export interface ConsumptionUnitInfo {

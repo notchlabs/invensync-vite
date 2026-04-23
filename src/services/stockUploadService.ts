@@ -14,7 +14,8 @@ export interface ExtractedProduct {
   sgstInPerc: number;
   taxPerc: number;
   imageUrl?: string | null;
-  _cacheId?: number;
+  existingProduct: boolean;
+  productId?: number | null;
 }
 
 export interface ExtractedVendor {

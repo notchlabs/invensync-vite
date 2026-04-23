@@ -1,13 +1,13 @@
 import { useState, useRef, useEffect, useCallback } from 'react';
 import { Bot, Upload, X, Check, FileText, Loader2, Play, RefreshCw } from 'lucide-react';
 import * as pdfjsLib from 'pdfjs-dist';
+import PDFWorkerUrl from 'pdfjs-dist/build/pdf.worker.min.mjs?url';
 import { StockUploadService, type PendingBatch, type ExtractedExtractionData } from '../../services/stockUploadService';
 import { ConfirmStockModal } from './ConfirmStockModal';
 import { InboundModal } from './InboundModal';
 import toast from 'react-hot-toast';
 
-// Initialize PDF.js worker
-pdfjsLib.GlobalWorkerOptions.workerSrc = `//cdnjs.cloudflare.com/ajax/libs/pdf.js/${pdfjsLib.version}/pdf.worker.min.mjs`;
+pdfjsLib.GlobalWorkerOptions.workerSrc = PDFWorkerUrl;
 
 export type FileStatus = 'READY' | 'PROCESSING' | 'SUCCESS' | 'FAILED' | 'DUPLICATE';
 
@@ -27,7 +27,7 @@ export const UploadArea = ({
 }: { 
   refreshRecent: () => void 
 }) => {
-  const [singleInvoiceMode, setSingleInvoiceMode] = useState(false);
+  const [singleInvoiceMode, setSingleInvoiceMode] = useState(true);
   const [queue, setQueue] = useState<UploadQueueItem[]>([]);
   const [isHovering, setIsHovering] = useState(false);
   const [isProcessingGlobal, setIsProcessingGlobal] = useState(false);
@@ -289,7 +289,9 @@ export const UploadArea = ({
 
         <div className="flex items-center justify-between p-4 bg-surface/50 border border-border-main rounded-xl mb-4">
           <div className="flex flex-col gap-1">
-            <span className="text-[14px] font-bold text-primary-text">Single Invoice Processing</span>
+            <span className="text-[14px] font-bold text-primary-text">
+              {singleInvoiceMode ? 'Single Invoice Processing' : 'Multi Invoice Processing'}
+            </span>
             <span className="text-[12px] text-muted-text max-w-sm">
               {singleInvoiceMode ? 'Each file is treated as one complete invoice.' : 'Multi-page PDFs will be split into individual invoice images.'}
             </span>

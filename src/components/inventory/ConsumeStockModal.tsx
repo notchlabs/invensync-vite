@@ -20,7 +20,7 @@ export function ConsumeStockModal({ isOpen, onClose, items, onSuccess }: Consume
   const [records, setRecords] = useState<Record<string, number>>(() => {
     const initial: Record<string, number> = {}
     items.forEach(item => {
-      initial[`${item.productId}-${item.siteId}`] = Math.min(1, item.quantity)
+      initial[`${item.productId}-${item.siteId}`] = item.quantity
     })
     return initial
   })
@@ -108,7 +108,7 @@ export function ConsumeStockModal({ isOpen, onClose, items, onSuccess }: Consume
             setCurrentItems(nextItems)
             const nextRecords: Record<string, number> = {}
             nextItems.forEach(item => {
-              nextRecords[`${item.productId}-${item.siteId}`] = Math.min(1, item.quantity)
+              nextRecords[`${item.productId}-${item.siteId}`] = item.quantity
             })
             setRecords(nextRecords)
           }

@@ -396,6 +396,13 @@ export default function DailyConsumptionPage() {
           selectedDate={selectedDate}
           dayAggr={dayAggr}
           isLoading={isLoadingContext}
+          lastUpdated={salesRecord?.createdAt ?? (() => {
+            const raw = items[0]?.consumedDate
+            if (!raw) return undefined
+            const m = raw.match(/T(\d{2}):(\d{2})/)
+            return m ? `T${m[1]}:${m[2]}` : undefined
+          })()}
+          isConcluded={isConcluded}
         />
 
         {isConcluded && (
