@@ -1,15 +1,16 @@
-import { 
-  LayoutDashboard, 
-  Building2, 
-  Truck, 
-  Package, 
-  PlusSquare, 
-  FileText, 
-  Users, 
-  Receipt, 
-  Box, 
+import {
+  LayoutDashboard,
+  Building2,
+  Truck,
+  Package,
+  PlusSquare,
+  FileText,
+  Users,
+  Receipt,
+  Box,
   BarChart,
-  type LucideIcon 
+  FolderOpen,
+  type LucideIcon
 } from 'lucide-react'
 
 export interface NavItem {
@@ -33,6 +34,7 @@ export const NAV_ITEMS: NavItem[] = [
   { label: 'Purchase Order', icon: Receipt,         path: '/app/panel/purchase-orders',  requiredRoles: ADMIN_OR_MANAGER },
   { label: 'Products',       icon: Box,             path: '/app/panel/products',         requiredRoles: ADMIN_OR_MANAGER },
   { label: 'Reports',        icon: BarChart,        path: '/app/panel/reports',          requiredRoles: ADMIN_OR_MANAGER },
+  { label: 'Documents',      icon: FolderOpen,      path: '/app/panel/documents',        requiredRoles: ADMIN_OR_MANAGER },
 ]
 
 export const SIDEBAR_WIDTH = 280

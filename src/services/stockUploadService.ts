@@ -223,18 +223,6 @@ export class StockUploadService {
   }
 
   /**
-   * Search product cache for image
-   */
-  static async searchProductCache(query: string): Promise<ApiResponse<{
-      id: number;
-      searchKey: string;
-      correctedName: string | null;
-      imageUrl: string;
-  }>> {
-    return ApiService.get(`/product-cache/search?query=${encodeURIComponent(query)}`);
-  }
-
-  /**
    * Create a new batch
    */
   static async createBatch(payload: CreateBatchPayload): Promise<ApiResponse<{ id: number }>> {

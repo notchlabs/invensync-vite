@@ -34,6 +34,7 @@ const TransitPage       = lazy(() => import('./pages/panel/TransitPage'))
 const ProductsPage      = lazy(() => import('./pages/panel/ProductsPage'))
 const ReportsPage       = lazy(() => import('./pages/panel/ReportsPage'))
 const PurchaseOrderPage = lazy(() => import('./pages/panel/PurchaseOrderPage'))
+const DocumentsPage     = lazy(() => import('./pages/panel/DocumentsPage'))
 
 function ScrollToTop() {
   const { pathname } = useLocation()
@@ -107,6 +108,7 @@ function App() {
                   <Route path="/app/panel/products"        element={<ProductsPage />} />
                   <Route path="/app/panel/reports"         element={<ReportsPage />} />
                   <Route path="/app/panel/purchase-orders" element={<PurchaseOrderPage />} />
+                  <Route path="/app/panel/documents"       element={<DocumentsPage />} />
                 </Route>
               </Route>
             </Route>

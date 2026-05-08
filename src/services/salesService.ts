@@ -25,10 +25,23 @@ export interface MonthlySummaryData {
   wstoreSale: number;
 }
 
+export interface DaySaleData {
+  date: string;
+  totalSale: number;
+  wbcSale: number;
+  billedAmount: number;
+  nonBilledAmount: number;
+  cashAmount: number;
+  upiAndCardAmount: number;
+  wstoreSale: number;
+}
+
 export interface MonthlySummary {
   shiftASummary: ShiftSummary;
   shiftBSummary: ShiftSummary;
   monthlySummary: MonthlySummaryData;
+  highestDaySale: DaySaleData;
+  lowestDaySale: DaySaleData;
 }
 
 export interface ConsumptionBucket {

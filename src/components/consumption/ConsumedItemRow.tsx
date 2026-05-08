@@ -83,7 +83,7 @@ export const ConsumedItemRow = ({
               }
             </div>
             <span className="w-full text-center text-[10px] font-black border border-[#065f46] text-[#065f46] bg-green-50/40 dark:bg-green-900/20 px-1 py-0.5 rounded-md truncate">
-              ₹{item.price.toFixed(0)}
+              ₹{(item.price ?? 0).toFixed(0)}
             </span>
           </div>
 
@@ -165,7 +165,7 @@ export const ConsumedItemRow = ({
         <div className="flex items-center gap-3 px-4">
           <span className="text-[12px] font-semibold text-muted-text whitespace-nowrap">{item.qty} {item.unit}</span>
           <span className="text-[13px] font-black border border-[#065f46] text-[#065f46] bg-green-50/40 dark:bg-green-900/20 px-3 py-1.5 rounded-lg whitespace-nowrap">
-            ₹{item.price.toFixed(2)}
+            ₹{(item.price ?? 0).toFixed(2)}
           </span>
         </div>
 

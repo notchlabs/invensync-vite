@@ -61,6 +61,30 @@ export interface RealTimeConsumePayload {
   }[];
 }
 
+export interface PrepareAndConsumePayload {
+  compositeProductId: number;
+  siteId: number;
+  quantityToPrepare: number;
+  consumptionUnitId: number | null;
+  rawMaterials: {
+    name: string;
+    requiredPerUnit: number;
+    unit: string;
+    availableQty: number;
+    consumeQty: number;
+    productId: number;
+  }[];
+  extraCharges: Record<string, { value: number; taxable: boolean }>;
+  consumptionDate: string;
+  saveDetails: boolean;
+  amountIncTax: number;
+  cash: number;
+  upi: number;
+  loyalty: boolean;
+  noBill: boolean;
+  isWbc: boolean;
+}
+
 export interface BucketItem {
   cuBillId: number;
   productId: number;
@@ -171,5 +195,9 @@ export class ConsumptionService {
    */
   static async consumeStock(payload: RealTimeConsumePayload): Promise<ApiResponse<null>> {
     return ApiService.post('/inbound/storage/consume-stock', payload);
+  }
+
+  static async prepareAndConsume(payload: PrepareAndConsumePayload): Promise<ApiResponse<null>> {
+    return ApiService.post('/product-boq/prepare-and-consume', payload);
   }
 }

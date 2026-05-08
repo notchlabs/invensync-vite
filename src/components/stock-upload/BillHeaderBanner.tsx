@@ -17,11 +17,18 @@ export function BillHeaderBanner({ selectedItem, onClose }: BillHeaderBannerProp
           <h1 className="text-[18px] md:text-[22px] font-black tracking-tight leading-tight uppercase truncate">
             {vendor?.name || 'Unknown Vendor'}
           </h1>
-          {fileName && (
-            <div className="flex items-center gap-1.5 text-[11px] text-white/40 font-medium">
+          {fileName && selectedItem.file && (
+            <button
+              onClick={() => {
+                const url = URL.createObjectURL(selectedItem.file)
+                window.open(url, '_blank')
+                setTimeout(() => URL.revokeObjectURL(url), 10000)
+              }}
+              className="flex items-center gap-1.5 text-[11px] text-white/40 hover:text-white/70 font-medium transition-colors cursor-pointer w-fit max-w-full"
+            >
               <Paperclip size={10} />
               <span className="truncate">{fileName}</span>
-            </div>
+            </button>
           )}
         </div>
         <div className="flex items-center gap-2 shrink-0">

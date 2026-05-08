@@ -1,8 +1,8 @@
 import { useEffect, useState } from 'react'
 import { useParams } from 'react-router-dom'
-import { ChevronDown, Clock, AlertTriangle, TrendingUp, TrendingDown } from 'lucide-react'
+import { ChevronDown, Clock, TrendingUp, TrendingDown, Sun, Moon } from 'lucide-react'
 import Skeleton from 'react-loading-skeleton'
-import { SalesService, type MonthlySummary, type MonthlySummaryData, type ConsumptionBucket } from '../../services/salesService'
+import { SalesService, type MonthlySummary, type ConsumptionBucket, type DaySaleData } from '../../services/salesService'
 import { ConsumptionService, type BucketItem } from '../../services/consumptionService'
 import { ENV } from '../../config/env'
 import { formatIndianNumber } from '../../utils/numberFormat'
@@ -52,105 +52,71 @@ function StatChip({ value, up }: { value: number; up: boolean }) {
   )
 }
 
-function DiscrepancyRow({ label, value }: Readonly<{ label: string; value: number }>) {
-  return (
-    <div className="flex items-center justify-between">
-      <span className="flex items-center gap-1.5 text-[13px] font-medium text-orange-500 dark:text-orange-400">
-        <AlertTriangle size={12} className="shrink-0" />
-        {label}
-      </span>
-      <span className="text-[13px] font-black text-rose-500">
-        {value < 0 ? '-' : ''}₹{formatIndianNumber(Math.abs(value))}
-      </span>
-    </div>
-  )
-}
 
-/* ── Billing / Payment sub-cards ────────────────────────── */
-function BillingCard({ loading, ms, billedPct }: Readonly<{ loading: boolean; ms: MonthlySummaryData | undefined; billedPct: number }>) {
+/* ── Day Sale card ──────────────────────────────────────── */
+function DaySaleCard({ loading, data, variant }: Readonly<{ loading: boolean; data: DaySaleData | undefined; variant: 'highest' | 'lowest' }>) {
+  const isHigh = variant === 'highest'
+  const accent = isHigh
+    ? { dot: 'bg-emerald-500', text: 'text-emerald-600 dark:text-emerald-400', badge: 'bg-emerald-50 dark:bg-emerald-500/10 text-emerald-700 dark:text-emerald-300', bar: 'bg-emerald-500' }
+    : { dot: 'bg-rose-500',   text: 'text-rose-600 dark:text-rose-400',       badge: 'bg-rose-50 dark:bg-rose-500/10 text-rose-700 dark:text-rose-300',           bar: 'bg-rose-400' }
+
+  const label = isHigh ? 'Best Day' : 'Lowest Day'
+  const Icon  = isHigh ? TrendingUp : TrendingDown
+
+  const dateLabel = data?.date
+    ? new Date(data.date).toLocaleDateString('en-IN', { day: '2-digit', month: 'short', year: 'numeric' })
+    : '—'
+
+  const rows: { label: string; dot: string; value: number }[] = data ? [
+    { label: 'WBC Sale', dot: 'bg-amber-400',  value: data.wbcSale },
+    { label: 'W Store',  dot: 'bg-indigo-400', value: data.wstoreSale },
+  ] : []
+
   return (
     <div className="bg-card border border-border-main rounded-2xl p-4 flex flex-col gap-3">
+      {/* Header */}
       <div className="flex items-center justify-between">
-        <span className="text-[10px] font-black text-muted-text uppercase tracking-widest">Billing Breakup</span>
+        <div className="flex items-center gap-2">
+          <div className={`w-7 h-7 rounded-lg flex items-center justify-center ${isHigh ? 'bg-emerald-50 dark:bg-emerald-500/15' : 'bg-rose-50 dark:bg-rose-500/15'}`}>
+            <Icon size={14} className={accent.text} />
+          </div>
+          <span className="text-[13px] font-black text-primary-text">{label}</span>
+        </div>
         {loading ? (
-          <Skeleton width={72} height={20} borderRadius={6} />
+          <Skeleton width={80} height={20} borderRadius={6} />
         ) : (
-          <span className="text-[11px] font-black text-emerald-600 dark:text-emerald-400 bg-emerald-50 dark:bg-emerald-500/10 px-2 py-0.5 rounded-md">
-            {billedPct.toFixed(1)}% billed
-          </span>
+          <span className={`text-[11px] font-bold px-2 py-0.5 rounded-md ${accent.badge}`}>{dateLabel}</span>
         )}
       </div>
-      {loading ? (
-        <Skeleton height={6} borderRadius={99} />
-      ) : (
-        <div className="h-1.5 rounded-full overflow-hidden bg-secondary">
-          <div className="h-full rounded-full bg-emerald-500 dark:bg-emerald-400 transition-all duration-700" style={{ width: `${billedPct}%` }} />
-        </div>
-      )}
-      <div className="flex flex-col gap-2">
-        {loading ? (
-          <>
-            <Skeleton height={16} borderRadius={4} />
-            <Skeleton height={16} borderRadius={4} />
-            <Skeleton height={16} borderRadius={4} />
-          </>
-        ) : ms ? (
-          <>
-            <div className="flex items-center justify-between">
-              <span className="flex items-center gap-1.5 text-[13px] font-medium text-secondary-text">
-                <span className="w-1.5 h-1.5 rounded-full bg-emerald-500" />Billed (MOP)
-              </span>
-              <span className="text-[13px] font-bold text-primary-text">₹{formatIndianNumber(ms.billedAmount)}</span>
-            </div>
-            <div className="flex items-center justify-between">
-              <span className="flex items-center gap-1.5 text-[13px] font-medium text-secondary-text">
-                <span className="w-1.5 h-1.5 rounded-full bg-neutral-400" />Non-Billed
-              </span>
-              <span className="text-[13px] font-bold text-primary-text">₹{formatIndianNumber(ms.nonBilledAmount)}</span>
-            </div>
-            <DiscrepancyRow label="Discrepancy" value={ms.billedDiscrepancy} />
-          </>
-        ) : null}
-      </div>
-    </div>
-  )
-}
 
-function PaymentCard({ loading, ms }: Readonly<{ loading: boolean; ms: MonthlySummaryData | undefined }>) {
-  return (
-    <div className="bg-card border border-border-main rounded-2xl p-4 flex flex-col gap-3">
-      <span className="text-[10px] font-black text-muted-text uppercase tracking-widest">Payment Mode</span>
-      <div className="flex flex-col gap-2">
+      {/* Total sale hero */}
+      {loading ? (
+        <Skeleton height={32} borderRadius={6} />
+      ) : data ? (
+        <div>
+          <p className="text-[10px] font-black text-muted-text uppercase tracking-widest mb-0.5">Total Sale</p>
+          <p className={`text-[26px] font-black leading-none tracking-tight ${accent.text}`}>
+            ₹{formatIndianNumber(data.totalSale)}
+          </p>
+        </div>
+      ) : null}
+
+      {/* Breakdown rows */}
+      <div className="flex flex-col gap-1.5 pt-2 border-t border-border-main/60">
         {loading ? (
           <>
-            <Skeleton height={16} borderRadius={4} />
-            <Skeleton height={16} borderRadius={4} />
-            <Skeleton height={16} borderRadius={4} />
-            <Skeleton height={16} borderRadius={4} />
+            <Skeleton height={14} borderRadius={4} />
+            <Skeleton height={14} borderRadius={4} />
+            <Skeleton height={14} borderRadius={4} />
           </>
-        ) : ms ? (
-          <>
-            <div className="flex items-center justify-between">
-              <span className="flex items-center gap-1.5 text-[13px] font-medium text-secondary-text">
-                <span className="w-1.5 h-1.5 rounded-full bg-blue-500" />UPI / Card
-              </span>
-              <span className="text-[13px] font-bold text-primary-text">₹{formatIndianNumber(ms.upiAndCardAmount)}</span>
-            </div>
-            <div className="flex items-center justify-between">
-              <span className="flex items-center gap-1.5 text-[13px] font-medium text-secondary-text">
-                <span className="w-1.5 h-1.5 rounded-full bg-violet-500" />Cash
-              </span>
-              <span className="text-[13px] font-bold text-primary-text">₹{formatIndianNumber(ms.cashAmount)}</span>
-            </div>
-            <div className="flex items-center justify-between">
-              <span className="flex items-center gap-1.5 text-[13px] font-medium text-secondary-text">
-                <span className="w-1.5 h-1.5 rounded-full bg-amber-500" />Loyalty
-              </span>
-              <span className="text-[13px] font-bold text-primary-text">₹{formatIndianNumber(ms.loyalty)}</span>
-            </div>
-            <DiscrepancyRow label="Discrepancy" value={ms.upiAndCardDiscrepancy} />
-          </>
-        ) : null}
+        ) : rows.map(r => (
+          <div key={r.label} className="flex items-center justify-between">
+            <span className={`flex items-center gap-1.5 text-[12px] font-medium text-secondary-text`}>
+              <span className={`w-1.5 h-1.5 rounded-full ${r.dot}`} />{r.label}
+            </span>
+            <span className="text-[12px] font-bold text-primary-text">₹{formatIndianNumber(r.value)}</span>
+          </div>
+        ))}
       </div>
     </div>
   )
@@ -222,13 +188,12 @@ export default function DashboardMonthPage() {
   }, [year, month])
 
   const ms = summary?.monthlySummary
-  const billedPct = ms && ms.totalSale > 0 ? (ms.billedAmount / ms.totalSale) * 100 : 0
 
   return (
     <div className="p-4 md:p-6 max-w-[1500px] mx-auto w-full flex flex-col gap-6 overflow-y-auto h-full">
 
       {/* ── Monthly Sales Summary (feature card) ───────────── */}
-      <div className="rounded-2xl bg-stats-card border border-stats-card-border p-5 flex flex-col gap-5">
+      <div className="rounded-2xl bg-card border border-stats-card-border p-5 flex flex-col gap-5">
 
         {/* Header */}
         <div className="flex items-center justify-between">
@@ -285,80 +250,126 @@ export default function DashboardMonthPage() {
               <Skeleton height={110} borderRadius={16} />
               <Skeleton height={110} borderRadius={16} />
             </>
-          ) : summary ? (
-            <>
-              {/* Shift A */}
-              <div className="bg-card border border-border-main rounded-2xl p-4 flex flex-col gap-3">
-                <div className="flex items-center justify-between">
-                  <div className="flex items-center gap-2">
-                    <div className="w-7 h-7 rounded-lg bg-amber-100 dark:bg-amber-500/15 flex items-center justify-center">
-                      <span className="text-[12px] font-black text-amber-600 dark:text-amber-400">A</span>
-                    </div>
-                    <div>
-                      <span className="text-[13px] font-black text-primary-text">Shift A</span>
-                      <span className="ml-1.5 text-[11px] font-bold text-muted-text">Day</span>
-                    </div>
-                  </div>
-                  <span className="text-[18px] font-black text-primary-text">
-                    ₹{formatIndianNumber(summary.shiftASummary.totalSale)}
-                  </span>
-                </div>
-                <div className="flex flex-col gap-1.5 pt-1 border-t border-border-main/60">
-                  <div className="flex items-center justify-between">
-                    <span className="flex items-center gap-1.5 text-[12px] font-medium text-secondary-text">
-                      <span className="w-1.5 h-1.5 rounded-full bg-amber-400" />WBC Sale
-                    </span>
-                    <span className="text-[12px] font-bold text-primary-text">₹{formatIndianNumber(summary.shiftASummary.wbcSale)}</span>
-                  </div>
-                  <div className="flex items-center justify-between">
-                    <span className="flex items-center gap-1.5 text-[12px] font-medium text-secondary-text">
-                      <span className="w-1.5 h-1.5 rounded-full bg-indigo-400" />W Store Sale
-                    </span>
-                    <span className="text-[12px] font-bold text-primary-text">₹{formatIndianNumber(summary.shiftASummary.wstoreSale)}</span>
-                  </div>
-                </div>
-              </div>
+          ) : summary ? (() => {
+              const combined = summary.shiftASummary.totalSale + summary.shiftBSummary.totalSale
+              const aPct = combined > 0 ? (summary.shiftASummary.totalSale / combined) * 100 : 50
 
-              {/* Shift B */}
-              <div className="bg-card border border-border-main rounded-2xl p-4 flex flex-col gap-3">
-                <div className="flex items-center justify-between">
-                  <div className="flex items-center gap-2">
-                    <div className="w-7 h-7 rounded-lg bg-blue-100 dark:bg-blue-500/15 flex items-center justify-center">
-                      <span className="text-[12px] font-black text-blue-600 dark:text-blue-400">B</span>
+              return (
+                <>
+                  {/* Shift A */}
+                  <div className="relative bg-card border border-border-main rounded-2xl overflow-hidden">
+                    <div className="absolute inset-0 bg-gradient-to-br from-amber-500/5 via-transparent to-transparent pointer-events-none" />
+                    <div className="relative p-5 flex flex-col gap-4">
+                      {/* Header row */}
+                      <div className="flex items-start justify-between gap-3">
+                        <div className="flex items-center gap-3">
+                          <div className="w-10 h-10 rounded-xl bg-amber-100 dark:bg-amber-500/20 border border-amber-200 dark:border-amber-500/30 flex items-center justify-center shrink-0">
+                            <Sun size={18} className="text-amber-600 dark:text-amber-400" />
+                          </div>
+                          <div>
+                            <p className="text-[15px] font-black text-primary-text leading-none">Shift A</p>
+                            <p className="text-[11px] font-semibold text-muted-text mt-0.5">Day Shift</p>
+                          </div>
+                        </div>
+                        <div className="text-right">
+                          <p className="text-[10px] font-black text-muted-text uppercase tracking-widest mb-0.5">Total Sale</p>
+                          <p className="text-[22px] font-black text-amber-600 dark:text-amber-400 leading-none tracking-tight">
+                            ₹{formatIndianNumber(summary.shiftASummary.totalSale)}
+                          </p>
+                        </div>
+                      </div>
+
+                      {/* Share bar */}
+                      <div className="flex flex-col gap-1.5">
+                        <div className="flex items-center justify-between text-[10px] font-bold text-muted-text uppercase tracking-wider">
+                          <span>Share of combined</span>
+                          <span className="text-amber-600 dark:text-amber-400">{aPct.toFixed(1)}%</span>
+                        </div>
+                        <div className="h-1.5 rounded-full bg-border-main overflow-hidden">
+                          <div className="h-full rounded-full bg-amber-400 transition-all duration-700" style={{ width: `${aPct}%` }} />
+                        </div>
+                      </div>
+
+                      {/* Sub-rows */}
+                      <div className="grid grid-cols-2 gap-2 pt-1 border-t border-border-main/50">
+                        <div className="flex flex-col gap-0.5">
+                          <span className="flex items-center gap-1 text-[10px] font-bold text-muted-text uppercase tracking-wider">
+                            <span className="w-1.5 h-1.5 rounded-full bg-amber-400 shrink-0" />WBC
+                          </span>
+                          <span className="text-[14px] font-black text-primary-text">₹{formatIndianNumber(summary.shiftASummary.wbcSale)}</span>
+                        </div>
+                        <div className="flex flex-col gap-0.5">
+                          <span className="flex items-center gap-1 text-[10px] font-bold text-muted-text uppercase tracking-wider">
+                            <span className="w-1.5 h-1.5 rounded-full bg-indigo-400 shrink-0" />W Store
+                          </span>
+                          <span className="text-[14px] font-black text-primary-text">₹{formatIndianNumber(summary.shiftASummary.wstoreSale)}</span>
+                        </div>
+                      </div>
                     </div>
-                    <div>
-                      <span className="text-[13px] font-black text-primary-text">Shift B</span>
-                      <span className="ml-1.5 text-[11px] font-bold text-muted-text">Night</span>
+                  </div>
+
+                  {/* Shift B */}
+                  <div className="relative bg-card border border-border-main rounded-2xl overflow-hidden">
+                    <div className="absolute inset-0 bg-gradient-to-br from-blue-500/5 via-transparent to-transparent pointer-events-none" />
+                    <div className="relative p-5 flex flex-col gap-4">
+                      {/* Header row */}
+                      <div className="flex items-start justify-between gap-3">
+                        <div className="flex items-center gap-3">
+                          <div className="w-10 h-10 rounded-xl bg-blue-100 dark:bg-blue-500/20 border border-blue-200 dark:border-blue-500/30 flex items-center justify-center shrink-0">
+                            <Moon size={18} className="text-blue-600 dark:text-blue-400" />
+                          </div>
+                          <div>
+                            <p className="text-[15px] font-black text-primary-text leading-none">Shift B</p>
+                            <p className="text-[11px] font-semibold text-muted-text mt-0.5">Night Shift</p>
+                          </div>
+                        </div>
+                        <div className="text-right">
+                          <p className="text-[10px] font-black text-muted-text uppercase tracking-widest mb-0.5">Total Sale</p>
+                          <p className="text-[22px] font-black text-blue-600 dark:text-blue-400 leading-none tracking-tight">
+                            ₹{formatIndianNumber(summary.shiftBSummary.totalSale)}
+                          </p>
+                        </div>
+                      </div>
+
+                      {/* Share bar */}
+                      <div className="flex flex-col gap-1.5">
+                        <div className="flex items-center justify-between text-[10px] font-bold text-muted-text uppercase tracking-wider">
+                          <span>Share of combined</span>
+                          <span className="text-blue-600 dark:text-blue-400">{(100 - aPct).toFixed(1)}%</span>
+                        </div>
+                        <div className="h-1.5 rounded-full bg-border-main overflow-hidden">
+                          <div className="h-full rounded-full bg-blue-400 transition-all duration-700" style={{ width: `${100 - aPct}%` }} />
+                        </div>
+                      </div>
+
+                      {/* Sub-rows */}
+                      <div className="grid grid-cols-2 gap-2 pt-1 border-t border-border-main/50">
+                        <div className="flex flex-col gap-0.5">
+                          <span className="flex items-center gap-1 text-[10px] font-bold text-muted-text uppercase tracking-wider">
+                            <span className="w-1.5 h-1.5 rounded-full bg-amber-400 shrink-0" />WBC
+                          </span>
+                          <span className="text-[14px] font-black text-primary-text">₹{formatIndianNumber(summary.shiftBSummary.wbcSale)}</span>
+                        </div>
+                        <div className="flex flex-col gap-0.5">
+                          <span className="flex items-center gap-1 text-[10px] font-bold text-muted-text uppercase tracking-wider">
+                            <span className="w-1.5 h-1.5 rounded-full bg-indigo-400 shrink-0" />W Store
+                          </span>
+                          <span className="text-[14px] font-black text-primary-text">₹{formatIndianNumber(summary.shiftBSummary.wstoreSale)}</span>
+                        </div>
+                      </div>
                     </div>
                   </div>
-                  <span className="text-[18px] font-black text-primary-text">
-                    ₹{formatIndianNumber(summary.shiftBSummary.totalSale)}
-                  </span>
-                </div>
-                <div className="flex flex-col gap-1.5 pt-1 border-t border-border-main/60">
-                  <div className="flex items-center justify-between">
-                    <span className="flex items-center gap-1.5 text-[12px] font-medium text-secondary-text">
-                      <span className="w-1.5 h-1.5 rounded-full bg-amber-400" />WBC Sale
-                    </span>
-                    <span className="text-[12px] font-bold text-primary-text">₹{formatIndianNumber(summary.shiftBSummary.wbcSale)}</span>
-                  </div>
-                  <div className="flex items-center justify-between">
-                    <span className="flex items-center gap-1.5 text-[12px] font-medium text-secondary-text">
-                      <span className="w-1.5 h-1.5 rounded-full bg-indigo-400" />W Store Sale
-                    </span>
-                    <span className="text-[12px] font-bold text-primary-text">₹{formatIndianNumber(summary.shiftBSummary.wstoreSale)}</span>
-                  </div>
-                </div>
-              </div>
-            </>
-          ) : null}
+                </>
+              )
+            })()
+          : null}
         </div>
       </div>
 
-      {/* ── Billing + Payment ───────────────────────────────── */}
+      {/* ── Best & Lowest Day ───────────────────────────────── */}
       <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
-        <BillingCard loading={loading} ms={ms} billedPct={billedPct} />
-        <PaymentCard loading={loading} ms={ms} />
+        <DaySaleCard loading={loading} data={summary?.highestDaySale} variant="highest" />
+        <DaySaleCard loading={loading} data={summary?.lowestDaySale}  variant="lowest"  />
       </div>
 
       {/* ── Daily Sales ─────────────────────────────────────── */}

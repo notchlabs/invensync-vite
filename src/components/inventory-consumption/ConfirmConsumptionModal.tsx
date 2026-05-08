@@ -3,27 +3,122 @@
 import { useState } from "react"
 import { motion } from "framer-motion"
 import { X } from "lucide-react"
+import toast from "react-hot-toast"
 import type { CartEntry, ItemSettings } from "./types"
 import { formatIndianCurrency } from "../../utils/numberFormat"
 import { ProductImage } from "./ProductImage"
+import { ConsumptionService } from "../../services/consumptionService"
+import { ENV } from "../../config/env"
 
 export function ConfirmConsumptionModal({
-    cart, onClose, onRemove, onConfirm,
+    cart, onClose, onRemove, onSuccess,
+    compositeProductId, quantityToPrepare,
   }: {
     cart: Map<number, CartEntry>
     onClose: () => void
     onRemove: (id: number) => void
-    onConfirm: (settings: Map<number, ItemSettings>) => void | Promise<void>
+    onSuccess: () => void
+    compositeProductId: number
+    quantityToPrepare: number
   }) {
     const entries = Array.from(cart.values())
-  
+
     const [isConfirming, setIsConfirming] = useState(false)
+    const [emptyIds, setEmptyIds] = useState<Set<number>>(new Set())
 
     const handleConfirm = async () => {
       if (isConfirming) return
+
+      const invalid = new Set<number>()
+      entries.forEach(e => {
+        const amt = parseFloat(settings.get(e.productId)?.amount ?? '')
+        if (!amt || amt <= 0) invalid.add(e.productId)
+      })
+      if (invalid.size > 0) { setEmptyIds(invalid); return }
+
       setIsConfirming(true)
       try {
-        await onConfirm(settings)
+        const now = new Date()
+        const consumptionDate = `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, '0')}-${String(now.getDate()).padStart(2, '0')}T${String(now.getHours()).padStart(2, '0')}:${String(now.getMinutes()).padStart(2, '0')}`
+
+        const inventoryEntries    = Array.from(cart.values()).filter(e => e.source === 'inventory')
+        const preparationEntries  = Array.from(cart.values()).filter(e => e.source === 'preparation')
+
+        const calls: Promise<unknown>[] = []
+
+        if (inventoryEntries.length > 0) {
+          const records = inventoryEntries.map(e => {
+            const s = settings.get(e.productId)
+            const amount = parseFloat(s?.amount || '0')
+            return {
+              sourceSiteId: Number(ENV.DEFAULT_SITE_ID),
+              productId: e.productId,
+              productName: e.productName,
+              quantity: e.qty,
+              amountIncTax: amount,
+              upi: (s?.paymentMode === 'UPI' || s?.paymentMode === 'Loyalty') ? amount : 0,
+              cash: s?.paymentMode === 'Cash' ? amount : 0,
+              noBill: s?.noBill ?? false,
+              loyalty: s?.paymentMode === 'Loyalty',
+            }
+          })
+          calls.push(ConsumptionService.consumeStock({
+            consumptionUnitId: Number(ENV.DEFAULT_CONSUMPTION_UNIT_ID),
+            consumptionDate,
+            saveDetails: true,
+            records,
+          }))
+        }
+
+        if (preparationEntries.length > 0) {
+          const rawMaterials = preparationEntries.map(e => ({
+            name: e.productName,
+            requiredPerUnit: 1,
+            unit: e.unit,
+            availableQty: 0,
+            consumeQty: e.qty,
+            productId: e.productId,
+          }))
+
+          const prepAmountIncTax = preparationEntries.reduce((sum, e) => {
+            return sum + (parseFloat(settings.get(e.productId)?.amount || '0') || 0)
+          }, 0)
+          const prepCash = preparationEntries.reduce((sum, e) => {
+            const s = settings.get(e.productId)
+            const amt = parseFloat(s?.amount || '0') || 0
+            return sum + (s?.paymentMode === 'Cash' ? amt : 0)
+          }, 0)
+          const prepUpi = preparationEntries.reduce((sum, e) => {
+            const s = settings.get(e.productId)
+            const amt = parseFloat(s?.amount || '0') || 0
+            return sum + ((s?.paymentMode === 'UPI' || s?.paymentMode === 'Loyalty') ? amt : 0)
+          }, 0)
+          const prepLoyalty = preparationEntries.some(e => settings.get(e.productId)?.paymentMode === 'Loyalty')
+          const prepNoBill  = preparationEntries.some(e => settings.get(e.productId)?.noBill === true)
+
+          calls.push(ConsumptionService.prepareAndConsume({
+            compositeProductId,
+            siteId: Number(ENV.DEFAULT_SITE_ID),
+            quantityToPrepare,
+            consumptionUnitId: Number(ENV.DEFAULT_CONSUMPTION_UNIT_ID),
+            rawMaterials,
+            extraCharges: {},
+            consumptionDate,
+            saveDetails: true,
+            amountIncTax: prepAmountIncTax,
+            cash: prepCash,
+            upi: prepUpi,
+            loyalty: prepLoyalty,
+            noBill: prepNoBill,
+            isWbc: false,
+          }))
+        }
+
+        await Promise.all(calls)
+        toast.success('Stock consumed successfully!')
+        onSuccess()
+      } catch {
+        toast.error('Failed to consume stock. Please try again.')
       } finally {
         setIsConfirming(false)
       }
@@ -33,7 +128,7 @@ export function ConfirmConsumptionModal({
     const [settings, setSettings] = useState<Map<number, ItemSettings>>(() => {
       const m = new Map<number, ItemSettings>()
       entries.forEach(e => m.set(e.productId, {
-        amount: String(e.price > 0 ? e.price : 0),
+        amount: String(e.price > 0 ? e.price * e.qty : 0),
         paymentMode: 'UPI',
         noBill: false,
         loyalty: false,
@@ -42,6 +137,7 @@ export function ConfirmConsumptionModal({
     })
   
     const updateSetting = <K extends keyof ItemSettings>(id: number, key: K, value: ItemSettings[K]) => {
+      if (key === 'amount') setEmptyIds(prev => { const next = new Set(prev); next.delete(id); return next })
       setSettings(prev => {
         const next = new Map(prev)
         const cur  = next.get(id)
@@ -120,7 +216,11 @@ export function ConfirmConsumptionModal({
                       type="number"
                       value={cfg.amount}
                       onChange={e => updateSetting(entry.productId, 'amount', e.target.value)}
-                      className="w-full sm:w-24 h-10 px-3 bg-card border border-border-main rounded-xl text-[14px] font-bold text-primary-text outline-none focus:border-secondary-text focus:ring-2 focus:ring-accent/5 transition-all text-center sm:text-left"
+                      className={`w-full sm:w-24 h-10 px-3 bg-card rounded-xl text-[14px] font-bold text-primary-text outline-none focus:ring-2 transition-all text-center sm:text-left border ${
+                        emptyIds.has(entry.productId)
+                          ? 'border-red-500 focus:border-red-500 focus:ring-red-500/10'
+                          : 'border-border-main focus:border-secondary-text focus:ring-accent/5'
+                      }`}
                       placeholder="Amount"
                     />
   

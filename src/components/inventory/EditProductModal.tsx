@@ -25,6 +25,8 @@ export function EditProductModal({ isOpen, onClose, item, onSuccess }: EditProdu
   })
   const [isLoading, setIsLoading] = useState(false)
   const [isUploading, setIsUploading] = useState(false)
+  const [isImageManual, setIsImageManual] = useState(false)
+  const [isSearchingImage, setIsSearchingImage] = useState(false)
   const fileInputRef = useRef<HTMLInputElement>(null)
 
   useEffect(() => {
@@ -38,8 +40,25 @@ export function EditProductModal({ isOpen, onClose, item, onSuccess }: EditProdu
         sgstInPerc: item.sgstInPerc || 0,
         imageUrl: item.imageUrl || ''
       })
+      setIsImageManual(false)
     }
   }, [item, isOpen])
+
+  // Debounced product cache image lookup on name change
+  useEffect(() => {
+    if (formData.name.length < 3 || isImageManual) return
+    const t = setTimeout(async () => {
+      setIsSearchingImage(true)
+      try {
+        const res = await InventoryService.searchProductCache(formData.name)
+        if (res.success && res.data?.imageUrl) {
+          setFormData(prev => ({ ...prev, imageUrl: res.data.imageUrl }))
+        }
+      } catch { /* silent */ }
+      finally { setIsSearchingImage(false) }
+    }, 600)
+    return () => clearTimeout(t)
+  }, [formData.name, isImageManual])
 
   const handleImageUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0]
@@ -49,6 +68,7 @@ export function EditProductModal({ isOpen, onClose, item, onSuccess }: EditProdu
     try {
       const res = await InventoryService.uploadAttachment(file)
       if (res.success && res.data?.docUrl) {
+        setIsImageManual(true)
         setFormData(prev => ({ ...prev, imageUrl: res.data.docUrl }))
       } else {
         const msg = res.message || 'Image upload failed'
@@ -141,7 +161,7 @@ export function EditProductModal({ isOpen, onClose, item, onSuccess }: EditProdu
                   <Package size={36} className="text-muted-text/30" />
                 )}
                 
-                {isUploading && (
+                {(isUploading || isSearchingImage) && (
                   <div className="absolute inset-0 bg-black/20 backdrop-blur-[1px] flex items-center justify-center z-10">
                     <Loader2 size={24} className="animate-spin text-white" />
                   </div>

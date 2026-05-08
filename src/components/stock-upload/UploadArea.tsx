@@ -1,13 +1,12 @@
 import { useState, useRef, useEffect, useCallback } from 'react';
 import { Bot, Upload, X, Check, FileText, Loader2, Play, RefreshCw } from 'lucide-react';
 import * as pdfjsLib from 'pdfjs-dist';
-import PDFWorkerUrl from 'pdfjs-dist/build/pdf.worker.min.mjs?url';
 import { StockUploadService, type PendingBatch, type ExtractedExtractionData } from '../../services/stockUploadService';
 import { ConfirmStockModal } from './ConfirmStockModal';
 import { InboundModal } from './InboundModal';
 import toast from 'react-hot-toast';
 
-pdfjsLib.GlobalWorkerOptions.workerSrc = PDFWorkerUrl;
+pdfjsLib.GlobalWorkerOptions.workerSrc = '/pdf.worker.min.js';
 
 export type FileStatus = 'READY' | 'PROCESSING' | 'SUCCESS' | 'FAILED' | 'DUPLICATE';
 
@@ -210,35 +209,39 @@ export const UploadArea = ({
     if (filesToProcess.length === 0) return;
 
     setIsProcessingGlobal(true);
-    
-    // Mark them as PROCESSING
-    setQueue(prev => prev.map(item => 
+
+    setQueue(prev => prev.map(item =>
       filesToProcess.some(f => f.id === item.id) ? { ...item, status: 'PROCESSING' } : item
     ));
 
-    for (const item of filesToProcess) {
+    let successfulCount = 0;
+
+    const processOne = async (item: UploadQueueItem) => {
       try {
         const res = await StockUploadService.extractInvoice(item.file);
         if (res.data) {
+          successfulCount++;
           setQueue(prev => prev.map(q => q.id === item.id ? { ...q, status: 'SUCCESS', extractedData: res.data ?? undefined } : q));
         } else {
-          setQueue(prev => prev.map(q => q.id === item.id ? { 
-            ...q, 
-            status: 'FAILED', 
-            message: 'The bill image is not clear. Kindly attach a clear copy.' 
+          setQueue(prev => prev.map(q => q.id === item.id ? {
+            ...q, status: 'FAILED', message: 'The bill image is not clear. Kindly attach a clear copy.'
           } : q));
         }
       } catch {
-        setQueue(prev => prev.map(q => q.id === item.id ? { 
-          ...q, 
-          status: 'FAILED', 
-          message: 'Failed to process document.' 
+        setQueue(prev => prev.map(q => q.id === item.id ? {
+          ...q, status: 'FAILED', message: 'Failed to process document.'
         } : q));
       }
+    };
+
+    const BATCH = 10;
+    for (let i = 0; i < filesToProcess.length; i += BATCH) {
+      await Promise.all(filesToProcess.slice(i, i + BATCH).map(processOne));
     }
 
     setIsProcessingGlobal(false);
     refreshRecent();
+    if (successfulCount > 0) setShowConfirmModal(true);
   };
 
   const removeFile = (id: string) => {
@@ -412,13 +415,20 @@ export const UploadArea = ({
                   </>
                 )}
 
-                <div className="flex items-start gap-4 relative z-10 w-full min-w-0 pr-4">
+                <button
+                  className="flex items-start gap-4 relative z-10 w-full min-w-0 pr-4 text-left cursor-pointer"
+                  onClick={() => {
+                    const url = URL.createObjectURL(item.file);
+                    window.open(url, '_blank');
+                    setTimeout(() => URL.revokeObjectURL(url), 10000);
+                  }}
+                >
                   <div className="w-10 h-10 shrink-0 bg-surface border border-border-main rounded-lg flex items-center justify-center text-secondary-text">
-                    {item.status === 'SUCCESS' ? <Check size={20} className="text-emerald-500" /> : 
-                     item.status === 'FAILED' ? <X size={20} className="text-red-500" /> : 
+                    {item.status === 'SUCCESS' ? <Check size={20} className="text-emerald-500" /> :
+                     item.status === 'FAILED' ? <X size={20} className="text-red-500" /> :
                      <FileText size={20} />}
                   </div>
-                  
+
                   <div className="flex flex-col min-w-0 flex-1">
                     <span className={`text-[14px] font-bold truncate ${item.status === 'FAILED' ? 'text-red-600' : 'text-primary-text'}`}>
                       {item.status === 'FAILED' && item.message ? item.message : item.name}
@@ -432,7 +442,7 @@ export const UploadArea = ({
                       {item.status === 'FAILED' && <span className="text-red-500 font-bold">Failed to Extract Data</span>}
                     </div>
                   </div>
-                </div>
+                </button>
 
                 {!isProcessingGlobal && item.status === 'FAILED' && (
                   <div className="flex items-center gap-1.5 relative z-10 shrink-0">

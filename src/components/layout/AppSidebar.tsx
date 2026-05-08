@@ -114,7 +114,7 @@ function SidebarContent({
           </div>
           <div className={`min-w-0 ${isCollapsed ? 'lg:hidden' : ''}`}>
             <p className="text-[11px] font-bold text-primary-text leading-none">Notch Labs</p>
-            <p className="text-[10px] text-muted-text mt-0.5">v13.0.0</p>
+            <p className="text-[10px] text-muted-text mt-0.5">v15.0.0</p>
           </div>
         </div>
       </div>

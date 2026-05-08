@@ -1,13 +1,11 @@
 import { useState, useEffect, useRef, useCallback } from 'react'
 import { Search, Package, ShoppingBag, ChevronRight, LineChartIcon } from 'lucide-react'
 import { AnimatePresence, motion } from 'framer-motion'
-import toast from 'react-hot-toast'
 import Skeleton from 'react-loading-skeleton'
 import { InventoryService, type PreparationProduct } from '../../services/inventoryService'
-import { ConsumptionService } from '../../services/consumptionService'
 import type { InventoryItem, Site } from '../../types/inventory'
 import { ENV } from '../../config/env'
-import type { CartEntry, ItemSettings } from '../../components/inventory-consumption/types'
+import type { CartEntry } from '../../components/inventory-consumption/types'
 import { ProductCard } from '../../components/inventory-consumption/ProductCard'
 import { ConfirmConsumptionModal } from '../../components/inventory-consumption/ConfirmConsumptionModal'
 import { useNavigate } from 'react-router-dom'
@@ -141,49 +139,13 @@ export default function ConsumptionPage() {
     setCart(prev => { const next = new Map(prev); next.delete(productId); return next })
   }
 
-  const handleConfirm = async (settings: Map<number, ItemSettings>) => {
-    try {
-      const now = new Date()
-      const formattedDate = `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, '0')}-${String(now.getDate()).padStart(2, '0')}T${String(now.getHours()).padStart(2, '0')}:${String(now.getMinutes()).padStart(2, '0')}`
-
-      const records = Array.from(cart.values()).map(e => {
-        const s = settings.get(e.productId)
-        const amount = parseFloat(s?.amount || '0')
-        return {
-          sourceSiteId: SITE_ID,
-          productId: e.productId,
-          productName: e.productName,
-          quantity: e.qty,
-          amountIncTax: amount,
-          upi: s?.paymentMode === 'UPI' ? amount : 0,
-          cash: s?.paymentMode === 'Cash' ? amount : 0,
-          noBill: s?.noBill ?? false,
-          loyalty: s?.paymentMode === 'Loyalty'
-        }
-      })
-
-      const payload = {
-        consumptionUnitId: Number(ENV.DEFAULT_CONSUMPTION_UNIT_ID),
-        consumptionDate: formattedDate,
-        saveDetails: true,
-        records
-      }
-
-      await ConsumptionService.consumeStock(payload)
-
-      toast.success('Stock consumed successfully!')
-      setCart(new Map())
-      setShowModal(false)
-      
-      // Optionally refresh current view based on tab
-      if (tab === 'inventory') {
-        loadInventory(true)
-      } else {
-        loadPrep('')
-      }
-    } catch (error) {
-      console.error('Failed to consume stock', error)
-      toast.error('Failed to consume stock. Please try again.')
+  const handleConsumeSuccess = () => {
+    setCart(new Map())
+    setShowModal(false)
+    if (tab === 'inventory') {
+      loadInventory(true)
+    } else {
+      loadPrep('')
     }
   }
 
@@ -278,6 +240,7 @@ export default function ConsumptionPage() {
                     <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3">
                       {inStock.map(item => {
                         const cartEntry = cart.get(item.productId)
+                        const resolvedImg = item.imageUrl
                         return (
                           <ProductCard
                             key={item.productId}
@@ -285,9 +248,9 @@ export default function ConsumptionPage() {
                             vendorName={item.vendorNames}
                             price={item.mrp}
                             unit={item.unit}
-                            imageUrl={item.imageUrl}
+                            imageUrl={resolvedImg}
                             cartQty={cartEntry?.qty ?? 0}
-                            onAdd={() => addToCart({ productId: item.productId, productName: item.productName, unit: item.unit, price: item.mrp, imageUrl: item.imageUrl, source: 'inventory' })}
+                            onAdd={() => addToCart({ productId: item.productId, productName: item.productName, unit: item.unit, price: item.mrp, imageUrl: resolvedImg, source: 'inventory' })}
                             onRemove={() => removeFromCart(item.productId)}
                             isOutOfStock={false}
                           />
@@ -310,6 +273,7 @@ export default function ConsumptionPage() {
                         <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3">
                           {outOfStock.map(item => {
                             const cartEntry = cart.get(item.productId)
+                            const resolvedImg = item.imageUrl
                             return (
                               <ProductCard
                                 key={item.productId}
@@ -317,9 +281,9 @@ export default function ConsumptionPage() {
                                 vendorName={item.vendorNames}
                                 price={item.mrp}
                                 unit={item.unit}
-                                imageUrl={item.imageUrl}
+                                imageUrl={resolvedImg}
                                 cartQty={cartEntry?.qty ?? 0}
-                                onAdd={() => addToCart({ productId: item.productId, productName: item.productName, unit: item.unit, price: item.mrp, imageUrl: item.imageUrl, source: 'inventory' })}
+                                onAdd={() => addToCart({ productId: item.productId, productName: item.productName, unit: item.unit, price: item.mrp, imageUrl: resolvedImg, source: 'inventory' })}
                                 onRemove={() => removeFromCart(item.productId)}
                                 isOutOfStock={true}
                               />
@@ -351,6 +315,7 @@ export default function ConsumptionPage() {
             <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3">
               {prepItems.map(item => {
                 const cartEntry = cart.get(item.productId)
+                const resolvedImg = item.productImage
                 return (
                   <ProductCard
                     key={item.productId}
@@ -358,9 +323,9 @@ export default function ConsumptionPage() {
                     vendorName={null}
                     price={item.price}
                     unit={item.unit}
-                    imageUrl={item.productImage}
+                    imageUrl={resolvedImg}
                     cartQty={cartEntry?.qty ?? 0}
-                    onAdd={() => addToCart({ productId: item.productId, productName: item.productName, unit: item.unit, price: item.price, imageUrl: item.productImage, source: 'preparation' })}
+                    onAdd={() => addToCart({ productId: item.productId, productName: item.productName, unit: item.unit, price: item.price, imageUrl: resolvedImg, source: 'preparation' })}
                     onRemove={() => removeFromCart(item.productId)}
                   />
                 )
@@ -426,7 +391,9 @@ export default function ConsumptionPage() {
             cart={cart}
             onClose={() => setShowModal(false)}
             onRemove={removeEntireFromCart}
-            onConfirm={handleConfirm}
+            onSuccess={handleConsumeSuccess}
+            compositeProductId={Array.from(cart.values()).find(e => e.source === 'preparation')?.productId ?? 0}
+            quantityToPrepare={Array.from(cart.values()).find(e => e.source === 'preparation')?.qty ?? 1}
           />
         )}
       </AnimatePresence>
