@@ -1,6 +1,7 @@
 import { FileText, ChevronDown, AlertCircle, X, Loader2 } from 'lucide-react';
 import type { UploadQueueItem } from './UploadArea';
 import type { DuplicateInfo } from '../../services/stockUploadService';
+import { ImagePreview } from './ImagePreview';
 
 interface BillSidebarProps {
   isVerifying: boolean;
@@ -73,7 +74,11 @@ export function BillSidebar({
                       <button onClick={(e) => { e.stopPropagation(); setPreviewHidden(true); }} className="absolute top-3 right-3 p-2 bg-black/60 hover:bg-black text-white rounded-lg z-[50] transition-colors shadow-md backdrop-blur-sm opacity-0 group-hover/preview:opacity-100" title="Hide Preview">
                         <X size={16} />
                       </button>
-                      <iframe src={fileUrl} className="absolute inset-0 w-full h-full border-0 bg-transparent" />
+                      {bill.file?.type?.startsWith('image/') ? (
+                        <ImagePreview src={fileUrl} />
+                      ) : (
+                        <iframe src={fileUrl} className="absolute inset-0 w-full h-full border-0 bg-transparent" />
+                      )}
                     </div>
                   )
                 )}
@@ -128,7 +133,11 @@ export function BillSidebar({
                       <button onClick={(e) => { e.stopPropagation(); setPreviewHidden(true); }} className="absolute top-3 right-3 p-2 bg-black/60 hover:bg-black text-white rounded-lg z-[50] transition-colors shadow-md backdrop-blur-sm opacity-0 group-hover/preview:opacity-100" title="Hide Preview">
                         <X size={16} />
                       </button>
-                      <iframe src={fileUrl} className="absolute inset-0 w-full h-full border-0 bg-transparent" />
+                      {bill.file?.type?.startsWith('image/') ? (
+                        <ImagePreview src={fileUrl} />
+                      ) : (
+                        <iframe src={fileUrl} className="absolute inset-0 w-full h-full border-0 bg-transparent" />
+                      )}
                     </div>
                   )
                 )}

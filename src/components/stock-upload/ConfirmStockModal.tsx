@@ -306,8 +306,8 @@ export function ConfirmStockModal({ isOpen, onClose, queue, onSuccess }: Confirm
         </div>
 
         {/* ─── Main Content ─── */}
-        <div className="flex-1 flex overflow-hidden bg-app">
-          <div className="flex-1 flex flex-col bg-card min-w-[300px]">
+    <div className="flex-1 overflow-hidden bg-app min-h-0">
+<div className="flex-1 flex flex-col bg-card min-w-[300px] min-h-0">
             {selectedItem ? (
               <div className="flex flex-col flex-1 h-full overflow-hidden">
                 
