@@ -78,8 +78,8 @@ export const ConsumedItemRow = ({
           <div className="w-11 shrink-0 flex flex-col items-center gap-1">
             <div className="w-11 h-11 rounded-xl border border-border-main bg-surface flex items-center justify-center overflow-hidden">
               {item.imageUrl
-                ? <img src={item.imageUrl} alt={item.productName} className="w-full h-full object-contain" />
-                : <span className="text-[12px] font-black text-muted-text/50">{item.productName.charAt(0)}</span>
+                ? <img src={item.imageUrl} alt={item.productName ?? ''} className="w-full h-full object-contain" />
+                : <span className="text-[12px] font-black text-muted-text/50">{item.productName?.charAt(0) ?? '?'}</span>
               }
             </div>
             <span className="w-full text-center text-[10px] font-black border border-[#065f46] text-[#065f46] bg-green-50/40 dark:bg-green-900/20 px-1 py-0.5 rounded-md truncate">
@@ -92,7 +92,7 @@ export const ConsumedItemRow = ({
               {fmtName(item.consumedByEmail)}
             </p>
             <div className="flex items-center gap-1.5 flex-wrap">
-              <span className="text-[14px] font-bold text-primary-text font-display leading-snug">{item.productName}</span>
+              <span className="text-[14px] font-bold text-primary-text font-display leading-snug">{item.productName ?? ''}</span>
               {isWbc && <span className="text-[8px] font-black tracking-wider bg-black text-white px-1.5 py-0.5 rounded uppercase">WBC</span>}
             </div>
             <div className="flex items-center gap-2 mt-1 flex-wrap">
@@ -135,8 +135,8 @@ export const ConsumedItemRow = ({
           </div>
           <div className="w-10 h-10 shrink-0 rounded-xl border border-border-main bg-surface flex items-center justify-center overflow-hidden">
             {item.imageUrl
-              ? <img src={item.imageUrl} alt={item.productName} className="w-full h-full object-contain" />
-              : <span className="text-[11px] font-black text-muted-text/50">{item.productName.charAt(0)}</span>
+              ? <img src={item.imageUrl} alt={item.productName ?? ''} className="w-full h-full object-contain" />
+              : <span className="text-[11px] font-black text-muted-text/50">{item.productName?.charAt(0) ?? '?'}</span>
             }
           </div>
         </div>
@@ -147,7 +147,7 @@ export const ConsumedItemRow = ({
             {fmtName(item.consumedByEmail)}
           </span>
           <div className="flex items-center gap-1.5 min-w-0">
-            <span className="text-[13px] font-bold text-primary-text font-display leading-tight truncate">{item.productName}</span>
+            <span className="text-[13px] font-bold text-primary-text font-display leading-tight truncate">{item.productName ?? ''}</span>
             {isWbc && <span className="shrink-0 text-[8px] font-black tracking-wider bg-black text-white px-1.5 py-0.5 rounded uppercase">WBC</span>}
           </div>
         </div>

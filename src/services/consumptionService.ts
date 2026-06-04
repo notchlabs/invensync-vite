@@ -3,6 +3,8 @@ import type { ApiResponse } from '../types/api';
 
 export interface Shift {
   id: number;
+  businessDate?: string;
+  siteId?: number;
   consumptionUnitId: number;
   shiftType: string; // 'DAY' | 'NIGHT'
   startTime: string;
@@ -14,6 +16,7 @@ export interface Shift {
   nonBilledAmount?: number;
   upiAndCardAmount?: number;
   cashAmount?: number;
+  purchaseValue?: number;
   loyalty?: number;
 }
 
@@ -103,15 +106,32 @@ export interface BucketItem {
   upi: number;
   noBill: number;
   consumedDate?: string;
+  billNumber?: string | null;
+  batchId?: number | null;
+  istId?: number | null;
 }
 
 export interface ExistingSales {
   id: number;
+  siteId?: number;
+  salesDate?: string;
+  totalSales?: number;
+  wbcSale?: number;
+  totalConsumptionValue?: number;
+  invoicedSales?: number;
+  nonInvoicedSales?: number;
+  upiAmount?: number;
+  cashAmount?: number;
+  loyalty?: number;
+  wstoreSale?: number;
   recordedBilledAmountByManager: number;
   recordedPosAmountByManager: number;
+  recordedBilledManager?: string | null;
   cashCollectedByManager: number;
   upiCollectedByManager: number;
+  collectedManager?: string | null;
   createdAt?: string;
+  createdBy?: string;
 }
 
 export interface ConsumptionUnitInfo {

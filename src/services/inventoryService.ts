@@ -182,7 +182,7 @@ export class InventoryService {
    * Fetch vendor stats (orders, order value)
    */
   static async fetchVendorStats(page: number, size: number, search: string = ''): Promise<ApiResponse<PaginatedResponse<VendorStat>>> {
-    return ApiService.post(`/supplier/list-stats?page=${page}&size=${size}`, { search });
+    return ApiService.post(`/supplier/list-stats?page=${page}&size=${size}`, { searchTerm: search });
   }
 
   /**
@@ -231,8 +231,11 @@ export class InventoryService {
   /**
    * Fetch storage details (bills) for a specific product and site
    */
-  static async fetchInboundStorage(productId: number, siteId: number): Promise<ApiResponse<PurchaseRecord[]>> {
-    return ApiService.get(`/inbound/storage?productId=${productId}&siteId=${siteId}`);
+  static async fetchInboundStorage(productId: number, siteId: number, istId?: number | null, date?: string | null): Promise<ApiResponse<PurchaseRecord[]>> {
+    let url = `/inbound/storage?productId=${productId}&siteId=${siteId}`;
+    if (istId) url += `&istId=${istId}`;
+    if (date) url += `&date=${encodeURIComponent(date)}`;
+    return ApiService.get(url);
   }
 
   /**

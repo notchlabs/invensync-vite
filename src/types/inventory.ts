@@ -66,6 +66,8 @@ export interface InventoryItem {
   totalIncludingTax: number;
   latestUpdate: string;
   imageUrl: string | null;
+  istId?: number | null;
+  date?: string | null;
 }
 
 export interface InventoryFetchPayload {

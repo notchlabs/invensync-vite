@@ -1,12 +1,17 @@
-import { X, Phone, FileDigit, Calendar, FileText, MapPin, Paperclip } from 'lucide-react';
+import { X, Phone, FileDigit, Calendar, FileText, MapPin, Paperclip, Loader2 } from 'lucide-react';
 import type { UploadQueueItem } from './UploadArea';
 
 interface BillHeaderBannerProps {
   selectedItem: UploadQueueItem;
   onClose: () => void;
+  editableInvoiceNumber: string;
+  isRefEditable: boolean;
+  onRefNumberChange: (val: string) => void;
+  refError: 'mandatory' | 'duplicate' | null;
+  isVerifyingRef: boolean;
 }
 
-export function BillHeaderBanner({ selectedItem, onClose }: BillHeaderBannerProps) {
+export function BillHeaderBanner({ selectedItem, onClose, editableInvoiceNumber, isRefEditable, onRefNumberChange, refError, isVerifyingRef }: BillHeaderBannerProps) {
   const vendor = selectedItem?.extractedData?.vendor;
   const fileName = selectedItem?.file?.name;
 
@@ -53,8 +58,35 @@ export function BillHeaderBanner({ selectedItem, onClose }: BillHeaderBannerProp
           <span className="text-[13px] font-bold text-white/80 tracking-tight">{selectedItem.extractedData?.billDate || '-'}</span>
         </div>
         <div className="flex flex-col gap-0.5">
-          <span className="flex items-center gap-1 text-[9px] font-bold text-white/30 uppercase tracking-widest"><FileText size={9}/> Ref No.</span>
-          <span className="text-[13px] font-bold text-white/80 tracking-tight">{selectedItem.extractedData?.invoiceNumber || '-'}</span>
+          <span className="flex items-center gap-1 text-[9px] font-bold text-white/30 uppercase tracking-widest">
+            <FileText size={9}/> Ref No.
+            {isVerifyingRef && <Loader2 size={9} className="animate-spin text-white/40 ml-0.5" />}
+          </span>
+          {isRefEditable ? (
+            <div className="flex flex-col gap-1">
+              <input
+                type="text"
+                value={editableInvoiceNumber}
+                onChange={e => onRefNumberChange(e.target.value)}
+                placeholder="Enter ref number"
+                className={`bg-transparent border-b text-[13px] font-bold text-white/80 outline-none placeholder:text-white/20 w-full py-0.5 transition-colors ${
+                  refError === 'mandatory'
+                    ? 'border-rose-500 placeholder:text-rose-400/50'
+                    : refError === 'duplicate'
+                      ? 'border-amber-500'
+                      : 'border-white/20 focus:border-white/50'
+                }`}
+              />
+              {refError === 'mandatory' && (
+                <span className="text-[10px] font-bold text-rose-400">Ref number is mandatory</span>
+              )}
+              {refError === 'duplicate' && (
+                <span className="text-[10px] font-bold text-amber-400">Duplicate — ref already exists</span>
+              )}
+            </div>
+          ) : (
+            <span className="text-[13px] font-bold text-white/80 tracking-tight">{selectedItem.extractedData?.invoiceNumber || '-'}</span>
+          )}
         </div>
         {vendor?.address && (
           <div className="flex flex-col gap-0.5 col-span-2">

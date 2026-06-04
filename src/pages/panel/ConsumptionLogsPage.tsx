@@ -2,15 +2,17 @@ import { useState, useEffect, useCallback, useRef } from 'react'
 import { createPortal } from 'react-dom'
 import { useParams, useSearchParams } from 'react-router-dom'
 import { format } from 'date-fns'
-import { ChevronDown, ChevronLeft, ChevronRight, Search, Undo2, Building2, User, Box, Loader2, MoreVertical } from 'lucide-react'
+import { ChevronDown, ChevronLeft, ChevronRight, Search, Undo2, Building2, User, Box, Loader2, MoreVertical, ExternalLink } from 'lucide-react'
 import { AnimatePresence, motion } from 'framer-motion'
 import toast from 'react-hot-toast'
 import Skeleton from 'react-loading-skeleton'
 import { SalesService, type ConsumptionBucket } from '../../services/salesService'
 import { ConsumptionService, type BucketItem, type ConsumptionUnitInfo } from '../../services/consumptionService'
-import { formatIndianCurrency } from '../../utils/numberFormat'
+import { formatIndianCurrency, fmtShort } from '../../utils/numberFormat'
 import { InventoryDetailModal } from '../../components/inventory/InventoryDetailModal'
 import type { InventoryItem } from '../../types/inventory'
+import { BillViewModal } from '../../components/stock-upload/BillViewModal'
+import type { UploadBatch } from '../../services/stockUploadService'
 
 const MONTHS = ['January', 'February', 'March', 'April', 'May', 'June', 'July', 'August', 'September', 'October', 'November', 'December']
 
@@ -47,6 +49,7 @@ export default function ConsumptionLogsPage() {
 
   // Inventory detail modal
   const [modalItem, setModalItem] = useState<InventoryItem | null>(null)
+  const [selectedBill, setSelectedBill] = useState<UploadBatch | null>(null)
   const [openMenu, setOpenMenu] = useState<{ id: number; date: string; top: number; right: number } | null>(null)
 
   const openInventoryModal = (item: BucketItem) => {
@@ -68,6 +71,8 @@ export default function ConsumptionLogsPage() {
       totalExcludingTax: 0,
       totalIncludingTax: 0,
       latestUpdate: '',
+      istId: item.istId ?? null,
+      date: item.consumedDate ? (item.consumedDate.includes('T') ? item.consumedDate : `${item.consumedDate}T00:00:00`) : null,
     }
     setModalItem(inv)
   }
@@ -188,6 +193,7 @@ export default function ConsumptionLogsPage() {
           sortDir: 'DESC',
           productName: searchTerm,
         })
+        console.log('@@@ fetchBucketItems data:', res.data)
         setExpandedItems(prev => new Map(prev).set(date, res.data || []))
       } catch {
         toast.error('Failed to load items')
@@ -255,7 +261,7 @@ export default function ConsumptionLogsPage() {
       })
       .catch((err) => {
         console.error('Revert failed:', err)
-        toast.error('Failed to revert item', { id: toastId })
+        toast.error(err.message, { id: toastId })
       })
   }
 
@@ -432,7 +438,7 @@ export default function ConsumptionLogsPage() {
 
                               <div className="flex flex-col w-full mb-3">
                                 <span className={`text-[18px] md:text-[22px] font-black tracking-tight leading-none mb-1 ${textPri}`}>
-                                  {formatIndianCurrency(total)}
+                                  {fmtShort(total)}
                                 </span>
                                 <span className={`text-[9px] font-black uppercase tracking-widest ${textSec}`}>
                                   Total Value
@@ -464,7 +470,16 @@ export default function ConsumptionLogsPage() {
         onClose={() => setModalItem(null)}
         item={modalItem}
         hideTabs
+        showConsumedQty={true}
       />
+
+      {selectedBill && (
+        <BillViewModal
+          isOpen={true}
+          onClose={() => setSelectedBill(null)}
+          batch={selectedBill}
+        />
+      )}
 
       {/* ── Accordion List ───────────────────────────────────────── */}
       <div className="flex-1 overflow-y-auto px-4 md:px-6 pb-8">
@@ -562,11 +577,11 @@ export default function ConsumptionLogsPage() {
                                 style={{ minWidth: '760px' }}
                               >
                                 <colgroup>
-                                  <col style={{ width: '44px' }} />
-                                  <col />
+                                  <col style={{ width: '6%' }} />
+                                  <col style={{ width: '38%' }} />
                                   <col style={{ width: '22%' }} />
-                                  <col style={{ width: '100px' }} />
-                                  <col style={{ width: '180px' }} />
+                                  <col style={{ width: '14%' }} />
+                                  <col style={{ width: '20%' }} />
                                 </colgroup>
                                 <thead>
                                   <tr className="bg-surface/60">
@@ -612,9 +627,37 @@ export default function ConsumptionLogsPage() {
                                             <span className="text-[11px] font-medium text-muted-text truncate">{item.consumedByEmail}</span>
                                           </div>
                                         </td>
-                                        <td className="px-4 py-5 text-center align-middle">
+                                        <td
+                                          className="px-4 py-5 text-center align-middle"
+                                          onClick={(e) => {
+                                            if (item.billNumber) {
+                                              e.stopPropagation()
+                                              setSelectedBill({
+                                                id: item.batchId ?? 0,
+                                                supplierName: item.vendorNames || '',
+                                                refNo: item.billNumber,
+                                                totalPrice: item.amountIncTax,
+                                                state: "COMPLETED",
+                                                siteNames: '',
+                                                createdAt: item.consumedDate || '',
+                                                billUrl: '',
+                                              })
+                                            }
+                                          }}
+                                        >
                                           <div className="flex flex-col items-center">
-                                            <span className="text-[14px] font-bold text-primary-text">{item.qty}</span>
+                                            <span
+                                              className={`text-[14px] font-bold inline-flex items-center gap-1 ${
+                                                item.billNumber
+                                                  ? 'text-blue-500 hover:text-blue-600 dark:text-blue-400 dark:hover:text-blue-300 underline cursor-pointer'
+                                                  : 'text-primary-text'
+                                              }`}
+                                            >
+                                              {item.qty}
+                                              {item.billNumber && (
+                                                <ExternalLink size={11} className="opacity-70 shrink-0 text-blue-500 dark:text-blue-400" />
+                                              )}
+                                            </span>
                                             <span className="text-[11px] font-medium text-muted-text uppercase tracking-tighter">{item.unit}</span>
                                           </div>
                                         </td>

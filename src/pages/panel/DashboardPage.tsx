@@ -27,7 +27,8 @@ export default function DashboardPage() {
   const [plData, setPlData]           = useState<ProfitLossMonth[]>([])
   const [isLoadingPL, setIsLoadingPL] = useState(true)
 
-  const [selectedMonth, setSelectedMonth] = useState<ProfitLossMonth | null>(null)
+  const [activeReportRows, setActiveReportRows] = useState<ProfitLossMonth[] | null>(null)
+  const [selectedMonthsForReport, setSelectedMonthsForReport] = useState<ProfitLossMonth[]>([])
 
   useEffect(() => {
     ReportService.fetchInventoryStats(SITE_ID, CU_ID)
@@ -83,16 +84,69 @@ export default function DashboardPage() {
               <MonthCard
                 key={`${row.year}-${row.month}`}
                 row={row}
-                onClick={() => setSelectedMonth(row)}
+                onClick={() => setActiveReportRows([row])}
               />
             ))}
           </div>
         )}
       </div>
 
+      {/* ── Custom Reports ─────────────────────────────────────────── */}
+      <div className="flex flex-col gap-4">
+        <div>
+          <h2 className="text-[16px] font-black text-primary-text tracking-tight">Custom Reports</h2>
+          <p className="text-[12px] text-muted-text font-medium mt-0.5">Select multiple months to generate a consolidated statement</p>
+        </div>
+        
+        {isLoadingPL ? (
+          <Skeleton height={60} borderRadius={12} />
+        ) : plData.length === 0 ? (
+          <p className="text-[13px] text-muted-text font-medium py-4 text-center">No data available for custom reports</p>
+        ) : (
+          <div className="bg-card border border-border-main rounded-xl p-4 flex flex-col gap-4">
+            <div className="flex flex-wrap gap-2">
+              {plData.map(row => {
+                const isSelected = selectedMonthsForReport.some(m => m.month === row.month && m.year === row.year);
+                return (
+                  <button
+                    key={`custom-${row.year}-${row.month}`}
+                    onClick={() => {
+                      if (isSelected) {
+                        setSelectedMonthsForReport(prev => prev.filter(m => !(m.month === row.month && m.year === row.year)));
+                      } else {
+                        setSelectedMonthsForReport(prev => [...prev, row]);
+                      }
+                    }}
+                    className={`px-3 py-1.5 rounded-lg text-[13px] font-bold transition-colors border ${
+                      isSelected 
+                        ? 'bg-neutral-900 dark:bg-neutral-100 text-white dark:text-neutral-900 border-transparent' 
+                        : 'bg-surface text-secondary-text hover:text-primary-text border-border-main'
+                    } cursor-pointer`}
+                  >
+                    {row.monthLabel}
+                  </button>
+                )
+              })}
+            </div>
+            
+            <button
+              onClick={() => {
+                if (selectedMonthsForReport.length > 0) {
+                  setActiveReportRows(selectedMonthsForReport);
+                }
+              }}
+              disabled={selectedMonthsForReport.length < 2}
+              className="w-full sm:w-auto self-start px-5 py-2.5 bg-blue-600 hover:bg-blue-700 disabled:bg-blue-600/50 disabled:cursor-not-allowed text-white text-[13px] font-black rounded-xl transition-colors cursor-pointer"
+            >
+              Generate Consolidated Report
+            </button>
+          </div>
+        )}
+      </div>
+
       {/* ── P&L Dialog ───────────────────────────────────────────── */}
-      {selectedMonth && (
-        <PLStatementDialog row={selectedMonth} onClose={() => setSelectedMonth(null)} />
+      {activeReportRows && (
+        <PLStatementDialog rows={activeReportRows} onClose={() => setActiveReportRows(null)} />
       )}
     </div>
   )

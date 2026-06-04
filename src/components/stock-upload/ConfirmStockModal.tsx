@@ -1,4 +1,4 @@
-import { useState, useEffect, useMemo } from 'react';
+import { useState, useEffect, useMemo, useRef } from 'react';
 import { FileText, Trash2, Plus } from 'lucide-react';
 import { StockUploadService, type DuplicateInfo, type CreateBatchPayload } from '../../services/stockUploadService';
 import toast from 'react-hot-toast';
@@ -95,6 +95,37 @@ export function ConfirmStockModal({ isOpen, onClose, queue, onSuccess }: Confirm
     finally { setIsReprocessing(false); }
   };
 
+  // ─── Editable Ref Number ───
+  const [editableInvoiceNumber, setEditableInvoiceNumber] = useState('');
+  const [refError, setRefError] = useState<'mandatory' | 'duplicate' | null>(null);
+  const [isVerifyingRef, setIsVerifyingRef] = useState(false);
+  const refDebounceRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+
+  useEffect(() => {
+    if (refDebounceRef.current) clearTimeout(refDebounceRef.current);
+    setEditableInvoiceNumber(selectedItem?.extractedData?.invoiceNumber || '');
+    setRefError(null);
+    setIsVerifyingRef(false);
+  }, [selectedItem]);
+
+  const isRefEditable = !selectedItem?.extractedData?.invoiceNumber;
+
+  const handleRefNumberChange = (val: string) => {
+    setEditableInvoiceNumber(val);
+    setRefError(null);
+    if (refDebounceRef.current) clearTimeout(refDebounceRef.current);
+    if (!val.trim()) return;
+    refDebounceRef.current = setTimeout(async () => {
+      if (!selectedItem?.extractedData) return;
+      setIsVerifyingRef(true);
+      try {
+        const res = await StockUploadService.verifyBill({ ...selectedItem.extractedData, invoiceNumber: val.trim() });
+        if (res.data) setRefError('duplicate');
+      } catch { /* ignore */ }
+      finally { setIsVerifyingRef(false); }
+    }, 600);
+  };
+
   // ─── Editable Products ───
   const [editableProducts, setEditableProducts] = useState<NonNullable<UploadQueueItem['extractedData']>['products']>([]);
   const [isSubmitting, setIsSubmitting] = useState(false);
@@ -176,6 +207,11 @@ export function ConfirmStockModal({ isOpen, onClose, queue, onSuccess }: Confirm
 
   const handleConfirmAndSave = async () => {
     if (!selectedItem || !selectedItem.extractedData) return;
+    if (isRefEditable && !editableInvoiceNumber.trim()) {
+      setRefError('mandatory');
+      return;
+    }
+    if (refError === 'duplicate') return;
     setIsSubmitting(true);
     const loader = toast.loading('Uploading bill & saving batch...');
     try {
@@ -202,7 +238,7 @@ export function ConfirmStockModal({ isOpen, onClose, queue, onSuccess }: Confirm
           phone: data.vendor?.phone || '',
           address: data.vendor?.address || '',
           billTotalIncludingTax: data.billTotalIncludingTax ?? null,
-          invoiceNumber: data.invoiceNumber ?? null,
+          invoiceNumber: editableInvoiceNumber.trim() || data.invoiceNumber || null,
           isInvoiceNumberClear: data.isInvoiceNumberClear ?? null,
           billDate: data.billDate ?? null,
         },
@@ -241,7 +277,7 @@ export function ConfirmStockModal({ isOpen, onClose, queue, onSuccess }: Confirm
           if (p.productId) product.productId = p.productId;
           return product;
         }),
-        invoiceNumber: data.invoiceNumber || null,
+        invoiceNumber: editableInvoiceNumber.trim() || data.invoiceNumber || null,
         isInvoiceNumberClear: data.isInvoiceNumberClear ?? true,
         billDate: data.billDate || null,
         totalWithTax: String(calculatedTotal),
@@ -306,7 +342,7 @@ export function ConfirmStockModal({ isOpen, onClose, queue, onSuccess }: Confirm
         </div>
 
         {/* ─── Main Content ─── */}
-    <div className="flex-1 overflow-hidden bg-app min-h-0">
+    <div className="flex-1 flex flex-col overflow-hidden bg-app min-h-0">
 <div className="flex-1 flex flex-col bg-card min-w-[300px] min-h-0">
             {selectedItem ? (
               <div className="flex flex-col flex-1 h-full overflow-hidden">
@@ -315,6 +351,11 @@ export function ConfirmStockModal({ isOpen, onClose, queue, onSuccess }: Confirm
                 <BillHeaderBanner
                   selectedItem={selectedItem}
                   onClose={onClose}
+                  editableInvoiceNumber={editableInvoiceNumber}
+                  isRefEditable={isRefEditable}
+                  onRefNumberChange={handleRefNumberChange}
+                  refError={refError}
+                  isVerifyingRef={isVerifyingRef}
                 />
 
                 {/* ─── Scrollable Table Area ─── */}
@@ -445,6 +486,7 @@ export function ConfirmStockModal({ isOpen, onClose, queue, onSuccess }: Confirm
                   onReprocess={handleReprocess}
                   isEdited={isEdited}
                   onReset={resetProducts}
+                  refError={refError}
                 />
               </div>
             ) : (

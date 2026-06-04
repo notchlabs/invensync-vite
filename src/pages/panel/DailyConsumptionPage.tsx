@@ -197,7 +197,20 @@ export default function DailyConsumptionPage() {
       loyaltyTotal: 0,
     };
 
-    // 1. Sum up shifts from the API
+    // When consumption sales are concluded, use the authoritative server data
+    if (isConcluded && salesRecord) {
+      aggr.wbcSale = salesRecord.wbcSale || 0;
+      aggr.wStoreSale = salesRecord.wstoreSale || 0;
+      aggr.totalSale = salesRecord.totalSales || 0;
+      aggr.billedMop = salesRecord.invoicedSales || 0;
+      aggr.nonBilled = salesRecord.nonInvoicedSales || 0;
+      aggr.upiTotal = salesRecord.upiAmount || 0;
+      aggr.cashTotal = salesRecord.cashAmount || 0;
+      aggr.loyaltyTotal = salesRecord.loyalty || 0;
+      return aggr;
+    }
+
+    // 1. Sum up shifts from the API (for shifts belonging to other CUs)
     shifts.forEach(shift => {
       // If we are currently editing this unit (not concluded), we skip its API total
       // and use the live 'items' total below instead to ensure real-time accuracy.
@@ -233,7 +246,7 @@ export default function DailyConsumptionPage() {
     }
 
     return aggr;
-  }, [items, shifts, isConcluded, selectedCu]);
+  }, [items, shifts, isConcluded, salesRecord, selectedCu]);
 
   const handleSave = (concludeShift: boolean, readings?: { mop: number; pos: number }) => {
     if (!selectedSite || !selectedCu || !selectedDate) {

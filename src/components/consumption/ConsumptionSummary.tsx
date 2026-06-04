@@ -30,7 +30,10 @@ export const ConsumptionSummary = ({
   lastUpdated,
   isConcluded,
 }: ConsumptionSummaryProps) => {
-  const gridClasses = `grid grid-cols-1 gap-6 ${shifts.length <= 1 ? 'md:grid-cols-2' : 'md:grid-cols-3 lg:grid-cols-3'}`;
+
+  // Determine how many cards to show: shift cards (if any) + day report
+  const totalCards = shifts.length + 1;
+  const gridClasses = `grid grid-cols-1 gap-6 ${totalCards <= 2 ? 'md:grid-cols-2' : 'md:grid-cols-3 lg:grid-cols-3'}`;
 
   if (isLoading) {
     return (
@@ -44,6 +47,7 @@ export const ConsumptionSummary = ({
 
   return (
     <div className={gridClasses}>
+      {/* Shift cards — only shown when shifts data is available */}
       {shifts.map(shift => {
         return (
           <ReportCard
@@ -67,6 +71,9 @@ export const ConsumptionSummary = ({
         )
       })}
 
+      {/* Day Report — always shown
+          When concluded: uses salesRecord data (via dayAggr from parent)
+          When not concluded: uses computed items data (via dayAggr from parent) */}
       <ReportCard
         type="day"
         title="Day Report"

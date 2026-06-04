@@ -26,6 +26,7 @@ export function ProductPickerCell({ product, index, onUpdate, disabled }: Produc
   const observerTarget = useRef<HTMLDivElement>(null);
   const loadingRef = useRef(false);
   const hasMoreRef = useRef(true);
+  const requestIdRef = useRef(0);
 
   const isNew = !product.existingProduct;
 
@@ -42,58 +43,68 @@ export function ProductPickerCell({ product, index, onUpdate, disabled }: Produc
   }, []);
 
   const loadItems = useCallback(async (reset: boolean = false) => {
-    if (loadingRef.current) return;
+    if (!reset && loadingRef.current) return;
+    
+    const currentRequestId = ++requestIdRef.current;
     loadingRef.current = true;
     setIsLoading(true);
     try {
       if (reset) { pageRef.current = 0; hasMoreRef.current = true; setHasMore(true); }
-      if (!hasMoreRef.current && !reset) { loadingRef.current = false; setIsLoading(false); return; }
-      const res = await InventoryService.fetchProducts(pageRef.current, 10, searchRef.current);
+      if (!hasMoreRef.current && !reset) {
+        if (currentRequestId === requestIdRef.current) {
+          loadingRef.current = false;
+          setIsLoading(false);
+        }
+        return;
+      }
+      
+      const searchTerm = searchRef.current;
+      const pageToFetch = pageRef.current;
+      const res = await InventoryService.fetchProducts(pageToFetch, 10, searchTerm);
+      
+      if (currentRequestId !== requestIdRef.current) return;
+
       const newItems = res.data?.content || [];
       setItems(prev => reset ? newItems : [...prev, ...newItems]);
-      pageRef.current += 1;
+      pageRef.current = pageToFetch + 1;
       const last = res.data?.last !== undefined ? res.data.last : newItems.length < 10;
       hasMoreRef.current = !last;
       setHasMore(!last);
     } catch {
       // ignore
     } finally {
-      loadingRef.current = false;
-      setIsLoading(false);
+      if (currentRequestId === requestIdRef.current) {
+        loadingRef.current = false;
+        setIsLoading(false);
+      }
     }
   }, []);
 
-  // Toggle open + position
+  // Toggle open + position; initial load happens here, not in an effect
   const handleOpen = () => {
     if (disabled) return;
     if (!isOpen) {
       updatePosition();
+      setSearch('');
+      searchRef.current = '';
       setIsOpen(true);
+      loadItems(true);
     } else {
       setIsOpen(false);
     }
   };
 
-  // Debounced search
+  // Debounced search — only fires when user actually changes the search text
   useEffect(() => {
     if (!isOpen) return;
-    if (search.length > 0 && search.length < 2) return;
     const t = setTimeout(() => {
       if (searchRef.current !== search) {
         searchRef.current = search;
         loadItems(true);
       }
-    }, 300);
+    }, 350);
     return () => clearTimeout(t);
   }, [search, isOpen, loadItems]);
-
-  // Initial load on open
-  useEffect(() => {
-    if (isOpen && items.length === 0) {
-      searchRef.current = '';
-      loadItems(true);
-    }
-  }, [isOpen, items.length, loadItems]);
 
   // Infinite scroll
   useEffect(() => {
@@ -138,6 +149,16 @@ export function ProductPickerCell({ product, index, onUpdate, disabled }: Produc
       imageUrl: p.imageUrl ?? product.imageUrl ?? null,
       existingProduct: 'true',
       productId: p.id,
+    });
+    setIsOpen(false);
+  };
+
+  const handleAddAsNew = () => {
+    onUpdate(index, {
+      name: search.trim() || product.name,
+      existingProduct: 'false',
+      productId: null,
+      imageUrl: null,
     });
     setIsOpen(false);
   };
@@ -208,10 +229,22 @@ export function ProductPickerCell({ product, index, onUpdate, disabled }: Produc
                 </button>
               );
             })}
-            <div ref={observerTarget} className="h-6 flex items-center justify-center">
+            {!isLoading && items.length === 0 && (
+              <button
+                onClick={handleAddAsNew}
+                className="w-full flex items-center gap-2 px-2.5 py-2 text-left hover:bg-surface/60 transition-colors border-t border-border-main/20"
+              >
+                <div className="w-5 h-5 rounded border-2 border-dashed border-amber-400/60 shrink-0 flex items-center justify-center">
+                  <span className="text-amber-400 text-[10px] font-black leading-none">+</span>
+                </div>
+                <span className="text-[11px] font-bold text-amber-500 truncate flex-1 min-w-0">
+                  {search.trim() ? `Add "${search.trim()}"` : 'Add product'}
+                </span>
+              </button>
+            )}
+            <div ref={observerTarget} className="h-5 flex items-center justify-center">
               {isLoading && <Loader2 size={12} className="animate-spin text-muted-text/40" />}
               {!isLoading && !hasMore && items.length > 0 && <span className="text-[9px] text-muted-text/40">End of list</span>}
-              {!isLoading && items.length === 0 && search.length >= 2 && <span className="text-[9px] text-muted-text/40">No results</span>}
             </div>
           </div>
         </div>

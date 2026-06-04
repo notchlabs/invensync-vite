@@ -9,9 +9,10 @@ interface InventoryDetailModalProps {
   onClose: () => void
   item: InventoryItem | null
   hideTabs?: boolean
+  showConsumedQty?: boolean
 }
 
-export function InventoryDetailModal({ isOpen, onClose, item, hideTabs = false }: InventoryDetailModalProps) {
+export function InventoryDetailModal({ isOpen, onClose, item, hideTabs = false, showConsumedQty = false }: InventoryDetailModalProps) {
   const [activeTab, setActiveTab] = useState<'bills' | 'audit'>('bills')
   const [billsData, setBillsData] = useState<PurchaseRecord[]>([])
   const [auditData, setAuditData] = useState<AuditLogItem[]>([])
@@ -28,7 +29,7 @@ export function InventoryDetailModal({ isOpen, onClose, item, hideTabs = false }
     isLoadingRef.current = true
     setIsLoading(true)
     try {
-      const res = await InventoryService.fetchInboundStorage(item.productId, item.siteId)
+      const res = await InventoryService.fetchInboundStorage(item.productId, item.siteId, item.istId, item.date)
       setBillsData(res.data || [])
     } catch (error) {
       console.error('Failed to load storage details', error)
@@ -115,13 +116,13 @@ export function InventoryDetailModal({ isOpen, onClose, item, hideTabs = false }
       )
     },
     {
-      header: 'Available Qty',
-      key: 'availableQuantity',
+      header: 'Quantity',
+      key: showConsumedQty ? 'consumedQuantity' : 'availableQuantity',
       width: '15%',
       className: 'text-right',
       render: (row) => (
         <div className="text-[13px] font-bold text-primary-text">
-          {row.availableQuantity} <span className="text-[11px] text-secondary-text font-medium">{row.unit}</span>
+          {showConsumedQty ? row.consumedQuantity : row.availableQuantity} <span className="text-[11px] text-secondary-text font-medium">{row.unit}</span>
         </div>
       )
     },
@@ -231,10 +232,12 @@ export function InventoryDetailModal({ isOpen, onClose, item, hideTabs = false }
                 <Tag size={12} className="text-primary-text" />
                 Site: <span className="text-secondary-text font-medium">{item.site}</span>
               </div>
-              <div className="flex items-center gap-1.5 px-2 py-0.5 bg-card border border-border-main rounded text-primary-text font-bold">
-                <Box size={12} className="text-primary-text" />
-                Total Qty: <span className={`font-medium ${item.quantity === 0 ? 'text-rose-500' : 'text-secondary-text'}`}>{item.quantity === 0 ? 'No Stock' : `${item.quantity} ${item.unit}`}</span>
-              </div>
+              {item.quantity > 0 && (
+                <div className="flex items-center gap-1.5 px-2 py-0.5 bg-card border border-border-main rounded text-primary-text font-bold">
+                  <Box size={12} className="text-primary-text" />
+                  Total Qty: <span className="font-medium text-secondary-text">{item.quantity} {item.unit}</span>
+                </div>
+              )}
             </div>
           </div>
           <button 

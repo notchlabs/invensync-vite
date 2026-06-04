@@ -17,13 +17,13 @@ export function MonthCard({ row, onClick }: { row: ProfitLossMonth; onClick: () 
   const bg = isLoss
     ? 'bg-rose-50 dark:bg-rose-500/10 border-rose-200 dark:border-rose-500/20'
     : isProfit
-    ? 'bg-emerald-50 dark:bg-emerald-500/10 border-emerald-200 dark:border-emerald-500/20'
+    ? 'bg-green-100 dark:bg-emerald-500/10 border-green-300 dark:border-emerald-500/20'
     : 'bg-card border-border-main'
 
   const amtColor = isLoss
     ? 'text-rose-600 dark:text-rose-400'
     : isProfit
-    ? 'text-emerald-700 dark:text-emerald-400'
+    ? 'text-green-800 dark:text-emerald-400'
     : 'text-muted-text'
 
   return (
@@ -33,7 +33,7 @@ export function MonthCard({ row, onClick }: { row: ProfitLossMonth; onClick: () 
     >
       <div className="flex items-center justify-between">
         {isLoss    ? <ArrowDownRight size={14} className="text-rose-500" />
-         : isProfit ? <ArrowUpRight  size={14} className="text-emerald-600" />
+         : isProfit ? <ArrowUpRight  size={14} className="text-green-700 dark:text-emerald-500" />
          : <span className="w-[14px]" />}
         {isCurrent && (
           <span className="text-[9px] font-black text-muted-text uppercase tracking-widest bg-black/5 dark:bg-white/10 px-1.5 py-0.5 rounded">NOW</span>

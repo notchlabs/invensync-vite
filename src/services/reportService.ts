@@ -26,6 +26,10 @@ export interface ProfitLossMonth {
   amount: number;
   profit: boolean;
   finalized: boolean;
+  cash: number;
+  cashCollectedByManager: number;
+  paytm: number;
+  paytmCheckedByManager: number;
 }
 
 export interface MonthlyExpensesData {
