@@ -11,15 +11,12 @@ import { ConsumptionService } from "../../services/consumptionService"
 import { ENV } from "../../config/env"
 
 export function ConfirmConsumptionModal({
-    cart, onClose, onRemove, onSuccess,
-    compositeProductId, quantityToPrepare,
+    cart, onClose, onRemove, onSuccess
   }: {
     cart: Map<number, CartEntry>
     onClose: () => void
     onRemove: (id: number) => void
     onSuccess: () => void
-    compositeProductId: number
-    quantityToPrepare: number
   }) {
     const entries = Array.from(cart.values())
 
@@ -44,8 +41,6 @@ export function ConfirmConsumptionModal({
         const inventoryEntries    = Array.from(cart.values()).filter(e => e.source === 'inventory')
         const preparationEntries  = Array.from(cart.values()).filter(e => e.source === 'preparation')
 
-        const calls: Promise<unknown>[] = []
-
         if (inventoryEntries.length > 0) {
           const records = inventoryEntries.map(e => {
             const s = settings.get(e.productId)
@@ -62,59 +57,42 @@ export function ConfirmConsumptionModal({
               loyalty: s?.paymentMode === 'Loyalty',
             }
           })
-          calls.push(ConsumptionService.consumeStock({
+          await ConsumptionService.consumeStock({
             consumptionUnitId: Number(ENV.DEFAULT_CONSUMPTION_UNIT_ID),
             consumptionDate,
             saveDetails: true,
             records,
-          }))
+          })
         }
 
         if (preparationEntries.length > 0) {
-          const rawMaterials = preparationEntries.map(e => ({
-            name: e.productName,
-            requiredPerUnit: 1,
-            unit: e.unit,
-            availableQty: 0,
-            consumeQty: e.qty,
-            productId: e.productId,
-          }))
-
-          const prepAmountIncTax = preparationEntries.reduce((sum, e) => {
-            return sum + (parseFloat(settings.get(e.productId)?.amount || '0') || 0)
-          }, 0)
-          const prepCash = preparationEntries.reduce((sum, e) => {
+          for (const e of preparationEntries) {
             const s = settings.get(e.productId)
-            const amt = parseFloat(s?.amount || '0') || 0
-            return sum + (s?.paymentMode === 'Cash' ? amt : 0)
-          }, 0)
-          const prepUpi = preparationEntries.reduce((sum, e) => {
-            const s = settings.get(e.productId)
-            const amt = parseFloat(s?.amount || '0') || 0
-            return sum + ((s?.paymentMode === 'UPI' || s?.paymentMode === 'Loyalty') ? amt : 0)
-          }, 0)
-          const prepLoyalty = preparationEntries.some(e => settings.get(e.productId)?.paymentMode === 'Loyalty')
-          const prepNoBill  = preparationEntries.some(e => settings.get(e.productId)?.noBill === true)
+            const amount = parseFloat(s?.amount || '0')
+            const cash = s?.paymentMode === 'Cash' ? amount : 0
+            const upi = (s?.paymentMode === 'UPI' || s?.paymentMode === 'Loyalty') ? amount : 0
+            const loyalty = s?.paymentMode === 'Loyalty'
+            const noBill = s?.noBill ?? false
 
-          calls.push(ConsumptionService.prepareAndConsume({
-            compositeProductId,
-            siteId: Number(ENV.DEFAULT_SITE_ID),
-            quantityToPrepare,
-            consumptionUnitId: Number(ENV.DEFAULT_CONSUMPTION_UNIT_ID),
-            rawMaterials,
-            extraCharges: {},
-            consumptionDate,
-            saveDetails: true,
-            amountIncTax: prepAmountIncTax,
-            cash: prepCash,
-            upi: prepUpi,
-            loyalty: prepLoyalty,
-            noBill: prepNoBill,
-            isWbc: false,
-          }))
+            await ConsumptionService.prepareAndConsume({
+              compositeProductId: e.productId,
+              siteId: Number(ENV.DEFAULT_SITE_ID),
+              quantityToPrepare: e.qty,
+              consumptionUnitId: Number(ENV.DEFAULT_CONSUMPTION_UNIT_ID),
+              rawMaterials: [],
+              extraCharges: {},
+              consumptionDate,
+              saveDetails: true,
+              amountIncTax: amount,
+              cash,
+              upi,
+              loyalty,
+              noBill,
+              isWbc: false,
+            })
+          }
         }
 
-        await Promise.all(calls)
         toast.success('Stock consumed successfully!')
         onSuccess()
       } catch {

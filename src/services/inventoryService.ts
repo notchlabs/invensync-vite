@@ -307,6 +307,20 @@ export class InventoryService {
   }
 
   /**
+   * Fetch composite product details (BOQ)
+   */
+  static async fetchCompositeProduct(productId: number): Promise<ApiResponse<any>> {
+    return ApiService.get(`/product-boq/${productId}`);
+  }
+
+  /**
+   * Update a composite product (BOQ)
+   */
+  static async updateCompositeProduct(productId: number, payload: CreateCompositePayload): Promise<ApiResponse<null>> {
+    return ApiService.post(`/product-boq/${productId}/update`, payload);
+  }
+
+  /**
    * Generate a transfer invoice preview (PDF URL)
    */
   static async transferPreview(payload: TransferPayload): Promise<ApiResponse<string>> {

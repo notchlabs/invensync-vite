@@ -462,41 +462,61 @@ export default function DashboardMonthPage() {
                       ) : (dayItems[b.consumptionDate] ?? []).length === 0 ? (
                         <p className="px-4 pb-4 text-[13px] text-muted-text font-medium text-center">No items found</p>
                       ) : (
-                        <div className="flex flex-col divide-y divide-border-main/50 pb-1">
-                          {(dayItems[b.consumptionDate] ?? []).map((item) => {
+                        <div className="flex flex-col">
+                          {(dayItems[b.consumptionDate] ?? []).map((item, idx) => {
                             const saleTotal = item.cash + item.upi + item.noBill + item.loyalty
+                            const purchaseTotal = item.amountIncTax ?? 0
+                            const itemProfit = saleTotal - purchaseTotal
+                            const itemProfitPct = saleTotal > 0 ? (itemProfit / saleTotal) * 100 : (purchaseTotal > 0 ? -100 : 0)
+                            const isItemProfit = itemProfit >= 0
                             const time = fmtTime(item.consumedDate)
+
                             return (
-                              <div key={item.cuBillId} className="flex items-start gap-3 px-4 py-2.5">
-                                <div className="relative shrink-0 mt-0.5">
-                                  <div className="w-10 h-10 rounded-xl border border-border-main bg-surface flex items-center justify-center overflow-hidden">
-                                    {item.imageUrl
-                                      ? <img src={item.imageUrl} alt={item.productName} className="w-full h-full object-contain" />
-                                      : <span className="text-[12px] font-black text-muted-text/50">{item.productName.charAt(0)}</span>
-                                    }
+                              <div
+                                key={item.cuBillId}
+                                className={`flex items-center gap-3 px-4 py-2.5 ${idx % 2 === 0 ? 'bg-transparent' : 'bg-surface/40'}`}
+                              >
+                                {/* Thumbnail */}
+                                <div className="relative shrink-0">
+                                  <div className="w-9 h-9 rounded-lg border border-border-main bg-surface flex items-center justify-center overflow-hidden">
+                                    {item.imageUrl ? (
+                                      <img src={item.imageUrl} alt={item.productName} className="w-full h-full object-contain" />
+                                    ) : (
+                                      <span className="text-[11px] font-bold text-muted-text">{item.productName.charAt(0)}</span>
+                                    )}
                                   </div>
                                   {item.qty > 1 && (
-                                    <span className="absolute -top-1 -right-1 w-4 h-4 rounded-full bg-primary-text text-card text-[9px] font-black flex items-center justify-center">
+                                    <span className="absolute -top-1 -right-1 min-w-[16px] h-[16px] px-0.5 rounded-full bg-primary-text text-card text-[8px] font-black flex items-center justify-center">
                                       {item.qty}
                                     </span>
                                   )}
                                 </div>
+
+                                {/* Product Info */}
                                 <div className="flex-1 min-w-0">
-                                  <div className="flex items-baseline justify-between gap-2">
+                                  <div className="flex items-center gap-1.5">
                                     <p className="text-[13px] font-bold text-primary-text truncate">{item.productName}</p>
-                                    <p className="text-[14px] font-black text-primary-text shrink-0">₹{formatIndianNumber(saleTotal)}</p>
                                   </div>
-                                  <div className="flex items-center justify-between gap-2 mt-0.5 flex-wrap">
-                                    <p className="text-[11px] text-muted-text font-medium">
-                                      Cash ₹{item.cash} · UPI ₹{item.upi} · No Bill ₹{item.noBill}
-                                    </p>
+                                  <div className="flex items-center gap-3 mt-0.5">
+                                    <span className="text-[11px] text-muted-text font-medium">
+                                      ₹{purchaseTotal.toFixed(2)} <span className="text-muted-text/40 mx-0.5">→</span> ₹{formatIndianNumber(saleTotal)}
+                                    </span>
                                     {time && (
-                                      <p className="text-[11px] text-muted-text font-medium flex items-center gap-1 shrink-0">
-                                        <Clock size={10} className="text-muted-text/50" />{time}
-                                      </p>
+                                      <span className="text-[10px] text-muted-text/60 font-medium flex items-center gap-0.5">
+                                        <Clock size={9} />{time}
+                                      </span>
                                     )}
                                   </div>
-                                  <p className="text-[10px] text-muted-text/60 font-medium mt-0.5">Purchase ₹{item.amountIncTax.toFixed(2)}</p>
+                                </div>
+
+                                {/* Profit / Loss */}
+                                <div className="shrink-0 text-right">
+                                  <p className={`text-[13px] font-black tabular-nums ${isItemProfit ? 'text-emerald-600 dark:text-emerald-400' : 'text-rose-500'}`}>
+                                    {isItemProfit ? '+' : '-'}₹{formatIndianNumber(Math.abs(itemProfit))}
+                                  </p>
+                                  <p className={`text-[10px] font-bold ${isItemProfit ? 'text-emerald-500/80' : 'text-rose-400/80'}`}>
+                                    {isItemProfit ? '+' : ''}{itemProfitPct.toFixed(0)}%
+                                  </p>
                                 </div>
                               </div>
                             )

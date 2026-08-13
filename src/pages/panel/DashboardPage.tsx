@@ -1,5 +1,6 @@
 import { useState, useEffect } from 'react'
-import { Activity, Database, TrendingUp, Target } from 'lucide-react'
+import { useNavigate } from 'react-router-dom'
+import { Activity, Database, TrendingUp, Target, BarChart2, Store } from 'lucide-react'
 import Skeleton from 'react-loading-skeleton'
 import { ReportService, type InventoryStats, type ProfitLossMonth } from '../../services/reportService'
 import { ENV } from '../../config/env'
@@ -21,6 +22,7 @@ const STAT_META = [
 
 
 export default function DashboardPage() {
+  const navigate = useNavigate()
   const [stats, setStats]             = useState<InventoryStats | null>(null)
   const [isLoadingStats, setIsLoadingStats] = useState(true)
 
@@ -142,6 +144,52 @@ export default function DashboardPage() {
             </button>
           </div>
         )}
+      </div>
+
+      {/* ── View Reports ─────────────────────────────────────────── */}
+      <div className="flex flex-col gap-4">
+        <div>
+          <h2 className="text-[16px] font-black text-primary-text tracking-tight">View Reports</h2>
+          <p className="text-[12px] text-muted-text font-medium mt-0.5">Detailed breakdown reports for business analysis</p>
+        </div>
+        
+        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
+          <div className="bg-card border border-border-main rounded-2xl p-5 flex flex-col justify-between hover:border-secondary-text transition-all group">
+            <div>
+              <div className="w-10 h-10 rounded-xl bg-blue-50 dark:bg-blue-500/10 flex items-center justify-center text-blue-600 dark:text-blue-400 mb-3 group-hover:scale-105 transition-transform">
+                <BarChart2 size={20} />
+              </div>
+              <h3 className="text-[14px] font-black text-primary-text mb-1">Product-wise Profit Report</h3>
+              <p className="text-[12px] text-muted-text font-medium leading-relaxed">
+                Analyze total sales, purchase costs, transaction volume, and overall net profit margins for each product.
+              </p>
+            </div>
+            <button
+              onClick={() => navigate('/app/panel/reports/product-wise-profit')}
+              className="mt-4 px-4 py-2 bg-surface hover:bg-neutral-900 hover:text-white dark:hover:bg-neutral-100 dark:hover:text-neutral-900 border border-border-main rounded-xl text-[12px] font-black text-secondary-text transition-all self-start cursor-pointer"
+            >
+              Open Report
+            </button>
+          </div>
+
+          <div className="bg-card border border-border-main rounded-2xl p-5 flex flex-col justify-between hover:border-secondary-text transition-all group">
+            <div>
+              <div className="w-10 h-10 rounded-xl bg-emerald-50 dark:bg-emerald-500/10 flex items-center justify-center text-emerald-600 dark:text-emerald-400 mb-3 group-hover:scale-105 transition-transform">
+                <Store size={20} />
+              </div>
+              <h3 className="text-[14px] font-black text-primary-text mb-1">Vendor-wise Profit Report</h3>
+              <p className="text-[12px] text-muted-text font-medium leading-relaxed">
+                Analyze total sales, purchase costs, transaction volume, and overall net profit margins for each vendor.
+              </p>
+            </div>
+            <button
+              onClick={() => navigate('/app/panel/reports/vendor-wise-profit')}
+              className="mt-4 px-4 py-2 bg-surface hover:bg-neutral-900 hover:text-white dark:hover:bg-neutral-100 dark:hover:text-neutral-900 border border-border-main rounded-xl text-[12px] font-black text-secondary-text transition-all self-start cursor-pointer"
+            >
+              Open Report
+            </button>
+          </div>
+        </div>
       </div>
 
       {/* ── P&L Dialog ───────────────────────────────────────────── */}

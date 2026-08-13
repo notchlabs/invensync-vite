@@ -6,6 +6,8 @@ import type { DuplicateInfo } from '../../services/stockUploadService';
 interface BillFooterProps {
   subtotal: number;
   tax: number;
+  extraTotal?: number;
+  extraChargesList?: { name: string; value: number; taxable: boolean; tax: number; total: number }[];
   calculatedTotal: number;
   billedTotal: number;
   isDuplicate: boolean;
@@ -25,6 +27,8 @@ const BILL_MISMATCH_THRESHOLD = 500;
 export function BillFooter({
   subtotal,
   tax,
+  extraTotal = 0,
+  extraChargesList = [],
   calculatedTotal,
   billedTotal,
   isDuplicate,
@@ -43,7 +47,7 @@ export function BillFooter({
   const isMinorMismatch = diff > 1 && diff <= BILL_MISMATCH_THRESHOLD;
 
   return (
-    <div className="shrink-0 sticky bottom-0 z-20 border-t border-border-main bg-card px-4 lg:px-6 xl:px-8 py-4">
+    <div className="shrink-0 sticky bottom-0 z-20 border-t border-border-main bg-card px-2 lg:px-2 xl:px-2 py-2">
       <div className="max-w-[1200px] mx-auto w-full flex flex-col gap-3">
         {/* Summary Row */}
         <div className="flex flex-wrap items-end justify-between gap-x-6 gap-y-2">
@@ -58,12 +62,22 @@ export function BillFooter({
             </div>
             <div className="flex flex-col gap-0.5 relative group/extra">
               <span className="text-[9px] font-bold text-muted-text/50 uppercase tracking-widest cursor-help flex items-center gap-0.5">Extra <span className="text-muted-text/25 text-[7px]">ⓘ</span></span>
-              <span className="text-[14px] font-bold text-primary-text tracking-tight">{formatIndianCurrency(0)}</span>
-              <div className="absolute bottom-full left-0 mb-2 w-[200px] bg-card border border-border-main rounded-xl shadow-2xl p-3 flex flex-col gap-1.5 opacity-0 invisible group-hover/extra:opacity-100 group-hover/extra:visible transition-all duration-200 z-[60]">
+              <span className="text-[14px] font-bold text-primary-text tracking-tight">{formatIndianCurrency(extraTotal)}</span>
+              <div className="absolute bottom-full left-0 mb-2 w-[240px] bg-card border border-border-main rounded-xl shadow-2xl p-3 flex flex-col gap-1.5 opacity-0 invisible group-hover/extra:opacity-100 group-hover/extra:visible transition-all duration-200 z-[60]">
                 <span className="text-[9px] font-black text-muted-text uppercase tracking-widest border-b border-border-main pb-1.5 mb-0.5">Charge Breakup</span>
-                <div className="flex justify-between text-[11px]"><span className="text-muted-text">Shipping</span><span className="font-bold text-primary-text">{formatIndianCurrency(0)}</span></div>
-                <div className="flex justify-between text-[11px]"><span className="text-muted-text">Handling</span><span className="font-bold text-primary-text">{formatIndianCurrency(0)}</span></div>
-                <div className="flex justify-between text-[11px]"><span className="text-muted-text">Other</span><span className="font-bold text-primary-text">{formatIndianCurrency(0)}</span></div>
+                {extraChargesList && extraChargesList.length > 0 ? (
+                  extraChargesList.map((c, idx) => (
+                    <div key={idx} className="flex justify-between text-[11px] gap-2">
+                      <span className="text-muted-text truncate capitalize">{c.name.toLowerCase()}</span>
+                      <span className="font-bold text-primary-text shrink-0">
+                        {formatIndianCurrency(c.total)}
+                        {c.taxable && <span className="text-[8px] text-muted-text font-normal ml-0.5">(18% GST)</span>}
+                      </span>
+                    </div>
+                  ))
+                ) : (
+                  <div className="text-[11px] text-muted-text italic">No extra charges</div>
+                )}
               </div>
             </div>
             {billedTotal > 0 && (

@@ -33,6 +33,8 @@ const VendorDetailPage  = lazy(() => import('./pages/panel/VendorDetailPage'))
 const TransitPage       = lazy(() => import('./pages/panel/TransitPage'))
 const ProductsPage      = lazy(() => import('./pages/panel/ProductsPage'))
 const ReportsPage       = lazy(() => import('./pages/panel/ReportsPage'))
+const ProductProfitReportPage = lazy(() => import('./pages/panel/ProductProfitReportPage'))
+const VendorProfitReportPage = lazy(() => import('./pages/panel/VendorProfitReportPage'))
 const PurchaseOrderPage = lazy(() => import('./pages/panel/PurchaseOrderPage'))
 const DocumentsPage     = lazy(() => import('./pages/panel/DocumentsPage'))
 
@@ -107,6 +109,8 @@ function App() {
                   <Route path="/app/panel/transit"         element={<TransitPage />} />
                   <Route path="/app/panel/products"        element={<ProductsPage />} />
                   <Route path="/app/panel/reports"         element={<ReportsPage />} />
+                  <Route path="/app/panel/reports/product-wise-profit" element={<ProductProfitReportPage />} />
+                  <Route path="/app/panel/reports/vendor-wise-profit" element={<VendorProfitReportPage />} />
                   <Route path="/app/panel/purchase-orders" element={<PurchaseOrderPage />} />
                   <Route path="/app/panel/documents"       element={<DocumentsPage />} />
                 </Route>

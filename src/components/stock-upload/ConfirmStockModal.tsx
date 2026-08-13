@@ -189,6 +189,28 @@ export function ConfirmStockModal({ isOpen, onClose, queue, onSuccess }: Confirm
     setEditableProducts(prev => prev.filter((_, i) => i !== index));
   };
 
+  const { extraChargesTotal, extraChargesList } = useMemo(() => {
+    const charges = selectedItem?.extractedData?.extraCharges;
+    if (!charges) return { extraChargesTotal: 0, extraChargesList: [] };
+
+    let total = 0;
+    const list = Object.entries(charges).map(([name, detail]) => {
+      const val = Number(detail.value) || 0;
+      const taxAmt = detail.taxable ? val * 0.18 : 0;
+      const lineTotal = val + taxAmt;
+      total += lineTotal;
+      return {
+        name,
+        value: val,
+        taxable: detail.taxable,
+        tax: taxAmt,
+        total: lineTotal
+      };
+    });
+
+    return { extraChargesTotal: total, extraChargesList: list };
+  }, [selectedItem]);
+
   const { subtotal, tax, calculatedTotal } = useMemo(() => {
     let s = 0;
     let t = 0;
@@ -198,12 +220,14 @@ export function ConfirmStockModal({ isOpen, onClose, queue, onSuccess }: Confirm
       const cgst = Number(p.cgstInPerc) || 0;
       const sgst = Number(p.sgstInPerc) || 0;
       const taxPerc = cgst + sgst;
-      const taxAmount = (price * taxPerc) / 100;
-      s += qty * price;
+      const discountPercentage = Number(p.discountPercentage) || 0;
+      const discountedPrice = price * (1 - discountPercentage / 100);
+      const taxAmount = (discountedPrice * taxPerc) / 100;
+      s += qty * discountedPrice;
       t += qty * taxAmount;
     });
-    return { subtotal: s, tax: t, calculatedTotal: s + t };
-  }, [editableProducts]);
+    return { subtotal: s, tax: t, calculatedTotal: s + t + extraChargesTotal };
+  }, [editableProducts, extraChargesTotal]);
 
   const handleConfirmAndSave = async () => {
     if (!selectedItem || !selectedItem.extractedData) return;
@@ -245,20 +269,24 @@ export function ConfirmStockModal({ isOpen, onClose, queue, onSuccess }: Confirm
         totalWithoutTax: String(subtotal),
         tax: String(tax),
         billTotalIncludingTax: data.billTotalIncludingTax ?? calculatedTotal,
-        extraCharges: {},
+        extraCharges: data.extraCharges || {},
         products: editableProducts.map(p => {
           const rawQty = p.quantity !== undefined ? p.quantity : '';
           const qty = Number(rawQty) || 0;
           const rawPrice = p.price !== undefined ? p.price : '';
           const price = Number(rawPrice) || 0;
+          const discountPercentage = Number(p.discountPercentage) || 0;
+          const discountedPrice = price * (1 - discountPercentage / 100);
           
           const rawCgst = p.cgstInPerc;
           const rawSgst = p.sgstInPerc;
           const rawTaxPerc = p.taxPerc !== undefined ? p.taxPerc : (rawCgst != null || rawSgst != null ? (Number(rawCgst) || 0) + (Number(rawSgst) || 0) : '');
           const taxPerc = Number(rawTaxPerc) || 0;
 
-          const taxAmount = (price * taxPerc) / 100;
+          const taxAmount = (discountedPrice * taxPerc) / 100;
           const totalTaxLine = qty * taxAmount;
+
+          const hasDiscount = p.discountPercentage !== null && p.discountPercentage !== undefined && Number(p.discountPercentage) > 0;
 
           const product: CreateBatchPayload['products'][number] = {
             name: p.name,
@@ -268,11 +296,12 @@ export function ConfirmStockModal({ isOpen, onClose, queue, onSuccess }: Confirm
             hsnName: p.hsnName || null,
             cgstInPerc: Number(rawCgst) || 0,
             sgstInPerc: Number(rawSgst) || 0,
-            price: price,
-            totalExcludingTax: qty * price,
+            price: hasDiscount ? discountedPrice : price,
+            totalExcludingTax: qty * discountedPrice,
             tax: totalTaxLine,
-            totalIncludingTax: qty * price + totalTaxLine,
+            totalIncludingTax: qty * discountedPrice + totalTaxLine,
             imageUrl: p.imageUrl || null,
+            discountPercentage: p.discountPercentage !== null && p.discountPercentage !== undefined ? Number(p.discountPercentage) : undefined,
           };
           if (p.productId) product.productId = p.productId;
           return product;
@@ -359,7 +388,7 @@ export function ConfirmStockModal({ isOpen, onClose, queue, onSuccess }: Confirm
                 />
 
                 {/* ─── Scrollable Table Area ─── */}
-                <div className="flex-1 overflow-y-auto custom-scrollbar p-4 lg:p-6 xl:p-8">
+                <div className="flex-1 overflow-y-auto custom-scrollbar p-2 lg:p-2 xl:p-2">
                   <div className="max-w-[1200px] mx-auto w-full">
                     {/* Product Table */}
                     <div className="flex flex-col gap-0 w-full">
@@ -385,7 +414,7 @@ export function ConfirmStockModal({ isOpen, onClose, queue, onSuccess }: Confirm
                               <th className="px-2 py-2 text-[10px] font-black text-muted-text uppercase tracking-widest text-center">Unit</th>
                               <th className="px-2 py-2 text-[10px] font-black text-muted-text uppercase tracking-widest text-right">Price</th>
                               <th className="px-2 py-2 text-[10px] font-black text-muted-text uppercase tracking-widest text-center">Tax %</th>
-                              <th className="px-2 py-2 text-[10px] font-black text-muted-text uppercase tracking-widest text-right">Tax/u</th>
+                              <th className="px-2 py-2 text-[10px] font-black text-muted-text uppercase tracking-widest text-center">Disc</th>
                               <th className="px-2 py-2 text-right text-[10px] font-black text-muted-text uppercase tracking-widest">Total</th>
                               <th className="px-2 py-2"></th>
                             </tr>
@@ -398,14 +427,17 @@ export function ConfirmStockModal({ isOpen, onClose, queue, onSuccess }: Confirm
                               const rawCgst = p.cgstInPerc;
                               const rawSgst = p.sgstInPerc;
                               const rawTaxPerc = p.taxPerc !== undefined ? p.taxPerc : (rawCgst != null || rawSgst != null ? (Number(rawCgst) || 0) + (Number(rawSgst) || 0) : '');
+                              const rawDiscount = p.discountPercentage !== undefined && p.discountPercentage !== null ? p.discountPercentage : '';
 
                               const qty = Number(rawQty) || 0;
                               const price = Number(rawPrice) || 0;
                               const taxPerc = Number(rawTaxPerc) || 0;
+                              const discountPercentage = Number(p.discountPercentage) || 0;
 
-                              const taxAmount = (price * taxPerc) / 100;
+                              const discountedPrice = price * (1 - discountPercentage / 100);
+                              const taxAmount = (discountedPrice * taxPerc) / 100;
                               const totalTaxLine = qty * taxAmount;
-                              const totalIncl = qty * price + totalTaxLine;
+                              const totalIncl = qty * discountedPrice + totalTaxLine;
 
                               return (
                                 <tr key={`${selectedItem?.id || 'x'}-${i}`} className="hover:bg-surface/50 transition-colors group">
@@ -433,8 +465,18 @@ export function ConfirmStockModal({ isOpen, onClose, queue, onSuccess }: Confirm
                                       });
                                     }} title="Total Tax %" />
                                   </td>
-                                  <td className="px-2 py-2 text-right text-[11px] font-bold text-primary-text tracking-tight">
-                                    {formatIndianCurrency(taxAmount)}
+                                  <td className="px-2 py-2">
+                                    <input 
+                                      type="number" 
+                                      min="0" 
+                                      max="100" 
+                                      step="any" 
+                                      disabled={isDuplicate} 
+                                      className={`w-full bg-card border border-border-main ${isDuplicate ? 'opacity-50 cursor-not-allowed' : 'hover:border-secondary-text/50 focus:border-secondary-text'} rounded-md px-1 py-1 text-[11px] font-bold text-primary-text text-center outline-none`} 
+                                      value={rawDiscount} 
+                                      onChange={e => handleProductChange(i, 'discountPercentage', e.target.value)} 
+                                      title="Discount %" 
+                                    />
                                   </td>
                                   <td className="px-2 py-2 text-right">
                                     <div className="flex flex-col text-[11px] font-black text-primary-text tracking-tight">
@@ -475,6 +517,8 @@ export function ConfirmStockModal({ isOpen, onClose, queue, onSuccess }: Confirm
                 <BillFooter
                   subtotal={subtotal}
                   tax={tax}
+                  extraTotal={extraChargesTotal}
+                  extraChargesList={extraChargesList}
                   calculatedTotal={calculatedTotal}
                   billedTotal={billedTotal}
                   isDuplicate={isDuplicate}

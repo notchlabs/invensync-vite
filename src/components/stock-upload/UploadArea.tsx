@@ -120,13 +120,13 @@ export const UploadArea = ({
   const handleFiles = useCallback(async (files: File[]) => {
     if (isProcessingGlobal || isExtractingFiles) return;
 
-    const MAX_SIZE = 10 * 1024 * 1024; // 10MB
+    const MAX_SIZE = singleInvoiceMode ? 10 * 1024 * 1024 : 100 * 1024 * 1024; // 10MB for single, 100MB for multi-processing
     const validExtensions = ['image/jpeg', 'image/png', 'application/pdf', 'application/vnd.ms-excel', 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet'];
     
     const validFiles = files.filter(f => validExtensions.includes(f.type) && f.size <= MAX_SIZE);
 
     if (validFiles.length < files.length) {
-       // Optional: Could toast an error here for invalid files
+       toast.error(`Some files were skipped. Max size is ${singleInvoiceMode ? '10MB' : '100MB'}.`);
     }
 
     if (validFiles.length === 0) return;
@@ -143,7 +143,7 @@ export const UploadArea = ({
     } finally {
       setIsExtractingFiles(false);
     }
-  }, [isProcessingGlobal, isExtractingFiles, processIncomingFile]); // Added processIncomingFile dependency
+  }, [isProcessingGlobal, isExtractingFiles, processIncomingFile, singleInvoiceMode]); // Added singleInvoiceMode dependency
 
   const handleGlobalDragOver = useCallback((e: DragEvent) => {
     e.preventDefault();
@@ -356,7 +356,7 @@ export const UploadArea = ({
             <Upload size={24} strokeWidth={2} />
           </div>
           <strong className="text-[15px] text-primary-text">Upload your bills & invoices</strong>
-          <span className="text-[13px] text-muted-text">Drag and drop or click to select · JPG, PNG, PDF up to 10MB each</span>
+          <span className="text-[13px] text-muted-text">Drag and drop or click to select · JPG, PNG, PDF up to {singleInvoiceMode ? '10MB' : '100MB'} each</span>
           
           <div className="flex items-center gap-4 text-[11px] font-semibold text-secondary-text mt-2">
             <span className="flex items-center gap-1.5"><span className="w-1.5 h-1.5 rounded-full bg-emerald-500" /> Secure</span>

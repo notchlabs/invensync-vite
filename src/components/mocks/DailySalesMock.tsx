@@ -61,39 +61,32 @@ const DailySalesMock = () => {
             </div>
 
             <div className="text-[13px] font-bold text-primary-text mb-3">Products Sold (30)</div>
-            <div className="flex flex-col gap-2 pb-10">
-                <div className="border border-border-main rounded-xl p-3 flex justify-between items-center hover:border-muted-text transition-colors">
-                   <div className="flex gap-3 items-center">
-                      <div className="w-9 h-9 bg-purple-50 rounded-lg flex items-center justify-center relative border border-purple-100 shrink-0">
-                         <span className="absolute -top-1.5 -right-1.5 bg-neutral-900 text-white text-[9px] font-bold px-1.5 py-0.5 rounded-full border-2 border-card">x2</span>
-                         <Package size={16} className="text-purple-600" />
-                      </div>
-                      <div className="flex flex-col gap-0.5">
-                         <strong className="text-[12px] text-primary-text">Munch 5/-</strong>
-                         <div className="text-[9px] text-muted-text flex flex-wrap gap-x-2 gap-y-0.5 mt-0.5"><span className="font-semibold text-secondary-text">Cash ₹10</span><span>UPI ₹0</span><span>No Bill ₹0</span></div>
-                         <div className="text-[9px] text-muted-text">Purchase <span className="line-through decoration-muted-text/30">₹9.07</span></div>
-                      </div>
+            <div className="flex flex-col pb-10">
+                <div className="flex items-center gap-3 px-3 py-2.5">
+                   <div className="w-8 h-8 bg-purple-50 rounded-lg flex items-center justify-center relative border border-purple-100 shrink-0">
+                      <span className="absolute -top-1 -right-1 bg-neutral-900 text-white text-[8px] font-bold w-4 h-4 rounded-full flex items-center justify-center border border-card">2</span>
+                      <Package size={14} className="text-purple-600" />
+                   </div>
+                   <div className="flex-1 min-w-0">
+                      <p className="text-[12px] font-bold text-primary-text truncate">Munch 5/-</p>
+                      <p className="text-[10px] text-muted-text font-medium mt-0.5">₹9.07 <span className="text-muted-text/40 mx-0.5">→</span> ₹10.00 <span className="text-muted-text/50 ml-1">07:54 AM</span></p>
                    </div>
                    <div className="text-right shrink-0">
-                      <div className="text-[10px] text-muted-text font-medium mb-1">07:54 AM</div>
-                      <strong className="text-[14px] text-primary-text font-display">₹10</strong>
+                      <p className="text-[12px] font-black text-emerald-600">+₹0.93</p>
+                      <p className="text-[9px] font-bold text-emerald-500/80">+9%</p>
                    </div>
                 </div>
-                <div className="border border-border-main rounded-xl p-3 flex justify-between items-center hover:border-muted-text transition-colors">
-                   <div className="flex gap-3 items-center">
-                      <div className="w-9 h-9 bg-orange-50 rounded-lg flex items-center justify-center relative border border-orange-100 shrink-0">
-                         <span className="absolute -top-1.5 -right-1.5 bg-neutral-900 text-white text-[9px] font-bold px-1.5 py-0.5 rounded-full border-2 border-card">x1</span>
-                         <Package size={16} className="text-orange-600" />
-                      </div>
-                      <div className="flex flex-col gap-0.5">
-                         <strong className="text-[12px] text-primary-text">Magic Masala Makhana</strong>
-                         <div className="text-[9px] text-muted-text flex flex-wrap gap-x-2 gap-y-0.5 mt-0.5"><span>Cash ₹0</span><span className="font-semibold text-secondary-text">UPI ₹149</span><span>No Bill ₹0</span></div>
-                         <div className="text-[9px] text-muted-text">Purchase <span className="line-through decoration-muted-text/30">₹121.29</span></div>
-                      </div>
+                <div className="flex items-center gap-3 px-3 py-2.5 bg-surface/40">
+                   <div className="w-8 h-8 bg-orange-50 rounded-lg flex items-center justify-center relative border border-orange-100 shrink-0">
+                      <Package size={14} className="text-orange-600" />
+                   </div>
+                   <div className="flex-1 min-w-0">
+                      <p className="text-[12px] font-bold text-primary-text truncate">Magic Masala Makhana</p>
+                      <p className="text-[10px] text-muted-text font-medium mt-0.5">₹121.29 <span className="text-muted-text/40 mx-0.5">→</span> ₹149.00 <span className="text-muted-text/50 ml-1">08:55 AM</span></p>
                    </div>
                    <div className="text-right shrink-0">
-                      <div className="text-[10px] text-muted-text font-medium mb-1">08:55 AM</div>
-                      <strong className="text-[14px] text-primary-text font-display">₹149</strong>
+                      <p className="text-[12px] font-black text-emerald-600">+₹27.71</p>
+                      <p className="text-[9px] font-bold text-emerald-500/80">+19%</p>
                    </div>
                 </div>
             </div>

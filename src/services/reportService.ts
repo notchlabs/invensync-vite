@@ -72,6 +72,18 @@ export class ReportService {
   ): Promise<ApiResponse<{ data: PaginatedResponse<ConsumptionReportItem>; summary: ConsumptionReportSummary | null }>> {
     return ApiService.post(`/list/consumption-report?page=${page}&size=${size}`, payload);
   }
+
+  static async fetchProductWiseProfitReport(
+    payload: ProductProfitReportPayload
+  ): Promise<ApiResponse<PaginatedResponse<ProductProfitReportItem>>> {
+    return ApiService.post('/profit/product-wise?page=0&size=1000', payload);
+  }
+
+  static async fetchVendorWiseProfitReport(
+    payload: VendorProfitReportPayload
+  ): Promise<ApiResponse<PaginatedResponse<VendorProfitReportItem>>> {
+    return ApiService.post('/profit/vendor-wise?page=0&size=1000', payload);
+  }
 }
 
 export type StockStatus = 'ALL' | 'SAFE' | 'ORDER_SOON' | 'CRITICAL'
@@ -102,3 +114,47 @@ export interface ConsumptionReportSummary {
   belowReorder: number
   critical: number
 }
+
+export interface ProductProfitReportPayload {
+  siteId: number
+  fromDate?: string
+  toDate?: string
+  searchTerm?: string
+  sortBy?: 'PROFIT' | 'SALE_AMOUNT' | 'PURCHASE_AMOUNT'
+  sortDir?: 'ASC' | 'DESC'
+}
+
+export interface ProductProfitReportItem {
+  productId: number
+  productName: string
+  unit: string
+  imageUrl: string | null
+  totalSaleAmount: number
+  totalPurchaseAmount: number
+  totalProfit: number
+  profitPercentage: number
+  transactionCount: number
+}
+
+export interface VendorProfitReportPayload {
+  siteId: number
+  fromDate?: string
+  toDate?: string
+  searchTerm?: string
+  sortBy?: 'PROFIT' | 'SALE_AMOUNT' | 'PURCHASE_AMOUNT'
+  sortDir?: 'ASC' | 'DESC'
+}
+
+export interface VendorProfitReportItem {
+  supplierId: number
+  supplierName: string
+  supplierAddress: string
+  totalSaleAmount: number
+  totalPurchaseAmount: number
+  totalProfit: number
+  profitPercentage: number
+  productCount: number
+  transactionCount: number
+}
+
+

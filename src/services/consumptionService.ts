@@ -61,6 +61,7 @@ export interface RealTimeConsumePayload {
     cash: number;
     noBill: boolean;
     loyalty: boolean;
+    loyaltyAmt?: number;
   }[];
 }
 
@@ -219,5 +220,12 @@ export class ConsumptionService {
 
   static async prepareAndConsume(payload: PrepareAndConsumePayload): Promise<ApiResponse<null>> {
     return ApiService.post('/product-boq/prepare-and-consume', payload);
+  }
+
+  /**
+   * Re-open shift for editing sales & consumption
+   */
+  static async openShift(payload: { siteId: number; date: string; consumptionUnitId?: number }): Promise<ApiResponse<boolean>> {
+    return ApiService.post('/sales/open-shift', payload);
   }
 }

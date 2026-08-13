@@ -3,7 +3,7 @@ import { Outlet, useLocation, Link, useSearchParams } from 'react-router-dom'
 import { useMsal } from '@azure/msal-react'
 import { Menu, PanelLeft, Sun, Moon, MoreVertical, LogOut } from 'lucide-react'
 import { AppSidebar } from '../components/layout/AppSidebar'
-import { NAV_ITEMS } from '../config/navigation'
+import { FLAT_NAV_ITEMS } from '../config/navigation'
 import toast from 'react-hot-toast'
 import { useTheme } from '../context/ThemeContext'
 
@@ -76,8 +76,8 @@ const AppLayout = () => {
   const [isMobileOpen, setIsMobileOpen] = useState(false)
   const { theme, toggleTheme } = useTheme()
 
-  const currentNav = NAV_ITEMS.find(item => location.pathname.startsWith(item.path)) || 
-    (location.pathname.startsWith('/app/panel/consumption') ? NAV_ITEMS.find(i => i.label === 'Inventory') || NAV_ITEMS[0] : NAV_ITEMS[0])
+  const currentNav = FLAT_NAV_ITEMS.find(item => location.pathname.startsWith(item.path)) || 
+    (location.pathname.startsWith('/app/panel/consumption') ? FLAT_NAV_ITEMS.find(i => i.label === 'Inventory') || FLAT_NAV_ITEMS[0] : FLAT_NAV_ITEMS[0])
 
   const toTitleCase = (s: string) =>
     s.replace(/\w\S*/g, w => w.charAt(0).toUpperCase() + w.slice(1))

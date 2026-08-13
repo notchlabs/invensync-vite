@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useState, useMemo } from 'react';
 import { X, FileText, Calendar, Building2, Package, Loader2, ExternalLink, Hash } from 'lucide-react';
 import { StockUploadService, type UploadBatch, type BatchInvoiceDetail } from '../../services/stockUploadService';
 import { formatIndianCurrency } from '../../utils/numberFormat';
@@ -24,6 +24,28 @@ export function BillViewModal({ isOpen, onClose, batch }: BillViewModalProps) {
       .catch(console.error)
       .finally(() => setIsLoading(false));
   }
+
+  const { extraChargesTotal, extraChargesList } = useMemo(() => {
+    const charges = detail?.extraCharges as Record<string, { value: number; taxable: boolean }> | undefined;
+    if (!charges) return { extraChargesTotal: 0, extraChargesList: [] };
+
+    let total = 0;
+    const list = Object.entries(charges).map(([name, detail]) => {
+      const val = Number(detail.value) || 0;
+      const taxAmt = detail.taxable ? val * 0.18 : 0;
+      const lineTotal = val + taxAmt;
+      total += lineTotal;
+      return {
+        name,
+        value: val,
+        taxable: detail.taxable,
+        tax: taxAmt,
+        total: lineTotal
+      };
+    });
+
+    return { extraChargesTotal: total, extraChargesList: list };
+  }, [detail]);
 
   if (!isOpen) return null;
 
@@ -69,7 +91,7 @@ export function BillViewModal({ isOpen, onClose, batch }: BillViewModalProps) {
         <div className="flex-1 flex flex-col bg-card min-w-[300px] overflow-hidden">
 
           {/* ─── Header Banner ─── */}
-          <div className="bg-[#0f0f0f] text-white px-5 lg:px-8 py-4 flex flex-col gap-3 shrink-0">
+          <div className="bg-[#0f0f0f] text-white px-2 lg:px-2 py-2 flex flex-col gap-3 shrink-0">
             <div className="flex items-start justify-between gap-4">
               <div className="flex flex-col gap-1 min-w-0 flex-1">
                 <h1 className="text-[18px] md:text-[22px] font-black tracking-tight leading-tight uppercase truncate">
@@ -161,7 +183,7 @@ export function BillViewModal({ isOpen, onClose, batch }: BillViewModalProps) {
                         <th className="px-2 py-2 text-[10px] font-black text-muted-text uppercase tracking-widest text-center">Unit</th>
                         <th className="px-2 py-2 text-[10px] font-black text-muted-text uppercase tracking-widest text-right">Price</th>
                         <th className="px-2 py-2 text-[10px] font-black text-muted-text uppercase tracking-widest text-center">Tax %</th>
-                        <th className="px-2 py-2 text-[10px] font-black text-muted-text uppercase tracking-widest text-right">Tax</th>
+                        <th className="px-2 py-2 text-[10px] font-black text-muted-text uppercase tracking-widest text-center">Disc</th>
                         <th className="px-2 py-2 text-right text-[10px] font-black text-muted-text uppercase tracking-widest">Total</th>
                       </tr>
                     </thead>
@@ -192,8 +214,8 @@ export function BillViewModal({ isOpen, onClose, batch }: BillViewModalProps) {
                               {formatIndianCurrency(p.price ?? 0)}
                             </td>
                             <td className="px-2 py-2.5 text-[11px] font-bold text-primary-text text-center">{taxPerc}%</td>
-                            <td className="px-2 py-2.5 text-right text-[11px] font-bold text-primary-text tracking-tight">
-                              {formatIndianCurrency(p.tax ?? 0)}
+                            <td className="px-2 py-2.5 text-center text-[11px] font-bold text-primary-text">
+                              {p.discountPercentage !== undefined && p.discountPercentage !== null ? `${p.discountPercentage}%` : '0%'}
                             </td>
                             <td className="px-2 py-2.5 text-right">
                               <div className="flex flex-col text-[11px] font-black text-primary-text tracking-tight">
@@ -229,6 +251,27 @@ export function BillViewModal({ isOpen, onClose, batch }: BillViewModalProps) {
                     <span className="text-[14px] font-bold text-primary-text tracking-tight">
                       {formatIndianCurrency(detail.tax)}
                     </span>
+                  </div>
+                  {/* Extra Charges */}
+                  <div className="flex flex-col gap-0.5 relative group/extra">
+                    <span className="text-[9px] font-bold text-muted-text/50 uppercase tracking-widest cursor-help flex items-center gap-0.5">Extra <span className="text-muted-text/25 text-[7px]">ⓘ</span></span>
+                    <span className="text-[14px] font-bold text-primary-text tracking-tight">{formatIndianCurrency(extraChargesTotal)}</span>
+                    <div className="absolute bottom-full left-0 mb-2 w-[240px] bg-card border border-border-main rounded-xl shadow-2xl p-3 flex flex-col gap-1.5 opacity-0 invisible group-hover/extra:opacity-100 group-hover/extra:visible transition-all duration-200 z-[60]">
+                      <span className="text-[9px] font-black text-muted-text uppercase tracking-widest border-b border-border-main pb-1.5 mb-0.5">Charge Breakup</span>
+                      {extraChargesList && extraChargesList.length > 0 ? (
+                        extraChargesList.map((c, idx) => (
+                          <div key={idx} className="flex justify-between text-[11px] gap-2">
+                            <span className="text-muted-text truncate capitalize">{c.name.toLowerCase()}</span>
+                            <span className="font-bold text-primary-text shrink-0">
+                              {formatIndianCurrency(c.total)}
+                              {c.taxable && <span className="text-[8px] text-muted-text font-normal ml-0.5">(18% GST)</span>}
+                            </span>
+                          </div>
+                        ))
+                      ) : (
+                        <div className="text-[11px] text-muted-text italic">No extra charges</div>
+                      )}
+                    </div>
                   </div>
                   {Boolean(detail.totalIncAll) && (
                     <div className="flex flex-col pl-4 border-l border-border-main/50">

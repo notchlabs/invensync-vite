@@ -1,13 +1,13 @@
 // ── ProductCard ───────────────────────────────────────────────────────────────
 
-import { Minus, Plus } from "lucide-react"
+import { Minus, Plus, Edit3 } from "lucide-react"
 import { motion, AnimatePresence } from "framer-motion"
 import { ProductImage } from "./ProductImage"
 import { formatIndianCurrency } from "../../utils/numberFormat"
 
 export function ProductCard({
   productName, vendorName, price, unit, imageUrl,
-  cartQty, onAdd, onRemove, isOutOfStock,
+  cartQty, onAdd, onRemove, isOutOfStock, onEdit,
 }: {
   productName: string
   vendorName?: string | null
@@ -18,6 +18,7 @@ export function ProductCard({
   onAdd: () => void
   onRemove: () => void
   isOutOfStock?: boolean
+  onEdit?: () => void
 }) {
   return (
     <div className={`bg-card border ${isOutOfStock ? 'border-dashed border-border-main opacity-[0.85]' : 'border-border-main shadow-sm'} rounded-2xl p-3.5 flex flex-col gap-3 relative transition-all`}>
@@ -32,12 +33,26 @@ export function ProductCard({
             <p className="text-[13px] font-bold text-primary-text leading-snug line-clamp-2">
               {productName}
             </p>
-            {isOutOfStock && (
-              <div className="px-2 py-0.5 rounded-full bg-rose-500/10 text-rose-600 font-bold text-[9px] flex items-center gap-1 shrink-0 whitespace-nowrap mt-0.5 ring-1 ring-inset ring-rose-500/20">
-                <span className="w-1.5 h-1.5 rounded-full bg-rose-500" />
-                Out of stock
-              </div>
-            )}
+            <div className="flex items-center gap-1.5 shrink-0">
+              {isOutOfStock && (
+                <div className="px-2 py-0.5 rounded-full bg-rose-500/10 text-rose-600 font-bold text-[9px] flex items-center gap-1 whitespace-nowrap mt-0.5 ring-1 ring-inset ring-rose-500/20">
+                  <span className="w-1.5 h-1.5 rounded-full bg-rose-500" />
+                  Out of stock
+                </div>
+              )}
+              {onEdit && (
+                <button
+                  onClick={(e) => {
+                    e.stopPropagation()
+                    onEdit()
+                  }}
+                  className="p-1 hover:bg-card-light rounded-lg border border-border-main/50 text-muted-text hover:text-primary-text transition-all cursor-pointer"
+                  title="Edit Product"
+                >
+                  <Edit3 size={13} />
+                </button>
+              )}
+            </div>
           </div>
           {vendorName && (
             <p className="text-[11px] text-muted-text font-medium mt-0.5 line-clamp-1">

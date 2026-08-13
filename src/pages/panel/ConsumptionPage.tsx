@@ -8,9 +8,13 @@ import { ENV } from '../../config/env'
 import type { CartEntry } from '../../components/inventory-consumption/types'
 import { ProductCard } from '../../components/inventory-consumption/ProductCard'
 import { ConfirmConsumptionModal } from '../../components/inventory-consumption/ConfirmConsumptionModal'
+import { BogoOfferModal } from '../../components/inventory-consumption/BogoOfferModal'
+import { ColdCoffeeOfferModal } from '../../components/inventory-consumption/ColdCoffeeOfferModal'
 import { useNavigate } from 'react-router-dom'
 import type { ApiResponse } from '../../types/api'
 import type { PaginatedResponse } from '../../services/common/common.types'
+import { useMsal } from '@azure/msal-react'
+import { EditCompositeModal } from '../../components/inventory/EditCompositeModal'
 
 // ── constants ─────────────────────────────────────────────────────────────────
 
@@ -19,18 +23,45 @@ const PAGE_SIZE = 12
 
 // ── types ─────────────────────────────────────────────────────────────────────
 
-type Tab = 'inventory' | 'preparation'
+type Tab = 'inventory' | 'preparation' | 'offer'
 
 // ── ConsumptionPage ───────────────────────────────────────────────────────────
 
 export default function ConsumptionPage() {
+  const { accounts } = useMsal()
+  const claims = accounts[0]?.idTokenClaims ?? {}
+  const tokenRoles: string[] = Array.isArray(claims['roles']) ? (claims['roles'] as string[]) : []
+  const isAdmin = tokenRoles.includes('ADMIN')
+
   const [siteName, setSiteName]   = useState('')
   const [tab, setTab]             = useState<Tab>('inventory')
   const [search, setSearch]       = useState('')
   const [showModal, setShowModal] = useState(false)
+  const [showBogoModal, setShowBogoModal] = useState(false)
+  const [showColdCoffeeModal, setShowColdCoffeeModal] = useState(false)
+  const [editingProductId, setEditingProductId] = useState<number | null>(null)
+  const [isEditModalOpen, setIsEditModalOpen]   = useState(false)
 
   // Cart
   const [cart, setCart] = useState<Map<number, CartEntry>>(new Map())
+
+  const handleBogoSuccess = () => {
+    setShowBogoModal(false)
+    if (tab === 'inventory') {
+      loadInventory(true)
+    } else {
+      loadPrep('')
+    }
+  }
+
+  const handleColdCoffeeSuccess = () => {
+    setShowColdCoffeeModal(false)
+    if (tab === 'inventory') {
+      loadInventory(true)
+    } else {
+      loadPrep('')
+    }
+  }
 
   // Inventory tab
   const [invItems, setInvItems]     = useState<InventoryItem[]>([])
@@ -164,21 +195,21 @@ export default function ConsumptionPage() {
     <div className="flex flex-col h-full overflow-hidden">
 
       {/* ── Hero ─────────────────────────────────────────────────── */}
-      <div className="px-5 md:px-8 pt-6 pb-4 shrink-0 flex items-start justify-between gap-4">
+      <div className="px-5 md:px-8 pt-6 pb-4 shrink-0 flex flex-col sm:flex-row sm:items-center justify-between gap-4">
         <div>
           <h1 className="text-[22px] md:text-[26px] font-black text-primary-text tracking-tight leading-tight">
             {siteName || 'Inventory Consumption'}
           </h1>
           <p className="text-[12px] text-muted-text font-medium mt-0.5">Track and manage your stock across site</p>
         </div>
-          <div className="flex items-center gap-3 w-full sm:w-auto">
+        <div className="flex items-center gap-3 w-full sm:w-auto">
           <button 
             onClick={() => {
               navigate(`/app/panel/inventory/consumption?siteId=${SITE_ID}`)
             }}
             className="flex-1 sm:flex-none flex items-center justify-center cursor-pointer gap-1.5 px-4 py-2 bg-btn-primary hover:opacity-90 text-btn-primary-fg text-[13px] font-semibold rounded-lg border border-border-main/50 transition-all shadow-sm tracking-wide"
           >
-            <LineChartIcon />
+            <LineChartIcon size={16} />
             View Consumption
           </button>
         </div>
@@ -200,8 +231,8 @@ export default function ConsumptionPage() {
 
       {/* ── Tabs ─────────────────────────────────────────────────── */}
       <div className="px-5 md:px-8 pb-3 shrink-0">
-        <div className="grid grid-cols-2 bg-tab-light border border-border-main rounded-xl p-1">
-          {(['inventory', 'preparation'] as Tab[]).map(t => (
+        <div className="grid grid-cols-3 bg-tab-light border border-border-main rounded-xl p-1">
+          {(['inventory', 'preparation', 'offer'] as Tab[]).map(t => (
             <button
               key={t}
               onClick={() => { setTab(t); setSearch('') }}
@@ -209,7 +240,7 @@ export default function ConsumptionPage() {
                 tab === t ? 'bg-card-light shadow-sm' : 'text-muted-text hover:text-secondary-text'
               }`}
             >
-              {t === 'inventory' ? 'Inventory' : 'Preparation'}
+              {t === 'inventory' ? 'Inventory' : t === 'preparation' ? 'Preparation' : 'Offer'}
             </button>
           ))}
         </div>
@@ -327,11 +358,79 @@ export default function ConsumptionPage() {
                     cartQty={cartEntry?.qty ?? 0}
                     onAdd={() => addToCart({ productId: item.productId, productName: item.productName, unit: item.unit, price: item.price, imageUrl: resolvedImg, source: 'preparation' })}
                     onRemove={() => removeFromCart(item.productId)}
+                    onEdit={isAdmin ? () => {
+                      setEditingProductId(item.productId)
+                      setIsEditModalOpen(true)
+                    } : undefined}
                   />
                 )
               })}
             </div>
           )
+        )}
+
+        {tab === 'offer' && (
+          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3">
+            <div
+              onClick={() => setShowBogoModal(true)}
+              className="bg-card border border-border-main rounded-2xl p-5 flex flex-col justify-between relative overflow-hidden transition-all shadow-sm group hover:border-[#f0b44c]/30 cursor-pointer active:scale-[0.98]"
+            >
+              {/* Card background/gradient elements for premium feel */}
+              <div className="absolute top-0 right-0 w-24 h-24 bg-gradient-to-br from-[#f0b44c]/10 to-transparent rounded-bl-full pointer-events-none transition-transform group-hover:scale-110" />
+              
+              <div className="flex flex-col gap-2.5">
+                <div className="flex items-center justify-between">
+                  <div className="px-2.5 py-1 rounded-full bg-[#f0b44c]/10 text-[#d99805] text-[11px] font-black tracking-wider uppercase border border-[#f0b44c]/20">
+                    BOGO
+                  </div>
+                  <span className="w-2.5 h-2.5 rounded-full bg-emerald-500 animate-pulse animate-duration-1000" />
+                </div>
+                
+                <h3 className="text-[18px] font-black text-primary-text tracking-tight mt-1 leading-snug">
+                  Buy 1 Get 1 Free
+                </h3>
+                
+                <p className="text-[12px] text-muted-text font-medium leading-relaxed">
+                  Billing bogo items.
+                </p>
+              </div>
+
+              <div className="mt-4 pt-3 border-t border-border-main/50 flex items-center justify-between text-[11px] font-semibold text-muted-text">
+                <span>Valid until further notice</span>
+                <span className="text-[#d99805] font-black">Active</span>
+              </div>
+            </div>
+
+            <div
+              onClick={() => setShowColdCoffeeModal(true)}
+              className="bg-card border border-border-main rounded-2xl p-5 flex flex-col justify-between relative overflow-hidden transition-all shadow-sm group hover:border-[#f0b44c]/30 cursor-pointer active:scale-[0.98]"
+            >
+              {/* Card background/gradient elements for premium feel */}
+              <div className="absolute top-0 right-0 w-24 h-24 bg-gradient-to-br from-[#f0b44c]/10 to-transparent rounded-bl-full pointer-events-none transition-transform group-hover:scale-110" />
+              
+              <div className="flex flex-col gap-2.5">
+                <div className="flex items-center justify-between">
+                  <div className="px-2.5 py-1 rounded-full bg-[#f0b44c]/10 text-[#d99805] text-[11px] font-black tracking-wider uppercase border border-[#f0b44c]/20">
+                    Promo
+                  </div>
+                  <span className="w-2.5 h-2.5 rounded-full bg-emerald-500 animate-pulse animate-duration-1000" />
+                </div>
+                
+                <h3 className="text-[18px] font-black text-primary-text tracking-tight mt-1 leading-snug">
+                  Cold Coffee @25
+                </h3>
+                
+                <p className="text-[12px] text-muted-text font-medium leading-relaxed">
+                  Billing items under Cold Coffee offer.
+                </p>
+              </div>
+
+              <div className="mt-4 pt-3 border-t border-border-main/50 flex items-center justify-between text-[11px] font-semibold text-muted-text">
+                <span>Valid until further notice</span>
+                <span className="text-[#d99805] font-black">Active</span>
+              </div>
+            </div>
+          </div>
         )}
       </div>
 
@@ -392,11 +491,44 @@ export default function ConsumptionPage() {
             onClose={() => setShowModal(false)}
             onRemove={removeEntireFromCart}
             onSuccess={handleConsumeSuccess}
-            compositeProductId={Array.from(cart.values()).find(e => e.source === 'preparation')?.productId ?? 0}
-            quantityToPrepare={Array.from(cart.values()).find(e => e.source === 'preparation')?.qty ?? 1}
           />
         )}
       </AnimatePresence>
+
+      {/* ── BOGO Offer Modal ──────────────────────────────────────── */}
+      <AnimatePresence>
+        {showBogoModal && (
+          <BogoOfferModal
+            onClose={() => setShowBogoModal(false)}
+            onSuccess={handleBogoSuccess}
+          />
+        )}
+      </AnimatePresence>
+
+      {/* ── Cold Coffee Offer Modal ───────────────────────────────── */}
+      <AnimatePresence>
+        {showColdCoffeeModal && (
+          <ColdCoffeeOfferModal
+            onClose={() => setShowColdCoffeeModal(false)}
+            onSuccess={handleColdCoffeeSuccess}
+          />
+        )}
+      </AnimatePresence>
+
+      {/* ── Edit Composite Modal ──────────────────────────────────── */}
+      {isEditModalOpen && editingProductId !== null && (
+        <EditCompositeModal
+          isOpen={isEditModalOpen}
+          onClose={() => {
+            setIsEditModalOpen(false)
+            setEditingProductId(null)
+          }}
+          productId={editingProductId}
+          onSuccess={() => {
+            loadPrep(search.trim())
+          }}
+        />
+      )}
     </div>
   )
 }

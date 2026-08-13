@@ -395,7 +395,7 @@ export default function InventoryPage() {
       dataMap: {
         value: "price",
         unit: "unit",
-        computedTax: (row) => (row.mrp ? row.mrp - row.price : 0),
+        computedTax: (row) => row.taxPerUnit ?? 0,
       },
       render: !canSeeFinancials ? () => (
         <div className="flex flex-col items-end opacity-40 select-none">

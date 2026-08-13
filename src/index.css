@@ -124,8 +124,20 @@
 }
 
 /* Base */
+*,
+html,
+body,
+button,
+a,
+input,
+select,
+textarea {
+  touch-action: manipulation;
+}
+
 html {
   scroll-behavior: smooth;
+  -webkit-text-size-adjust: 100%;
 }
 
 body {
@@ -134,6 +146,13 @@ body {
   color: var(--text-primary);
   -webkit-font-smoothing: antialiased;
   transition: background-color 0.3s ease, color 0.3s ease;
+}
+
+/* Prevent auto-zoom on mobile browsers when focusing inputs/buttons */
+@media screen and (max-width: 768px) {
+  input, select, textarea {
+    font-size: 16px !important;
+  }
 }
 
 #root {

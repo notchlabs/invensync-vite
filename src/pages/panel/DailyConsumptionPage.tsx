@@ -1,6 +1,6 @@
 import { useState, useEffect, useMemo, useCallback } from 'react';
 import { useSearchParams } from 'react-router-dom';
-import { CheckCircle2 } from 'lucide-react';
+import { CheckCircle2, Unlock } from 'lucide-react';
 import toast from 'react-hot-toast';
 
 import { PageHeader } from '../../components/common/PageHeader';
@@ -53,6 +53,42 @@ export default function DailyConsumptionPage() {
   // Modal State
   const [isEndShiftModalOpen, setIsEndShiftModalOpen] = useState(false);
   const [isSaving, setIsSaving] = useState(false);
+  const [isOpenShiftLoading, setIsOpenShiftLoading] = useState(false);
+
+  const handleOpenShift = async () => {
+    if (!selectedSite || !selectedDate) return;
+
+    if (!window.confirm('Are you sure you want to open this shift again? This will allow edits to daily consumption & sales.')) {
+      return;
+    }
+
+    setIsOpenShiftLoading(true);
+    try {
+      const res = await ConsumptionService.openShift({
+        siteId: selectedSite.id,
+        date: selectedDate,
+        consumptionUnitId: selectedCu?.id,
+      });
+
+      if (res.status === 200) {
+        toast.success('Shift opened successfully! You can now edit consumption & sales.');
+        setSalesRecord(null);
+        const [salesRes, shiftsRes] = await Promise.all([
+          ConsumptionService.existsSalesByDateAndSiteId(selectedDate, selectedSite.id),
+          ConsumptionService.fetchShifts(selectedDate)
+        ]);
+        setSalesRecord(salesRes.data);
+        setShifts(shiftsRes.data || []);
+      } else {
+        toast.error(res.message || 'Failed to open shift');
+      }
+    } catch (err: unknown) {
+      const error = err as { message?: string };
+      toast.error(error.message || 'Failed to open shift');
+    } finally {
+      setIsOpenShiftLoading(false);
+    }
+  };
 
   // Computed state
   const isConcluded = salesRecord !== null;
@@ -383,12 +419,22 @@ export default function DailyConsumptionPage() {
         />
 
         {isConcluded && (
-          <div className="bg-[#065f46]/10 border border-[#065f46]/20 p-4 rounded-xl flex items-start gap-3">
-            <CheckCircle2 className="text-[#065f46] mt-0.5" size={20} />
-            <div className="flex flex-col">
-              <span className="font-bold text-[#065f46]">Sales already recorded</span>
-              <span className="text-[13px] text-[#065f46]">Sales for this consumption date have been successfully concluded. No further changes are allowed.</span>
+          <div className="bg-[#065f46]/10 border border-[#065f46]/20 p-4 rounded-xl flex flex-col sm:flex-row sm:items-center justify-between gap-4">
+            <div className="flex items-start gap-3">
+              <CheckCircle2 className="text-[#065f46] mt-0.5 shrink-0" size={20} />
+              <div className="flex flex-col">
+                <span className="font-bold text-[#065f46]">Sales already recorded</span>
+                <span className="text-[13px] text-[#065f46]">Sales for this consumption date have been successfully concluded. No further changes are allowed.</span>
+              </div>
             </div>
+            <button
+              disabled={isOpenShiftLoading}
+              onClick={handleOpenShift}
+              className="px-4 py-2 bg-[#065f46] hover:bg-[#044e39] text-white text-[13px] font-bold rounded-lg transition-all shadow-sm shrink-0 flex items-center justify-center gap-1.5 disabled:opacity-50 cursor-pointer"
+            >
+              <Unlock size={15} />
+              {isOpenShiftLoading ? 'Opening Shift...' : 'Open Shift'}
+            </button>
           </div>
         )}
 

@@ -64,6 +64,7 @@ export interface InventoryItem {
   billNos: string | null;
   totalExcludingTax: number;
   totalIncludingTax: number;
+  taxPerUnit?: number;
   latestUpdate: string;
   imageUrl: string | null;
   istId?: number | null;

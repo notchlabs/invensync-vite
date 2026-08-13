@@ -33,6 +33,7 @@ export interface ExtractedExtractionData {
   invoiceNumber: string | null;
   isInvoiceNumberClear: boolean | null;
   billDate: string | null;
+  extraCharges?: Record<string, { value: number; taxable: boolean }> | null;
 }
 
 export interface UploadBatch {
@@ -84,6 +85,7 @@ export interface CreateBatchPayload {
     totalIncludingTax: number;
     imageUrl: string | null;
     productId?: number;
+    discountPercentage?: number;
   }[];
   invoiceNumber: string | null;
   isInvoiceNumberClear: boolean | null;
@@ -183,6 +185,7 @@ export interface BatchInvoiceDetail {
     totalWithoutTax: number;
     productUrl: string;
     name: string;
+    discountPercentage?: number;
   }[];
   supportingDocs: string[];
   invoiceNumber: string;
