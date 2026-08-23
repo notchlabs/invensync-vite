@@ -3,6 +3,7 @@ import { Outlet, useLocation, Link, useSearchParams } from 'react-router-dom'
 import { useMsal } from '@azure/msal-react'
 import { Menu, PanelLeft, Sun, Moon, MoreVertical, LogOut } from 'lucide-react'
 import { AppSidebar } from '../components/layout/AppSidebar'
+import { BottomNavBar } from '../components/layout/BottomNavBar'
 import { FLAT_NAV_ITEMS } from '../config/navigation'
 import toast from 'react-hot-toast'
 import { useTheme } from '../context/ThemeContext'
@@ -197,9 +198,12 @@ const AppLayout = () => {
         </header>
 
         {/* Page Content */}
-        <div className="flex-1 flex flex-col min-h-0 overflow-hidden relative">
+        <div className="flex-1 flex flex-col min-h-0 overflow-hidden relative pb-16 lg:pb-0">
           <Outlet />
         </div>
+
+        {/* Mobile Bottom Navigation Bar */}
+        <BottomNavBar />
       </main>
     </div>
   )

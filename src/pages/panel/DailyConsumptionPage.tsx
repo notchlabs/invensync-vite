@@ -1,6 +1,7 @@
 import { useState, useEffect, useMemo, useCallback } from 'react';
 import { useSearchParams } from 'react-router-dom';
 import { CheckCircle2, Unlock } from 'lucide-react';
+import { useMsal } from '@azure/msal-react';
 import toast from 'react-hot-toast';
 
 import { PageHeader } from '../../components/common/PageHeader';
@@ -18,6 +19,11 @@ import { ManagerAuditForm } from '../../components/consumption/ManagerAuditForm'
 import { EndShiftModal } from '../../components/consumption/EndShiftModal';
 
 export default function DailyConsumptionPage() {
+  const { accounts } = useMsal();
+  const claims = accounts[0]?.idTokenClaims ?? {};
+  const tokenRoles: string[] = Array.isArray(claims['roles']) ? (claims['roles'] as string[]) : [];
+  const isAdmin = tokenRoles.includes('ADMIN');
+
   const [searchParams, setSearchParams] = useSearchParams();
 
   // URL state with defaults from ENV
@@ -70,7 +76,7 @@ export default function DailyConsumptionPage() {
         consumptionUnitId: selectedCu?.id,
       });
 
-      if (res.status === 200) {
+      if (res.success) {
         toast.success('Shift opened successfully! You can now edit consumption & sales.');
         setSalesRecord(null);
         const [salesRes, shiftsRes] = await Promise.all([
@@ -427,14 +433,16 @@ export default function DailyConsumptionPage() {
                 <span className="text-[13px] text-[#065f46]">Sales for this consumption date have been successfully concluded. No further changes are allowed.</span>
               </div>
             </div>
-            <button
-              disabled={isOpenShiftLoading}
-              onClick={handleOpenShift}
-              className="px-4 py-2 bg-[#065f46] hover:bg-[#044e39] text-white text-[13px] font-bold rounded-lg transition-all shadow-sm shrink-0 flex items-center justify-center gap-1.5 disabled:opacity-50 cursor-pointer"
-            >
-              <Unlock size={15} />
-              {isOpenShiftLoading ? 'Opening Shift...' : 'Open Shift'}
-            </button>
+            {isAdmin && (
+              <button
+                disabled={isOpenShiftLoading}
+                onClick={handleOpenShift}
+                className="px-4 py-2 bg-[#065f46] hover:bg-[#044e39] text-white text-[13px] font-bold rounded-lg transition-all shadow-sm shrink-0 flex items-center justify-center gap-1.5 disabled:opacity-50 cursor-pointer"
+              >
+                <Unlock size={15} />
+                {isOpenShiftLoading ? 'Opening Shift...' : 'Open Shift'}
+              </button>
+            )}
           </div>
         )}
 
