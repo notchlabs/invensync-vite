@@ -194,29 +194,8 @@ export default function ConsumptionPage() {
   return (
     <div className="flex flex-col h-full overflow-hidden">
 
-      {/* ── Hero ─────────────────────────────────────────────────── */}
-      <div className="px-5 md:px-8 pt-6 pb-4 shrink-0 flex flex-col sm:flex-row sm:items-center justify-between gap-4">
-        <div>
-          <h1 className="text-[22px] md:text-[26px] font-black text-primary-text tracking-tight leading-tight">
-            {siteName || 'Inventory Consumption'}
-          </h1>
-          <p className="text-[12px] text-muted-text font-medium mt-0.5">Track and manage your stock across site</p>
-        </div>
-        <div className="flex items-center gap-3 w-full sm:w-auto">
-          <button 
-            onClick={() => {
-              navigate(`/app/panel/inventory/consumption?siteId=${SITE_ID}`)
-            }}
-            className="flex-1 sm:flex-none flex items-center justify-center cursor-pointer gap-1.5 px-4 py-2 bg-btn-primary hover:opacity-90 text-btn-primary-fg text-[13px] font-semibold rounded-lg border border-border-main/50 transition-all shadow-sm tracking-wide"
-          >
-            <LineChartIcon size={16} />
-            View Consumption
-          </button>
-        </div>
-      </div>
-
       {/* ── Search ───────────────────────────────────────────────── */}
-      <div className="px-5 md:px-8 pb-3 shrink-0">
+      <div className="px-5 md:px-8 pt-3 sm:pt-4 pb-3 shrink-0">
         <div className="relative">
           <Search size={14} className="absolute left-3.5 top-1/2 -translate-y-1/2 text-muted-text" />
           <input
@@ -272,16 +251,18 @@ export default function ConsumptionPage() {
                       {inStock.map(item => {
                         const cartEntry = cart.get(item.productId)
                         const resolvedImg = item.imageUrl
+                        const itemCostPrice = item.price != null && item.price > 0 ? item.price : item.mrp
+                        const itemMrp = item.mrp || itemCostPrice
                         return (
                           <ProductCard
                             key={item.productId}
                             productName={item.productName}
                             vendorName={item.vendorNames}
-                            price={item.mrp}
+                            price={itemMrp}
                             unit={item.unit}
                             imageUrl={resolvedImg}
                             cartQty={cartEntry?.qty ?? 0}
-                            onAdd={() => addToCart({ productId: item.productId, productName: item.productName, unit: item.unit, price: item.mrp, imageUrl: resolvedImg, source: 'inventory' })}
+                            onAdd={() => addToCart({ productId: item.productId, productName: item.productName, unit: item.unit, price: itemCostPrice, mrp: itemMrp, imageUrl: resolvedImg, source: 'inventory', cgstInPerc: item.cgstInPerc || 0, sgstInPerc: item.sgstInPerc || 0 })}
                             onRemove={() => removeFromCart(item.productId)}
                             isOutOfStock={false}
                           />
@@ -305,16 +286,18 @@ export default function ConsumptionPage() {
                           {outOfStock.map(item => {
                             const cartEntry = cart.get(item.productId)
                             const resolvedImg = item.imageUrl
+                            const itemCostPrice = item.price != null && item.price > 0 ? item.price : item.mrp
+                            const itemMrp = item.mrp || itemCostPrice
                             return (
                               <ProductCard
                                 key={item.productId}
                                 productName={item.productName}
                                 vendorName={item.vendorNames}
-                                price={item.mrp}
+                                price={itemMrp}
                                 unit={item.unit}
                                 imageUrl={resolvedImg}
                                 cartQty={cartEntry?.qty ?? 0}
-                                onAdd={() => addToCart({ productId: item.productId, productName: item.productName, unit: item.unit, price: item.mrp, imageUrl: resolvedImg, source: 'inventory' })}
+                                onAdd={() => addToCart({ productId: item.productId, productName: item.productName, unit: item.unit, price: itemCostPrice, mrp: itemMrp, imageUrl: resolvedImg, source: 'inventory', cgstInPerc: item.cgstInPerc || 0, sgstInPerc: item.sgstInPerc || 0 })}
                                 onRemove={() => removeFromCart(item.productId)}
                                 isOutOfStock={true}
                               />
@@ -356,7 +339,7 @@ export default function ConsumptionPage() {
                     unit={item.unit}
                     imageUrl={resolvedImg}
                     cartQty={cartEntry?.qty ?? 0}
-                    onAdd={() => addToCart({ productId: item.productId, productName: item.productName, unit: item.unit, price: item.price, imageUrl: resolvedImg, source: 'preparation' })}
+                    onAdd={() => addToCart({ productId: item.productId, productName: item.productName, unit: item.unit, price: item.price, mrp: item.price, imageUrl: resolvedImg, source: 'preparation' })}
                     onRemove={() => removeFromCart(item.productId)}
                     onEdit={isAdmin ? () => {
                       setEditingProductId(item.productId)

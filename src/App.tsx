@@ -37,6 +37,8 @@ const ProductProfitReportPage = lazy(() => import('./pages/panel/ProductProfitRe
 const VendorProfitReportPage = lazy(() => import('./pages/panel/VendorProfitReportPage'))
 const PurchaseOrderPage = lazy(() => import('./pages/panel/PurchaseOrderPage'))
 const DocumentsPage     = lazy(() => import('./pages/panel/DocumentsPage'))
+const CreditCustomersPage = lazy(() => import('./pages/panel/CreditCustomersPage'))
+const CreditCustomerViewPage = lazy(() => import('./pages/panel/CreditCustomerViewPage'))
 
 function ScrollToTop() {
   const { pathname } = useLocation()
@@ -84,6 +86,8 @@ function App() {
                 <Route path="/app/panel/inventory"             element={<InventoryPage />} />
                 <Route path="/app/panel/inventory/consumption" element={<DailyConsumptionPage />} />
                 <Route path="/app/panel/consumption"           element={<ConsumptionPage />} />
+                <Route path="/app/panel/credit-customers"      element={<CreditCustomersPage />} />
+                <Route path="/app/panel/credit-customers/:id/view" element={<CreditCustomerViewPage />} />
 
                 {/* ADMIN */}
                 <Route element={<RoleGuard requiredRoles={['ADMIN']} />}>

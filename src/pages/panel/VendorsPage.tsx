@@ -159,12 +159,10 @@ export default function VendorsPage() {
   return (
     <div className="p-4 md:p-6 max-w-[1500px] mx-auto w-full flex flex-col h-full overflow-hidden">
       {/* Header */}
-      <div className="flex items-start justify-between mb-6">
-        <PageHeader
-          title="Vendors"
-          description="All suppliers and their purchase summary"
-        />
-      </div>
+      <PageHeader
+        title="Vendors"
+        description="All suppliers and their purchase summary"
+      />
 
       {/* Search */}
       <div className="mb-4">

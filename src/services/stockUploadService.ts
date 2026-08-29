@@ -13,6 +13,7 @@ export interface ExtractedProduct {
   cgstInPerc: number;
   sgstInPerc: number;
   taxPerc: number;
+  expiryDate?: string | Date | null;
   imageUrl?: string | null;
   existingProduct: boolean;
   productId?: number | null;
@@ -86,6 +87,7 @@ export interface CreateBatchPayload {
     imageUrl: string | null;
     productId?: number;
     discountPercentage?: number;
+    expiryDate?: string | Date | null;
   }[];
   invoiceNumber: string | null;
   isInvoiceNumberClear: boolean | null;

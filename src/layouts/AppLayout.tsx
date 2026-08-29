@@ -7,6 +7,7 @@ import { BottomNavBar } from '../components/layout/BottomNavBar'
 import { FLAT_NAV_ITEMS } from '../config/navigation'
 import toast from 'react-hot-toast'
 import { useTheme } from '../context/ThemeContext'
+import { HeaderProvider, useHeader } from '../context/HeaderContext'
 
 /* ── Account dropdown ────────────────────────────────────── */
 function AccountMenu() {
@@ -70,12 +71,13 @@ function AccountMenu() {
   )
 }
 
-const AppLayout = () => {
+function AppLayoutContent() {
   const location = useLocation()
   const [searchParams] = useSearchParams()
   const [isCollapsed, setIsCollapsed] = useState(false)
   const [isMobileOpen, setIsMobileOpen] = useState(false)
   const { theme, toggleTheme } = useTheme()
+  const { headerDetails } = useHeader()
 
   const currentNav = FLAT_NAV_ITEMS.find(item => location.pathname.startsWith(item.path)) || 
     (location.pathname.startsWith('/app/panel/consumption') ? FLAT_NAV_ITEMS.find(i => i.label === 'Inventory') || FLAT_NAV_ITEMS[0] : FLAT_NAV_ITEMS[0])
@@ -149,45 +151,59 @@ const AppLayout = () => {
       {/* Main Content */}
       <main className="flex-1 flex flex-col min-w-0 bg-app transition-colors duration-300">
         {/* Top Header */}
-        <header className="h-[60px] bg-header border-b border-border-main px-4 md:px-6 flex items-center justify-between shrink-0 transition-colors">
-          <div className="flex items-center gap-4 text-primary-text">
+        <header className="h-[64px] bg-header border-b border-border-main px-4 md:px-6 flex items-center justify-between shrink-0 transition-colors z-20">
+          <div className="flex items-center gap-3 md:gap-4 text-primary-text min-w-0">
             {/* Hamburger — mobile */}
             <button
               onClick={() => setIsMobileOpen(true)}
-              className="lg:hidden p-1 rounded-md hover:bg-surface transition-colors text-secondary-text"
+              className="lg:hidden p-1 rounded-md hover:bg-surface transition-colors text-secondary-text shrink-0"
             >
               <Menu size={20} />
             </button>
             {/* Collapse toggle — desktop */}
             <button
               onClick={() => setIsCollapsed(!isCollapsed)}
-              className="hidden lg:flex items-center justify-center w-8 h-8 hover:bg-surface rounded-md transition-colors text-secondary-text"
+              className="hidden lg:flex items-center justify-center w-8 h-8 hover:bg-surface rounded-md transition-colors text-secondary-text shrink-0"
             >
               <PanelLeft size={18} />
             </button>
-            {/* Breadcrumbs */}
-            <div className="flex items-center gap-2 text-[15px] font-bold tracking-tight">
-              {location.pathname === currentNav.path ? (
-                <h1 className="text-primary-text m-0 p-0">{currentNav.label}</h1>
-              ) : (
-                <>
-                  <Link to={currentNav.path} className="text-blue-600 dark:text-blue-500 hover:underline transition-all">
-                    {currentNav.label}
-                  </Link>
-                  <span className="text-muted-text/40 font-normal">/</span>
-                  <h1 className="text-primary-text m-0 p-0">
-                    {getBreadcrumbLabel()}
-                  </h1>
-                </>
-              )}
-            </div>
+
+            {/* Header Details or Breadcrumbs */}
+            {headerDetails.title ? (
+              <div className="flex flex-col justify-center min-w-0">
+                <h1 className="text-[15px] sm:text-[17px] font-extrabold text-primary-text leading-tight tracking-tight truncate">
+                  {headerDetails.title}
+                </h1>
+                {headerDetails.description && (
+                  <p className="text-[11px] font-medium text-secondary-text leading-none mt-0.5 hidden sm:block truncate">
+                    {headerDetails.description}
+                  </p>
+                )}
+              </div>
+            ) : (
+              <div className="flex items-center gap-2 text-[15px] font-bold tracking-tight">
+                {location.pathname === currentNav.path ? (
+                  <h1 className="text-primary-text m-0 p-0">{currentNav.label}</h1>
+                ) : (
+                  <>
+                    <Link to={currentNav.path} className="text-blue-600 dark:text-blue-500 hover:underline transition-all">
+                      {currentNav.label}
+                    </Link>
+                    <span className="text-muted-text/40 font-normal">/</span>
+                    <h1 className="text-primary-text m-0 p-0">
+                      {getBreadcrumbLabel()}
+                    </h1>
+                  </>
+                )}
+              </div>
+            )}
           </div>
 
-          <div className="flex items-center gap-3">
+          <div className="flex items-center gap-2.5 sm:gap-3 shrink-0">
             {/* Theme Toggle */}
             <button
               onClick={toggleTheme}
-              className="w-8 h-8 flex items-center justify-center rounded-lg border border-border-main bg-card hover:bg-surface transition-all text-secondary-text hover:text-primary-text shadow-sm"
+              className="w-8 h-8 flex items-center justify-center rounded-lg border border-border-main bg-card hover:bg-surface transition-all text-secondary-text hover:text-primary-text shadow-xs"
               title={`Switch to ${theme === 'light' ? 'dark' : 'light'} mode`}
             >
               {theme === 'light' ? <Moon size={16} /> : <Sun size={16} />}
@@ -206,6 +222,14 @@ const AppLayout = () => {
         <BottomNavBar />
       </main>
     </div>
+  )
+}
+
+const AppLayout = () => {
+  return (
+    <HeaderProvider>
+      <AppLayoutContent />
+    </HeaderProvider>
   )
 }
 

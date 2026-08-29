@@ -7,6 +7,7 @@ import { ENV } from '../../config/env'
 import { StatCard } from '../../components/dashboard/StatCard'
 import { MonthCard } from '../../components/dashboard/MonthCard'
 import { PLStatementDialog } from '../../components/dashboard/PLStatementDialog'
+import { PageHeader } from '../../components/common/PageHeader'
 import { CapitalOverview } from '../../components/dashboard/CapitalOverview'
 
 const SITE_ID = Number(ENV.DEFAULT_SITE_ID)
@@ -49,11 +50,11 @@ export default function DashboardPage() {
   return (
     <div className="p-4 md:p-6 max-w-[1500px] mx-auto w-full flex flex-col gap-6 overflow-y-auto h-full">
 
-      {/* ── Header ───────────────────────────────────────────────── */}
-      <div>
-        <h1 className="text-[22px] font-black text-primary-text tracking-tight">Dashboard</h1>
-        <p className="text-[12px] text-muted-text font-medium mt-0.5">Site performance at a glance</p>
-      </div>
+      {/* Header */}
+      <PageHeader
+        title="Dashboard"
+        description="Site performance at a glance"
+      />
 
       {/* ── Stats row ────────────────────────────────────────────── */}
       <div className="flex flex-wrap gap-3">

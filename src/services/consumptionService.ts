@@ -62,6 +62,8 @@ export interface RealTimeConsumePayload {
     noBill: boolean;
     loyalty: boolean;
     loyaltyAmt?: number;
+    creditCustomerId?: number | string | null;
+    total?: number;
   }[];
 }
 
@@ -87,6 +89,8 @@ export interface PrepareAndConsumePayload {
   loyalty: boolean;
   noBill: boolean;
   isWbc: boolean;
+  creditCustomerId?: number | string | null;
+  total?: number;
 }
 
 export interface BucketItem {
@@ -106,6 +110,7 @@ export interface BucketItem {
   cash: number;
   upi: number;
   noBill: number;
+  creditCustomerId?: number | string | null;
   consumedDate?: string;
   billNumber?: string | null;
   batchId?: number | null;

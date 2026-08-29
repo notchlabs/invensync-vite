@@ -302,6 +302,7 @@ export function ConfirmStockModal({ isOpen, onClose, queue, onSuccess }: Confirm
             totalIncludingTax: qty * discountedPrice + totalTaxLine,
             imageUrl: p.imageUrl || null,
             discountPercentage: p.discountPercentage !== null && p.discountPercentage !== undefined ? Number(p.discountPercentage) : undefined,
+            expiryDate: p.expiryDate || null,
           };
           if (p.productId) product.productId = p.productId;
           return product;

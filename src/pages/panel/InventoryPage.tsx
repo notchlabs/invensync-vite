@@ -31,22 +31,7 @@ import type {
 import { ShoppingBag } from "lucide-react";
 import { ENV } from "../../config/env";
 
-const LineChartIcon = () => (
-  <svg
-    xmlns="http://www.w3.org/2000/svg"
-    width="14"
-    height="14"
-    viewBox="0 0 24 24"
-    fill="none"
-    stroke="currentColor"
-    strokeWidth="2"
-    strokeLinecap="round"
-    strokeLinejoin="round"
-  >
-    <path d="M3 3v18h18" />
-    <path d="m19 9-5 5-4-4-3 3" />
-  </svg>
-);
+
 
 export default function InventoryPage() {
   const [searchParams, setSearchParams] = useSearchParams();
@@ -445,25 +430,11 @@ export default function InventoryPage() {
 
   return (
     <div className="p-4 md:p-6 max-w-[1400px] mx-auto w-full flex flex-col h-full transition-all">
-      {/* Header Actions */}
-      <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4 mb-6">
-        <PageHeader
-          title="Inventory Management"
-          description="Track and manage your stock across all sites"
-        />
-
-        <div className="flex items-center gap-3 w-full sm:w-auto">
-          <button
-            onClick={() => {
-              navigate(`/app/panel/inventory/consumption?siteId=${SITE_ID}`);
-            }}
-            className="flex-1 sm:flex-none flex items-center justify-center gap-1.5 px-4 py-2 bg-btn-primary hover:opacity-90 text-btn-primary-fg text-[13px] font-semibold rounded-lg border border-border-main/50 transition-all shadow-sm tracking-wide cursor-pointer"
-          >
-            <LineChartIcon />
-            View Consumption
-          </button>
-        </div>
-      </div>
+      {/* Header */}
+      <PageHeader
+        title="Inventory Management"
+        description="Track and manage your stock across all sites"
+      />
 
       {/* Filters Row */}
       <div className="flex flex-row flex-wrap items-center gap-3 mb-5 w-full bg-card p-3 rounded-xl border border-border-main">
@@ -518,6 +489,8 @@ export default function InventoryPage() {
             Clear
           </button>
         )}
+
+
       </div>
 
       {/* Table Area */}

@@ -64,7 +64,7 @@ export function ProductCard({
 
       {/* ── Bottom: price + action ───────────── */}
       <div className="flex items-center justify-between gap-2 p-2 -mx-2 rounded-[14px] bg-card-light h-14 overflow-hidden">
-        <div className="flex items-baseline gap-1.5 min-w-0">
+        <div className="flex items-baseline gap-2.5 min-w-0">
           {price > 0 ? (
             <span className="text-[15px] font-black text-primary-text tracking-tight">
               {formatIndianCurrency(price)}
@@ -72,7 +72,7 @@ export function ProductCard({
           ) : (
             <span className="text-[11px] text-muted-text italic">No MRP</span>
           )}
-          <span className="text-[12px] text-muted-text font-medium">| {unit}</span>
+          <span className="text-[12px] text-muted-text font-medium ml-0.5">| &nbsp;{unit}</span>
         </div>
 
         <div className="relative flex items-center justify-end h-full">

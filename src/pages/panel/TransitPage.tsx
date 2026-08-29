@@ -375,21 +375,10 @@ export default function TransitPage() {
     <div className="p-4 md:p-6 max-w-[1500px] mx-auto w-full flex flex-col h-full overflow-hidden">
 
       {/* Header */}
-      <div className="flex items-start justify-between mb-5 gap-4">
-        <PageHeader
-          title="Transit"
-          description="Track all stock transfers between sites"
-        />
-        <button
-          onClick={handleExport}
-          disabled={isExporting || data.length === 0}
-          className="flex items-center gap-2 px-4 py-2.5 bg-emerald-500/10 hover:bg-emerald-500/20 text-emerald-600 dark:text-emerald-500 text-[13px] font-black rounded-xl transition-all cursor-pointer disabled:opacity-50 disabled:cursor-not-allowed shrink-0 border border-emerald-500/10"
-        >
-          {isExporting
-            ? <><Download size={14} className="animate-bounce" /> Exporting...</>
-            : <><FileSpreadsheet size={14} /> {exportLabel}</>}
-        </button>
-      </div>
+      <PageHeader
+        title="Transit"
+        description="Track all stock transfers between sites"
+      />
 
       {/* Filters */}
       <div className="bg-card border border-border-main rounded-2xl p-4 mb-4 flex flex-wrap items-end gap-3 shadow-sm">
@@ -424,14 +413,25 @@ export default function TransitPage() {
           <SiteFilter selectedItems={toSites} placeholder="Select To site"  onSelectionChange={setToSites} />
         </div>
 
+        {/* Export & Clear Actions */}
+        <div className="flex items-center gap-2 mt-auto">
+          <button
+            onClick={handleExport}
+            disabled={isExporting || data.length === 0}
+            className="flex items-center gap-1.5 px-3.5 py-2 bg-emerald-500/10 hover:bg-emerald-500/20 text-emerald-600 dark:text-emerald-500 rounded-lg text-[12px] font-bold transition-all h-[38px] cursor-pointer disabled:opacity-50 disabled:cursor-not-allowed shrink-0 border border-emerald-500/10"
+          >
+            {isExporting
+              ? <><Download size={13} className="animate-bounce" /> Exporting...</>
+              : <><FileSpreadsheet size={13} /> {exportLabel}</>}
+          </button>
 
-        <button
-          onClick={handleClearFilters}
-          className="flex items-center gap-1.5 px-3 py-2 bg-rose-500/10 hover:bg-rose-500/20 text-rose-500 rounded-lg text-[11px] font-black uppercase tracking-widest transition-all h-[38px] mt-auto"
-        >
-          <RotateCw size={12} /> Clear
-        </button>
-
+          <button
+            onClick={handleClearFilters}
+            className="flex items-center gap-1.5 px-3.5 py-2 bg-rose-500/10 hover:bg-rose-500/20 text-rose-500 rounded-lg text-[11px] font-black uppercase tracking-widest transition-all h-[38px] cursor-pointer"
+          >
+            <RotateCw size={12} /> Clear
+          </button>
+        </div>
       </div>
 
       {/* Table */}

@@ -46,6 +46,7 @@ export const ConsumedItemRow = ({
   const isAlt = idx % 2 === 1;
   const time  = fmtTime(item.consumedDate)
   const isWbc = item.vendorNames?.toLowerCase().includes('wild bean')
+  const isCredit = Boolean(item.creditCustomerId != null && Number(item.creditCustomerId) > 0)
 
   const baseRow = `border-b border-border-main/50 last:border-0 transition-colors ${isAlt ? 'bg-black/[0.01] dark:bg-white/[0.01]' : 'bg-transparent'} hover:bg-black/[0.02] dark:hover:bg-white/[0.02]`
 
@@ -94,6 +95,7 @@ export const ConsumedItemRow = ({
             <div className="flex items-center gap-1.5 flex-wrap">
               <span className="text-[14px] font-bold text-primary-text font-display leading-snug">{item.productName ?? ''}</span>
               {isWbc && <span className="text-[8px] font-black tracking-wider bg-black text-white px-1.5 py-0.5 rounded uppercase">WBC</span>}
+              {isCredit && <span className="text-[8px] font-black tracking-wider bg-amber-600 text-white px-1.5 py-0.5 rounded uppercase">CREDIT</span>}
             </div>
             <div className="flex items-center gap-2 mt-1 flex-wrap">
               {time && (
@@ -149,6 +151,7 @@ export const ConsumedItemRow = ({
           <div className="flex items-center gap-1.5 min-w-0">
             <span className="text-[13px] font-bold text-primary-text font-display leading-tight truncate">{item.productName ?? ''}</span>
             {isWbc && <span className="shrink-0 text-[8px] font-black tracking-wider bg-black text-white px-1.5 py-0.5 rounded uppercase">WBC</span>}
+            {isCredit && <span className="shrink-0 text-[8px] font-black tracking-wider bg-amber-600 text-white px-1.5 py-0.5 rounded uppercase">CREDIT</span>}
           </div>
         </div>
 

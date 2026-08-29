@@ -407,12 +407,10 @@ export default function DailyConsumptionPage() {
   return (
     <div className="w-full h-full overflow-y-auto overflow-x-hidden custom-scrollbar">
       <div className="p-4 md:p-6 max-w-[1400px] mx-auto w-full flex flex-col gap-6 pb-20">
-        <div className="flex items-center justify-between">
-          <PageHeader
-            title="Daily Consumption & Sales"
-            description="Track item-wise sales by payment mode for the selected site and date"
-          />
-        </div>
+        <PageHeader
+          title="Daily Consumption & Sales"
+          description="Track item-wise sales by payment mode for the selected site and date"
+        />
 
         <ConsumptionFilters
           selectedDate={selectedDate}

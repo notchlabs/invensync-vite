@@ -110,62 +110,48 @@ export function InfiniteScrollTable<T>({
   useEffect(() => { isLoadingRef.current  = isLoading }, [isLoading])
   useEffect(() => { onLoadMoreRef.current = onLoadMore }, [onLoadMore])
 
-  // ── Error-loop guard ────────────────────────────────────────────────────────
-  // If a load was triggered by the observer but data didn't grow (API error),
-  // block further triggers until the parent resets (data goes back to empty).
-  const [loadBlocked, setLoadBlocked] = useState(false)
-  const loadBlockedRef   = useRef(false)
-  const pendingLoadRef   = useRef(false)   // true while we're waiting for a load we triggered
-  const dataLenAtLoad    = useRef(0)       // data.length when we last triggered a load
-  const dataLenRef       = useRef(data.length)  // always-fresh data.length for observer
+  const scrollContainerRef = useRef<HTMLDivElement>(null)
 
-  // Sync blocked state + data length to refs so the observer reads fresh values
-  useEffect(() => { loadBlockedRef.current = loadBlocked }, [loadBlocked])
-  useEffect(() => { dataLenRef.current = data.length }, [data.length])
-
-  // When data resets to empty (filter change / fresh search) → unblock
+  // ── IntersectionObserver + Scroll Fallback ──────────────────────────────────
   useEffect(() => {
-    if (data.length === 0) {
-      setLoadBlocked(false)
-      pendingLoadRef.current = false
-    }
-  }, [data.length])
-
-  // When isLoading transitions false → check if the load we triggered produced data
-  useEffect(() => {
-    if (!isLoading && pendingLoadRef.current) {
-      pendingLoadRef.current = false
-      if (hasMore && data.length === dataLenAtLoad.current) {
-        // Load finished but data didn't grow and hasMore is still true → error
-        setLoadBlocked(true)
+    const handleCheckScroll = () => {
+      const container = scrollContainerRef.current
+      if (!container || isLoadingRef.current || !hasMoreRef.current) return
+      const scrollBottom = container.scrollHeight - container.scrollTop - container.clientHeight
+      if (scrollBottom < 300) {
+        onLoadMoreRef.current()
       }
     }
-  }, [isLoading]) // eslint-disable-line react-hooks/exhaustive-deps
-  // ^ intentionally omit hasMore/data.length — we only want this to react to
-  //   the loading→done transition, not to data changes mid-flight.
 
-  // Observer is created once on mount and never recreated.
-  // Recreating it on dep changes was the bug: when hasMore flipped false→true
-  // after a filter reset, the newly-attached observer would fire immediately
-  // (sentinel already in viewport) and trigger an extra page load.
-  useEffect(() => {
     const observer = new IntersectionObserver(
       entries => {
-        if (entries[0].isIntersecting && hasMoreRef.current && !isLoadingRef.current && !loadBlockedRef.current) {
-          pendingLoadRef.current = true
-          dataLenAtLoad.current = dataLenRef.current
+        if (entries[0].isIntersecting && hasMoreRef.current && !isLoadingRef.current) {
           onLoadMoreRef.current()
         }
       },
-      { threshold: 1.0, rootMargin: '0px 0px 100px 0px' }
+      {
+        root: scrollContainerRef.current,
+        rootMargin: '0px 0px 400px 0px',
+        threshold: 0,
+      }
     )
 
     if (observerTarget.current) {
       observer.observe(observerTarget.current)
     }
 
-    return () => observer.disconnect()
-  }, []) // intentionally empty — refs handle freshness
+    const container = scrollContainerRef.current
+    if (container) {
+      container.addEventListener('scroll', handleCheckScroll, { passive: true })
+    }
+
+    return () => {
+      observer.disconnect()
+      if (container) {
+        container.removeEventListener('scroll', handleCheckScroll)
+      }
+    }
+  }, [])
 
   const allSelected = data.length > 0 && data.every((row, index) => selectedKeys.has(keyExtractor(row, index)))
 
@@ -214,7 +200,7 @@ export function InfiniteScrollTable<T>({
           </div>
         )}
 
-        <div className="flex-1 overflow-auto min-h-0">
+        <div ref={scrollContainerRef} className="flex-1 overflow-auto min-h-0">
           <table 
             className="w-full text-left border-collapse relative table-fixed" 
             style={{ minWidth }}

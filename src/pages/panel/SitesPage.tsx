@@ -113,59 +113,75 @@ export default function SitesPage() {
   return (
     <div className="p-4 md:p-6 max-w-[1500px] mx-auto w-full flex flex-col h-full overflow-hidden">
       {/* Page Header */}
-      <div className="flex items-start justify-between mb-6">
-        <PageHeader
-          title="All Sites"
-          description="Manage and monitor all your sites"
-        />
-        <button
-          onClick={() => navigate('/app/panel/sites/create')}
-          className="flex items-center gap-2 px-4 py-2.5 bg-neutral-900 dark:bg-neutral-100 text-white dark:text-neutral-900 text-[13px] font-bold rounded-xl hover:opacity-90 transition-opacity shrink-0"
-        >
-          <Plus size={15} />
-          Create Site
-        </button>
-      </div>
+      <PageHeader
+        title="All Sites"
+        description="Manage and monitor all your sites"
+      />
 
-      {/* Filters Row */}
-      <div className="flex flex-wrap items-center gap-3 mb-4">
+      {/* Filters & Actions Bar */}
+      <div className="flex flex-col sm:flex-row items-stretch sm:items-center justify-between gap-3 mb-4">
         {/* Search */}
-        <div className="relative group flex-1 min-w-[200px] max-w-[340px]">
-          <Search size={14} className="absolute left-3 top-1/2 -translate-y-1/2 text-muted-text group-focus-within:text-secondary-text" />
+        <div className="relative group flex-1 max-w-full sm:max-w-[360px]">
+          <Search size={14} className="absolute left-3 top-1/2 -translate-y-1/2 text-muted-text group-focus-within:text-secondary-text transition-colors" />
           <input
             type="text"
             placeholder="Search by site name or address..."
             value={searchTerm}
             onChange={(e) => setSearchTerm(e.target.value)}
-            className="w-full h-[38px] pl-9 pr-4 bg-surface border border-border-main rounded-lg text-[12px] font-bold text-primary-text outline-none focus:border-secondary-text focus:ring-2 focus:ring-accent/5 transition-all"
+            className="w-full h-[38px] pl-9 pr-4 bg-surface border border-border-main rounded-xl text-[12px] font-bold text-primary-text outline-none focus:border-secondary-text focus:ring-2 focus:ring-accent/5 transition-all"
           />
+          {searchTerm && (
+            <button
+              type="button"
+              onClick={() => setSearchTerm('')}
+              className="absolute right-3 top-1/2 -translate-y-1/2 text-muted-text hover:text-primary-text transition-colors cursor-pointer"
+            >
+              <RotateCw size={12} />
+            </button>
+          )}
         </div>
 
-        {/* Status Filter */}
-        <div className="flex items-center gap-2 ml-auto">
-          <span className="text-[12px] font-semibold text-secondary-text whitespace-nowrap">
-            Filter by status:
-          </span>
-          <div className="h-[38px] w-[160px] border border-border-main rounded-lg">
-            <CustomSelect
-              placeholder="All Status"
-              options={STATUS_OPTIONS}
-              value={statusFilter}
-              onChange={setStatusFilter}
-              className="rounded-lg border-none h-[38px]"
-            />
+        {/* Right Controls: Status Filter + Clear + Create Site */}
+        <div className="flex items-center gap-2 flex-wrap sm:flex-nowrap justify-between sm:justify-end">
+          {/* Status Filter */}
+          <div className="flex items-center gap-2 min-w-0">
+            <span className="text-[12px] font-semibold text-secondary-text whitespace-nowrap hidden xs:inline">
+              Filter by status:
+            </span>
+            <div className="h-[38px] w-[140px] xs:w-[150px] border border-border-main rounded-xl overflow-hidden bg-card">
+              <CustomSelect
+                placeholder="All Status"
+                options={STATUS_OPTIONS}
+                value={statusFilter}
+                onChange={setStatusFilter}
+                className="rounded-xl border-none h-[38px]"
+              />
+            </div>
           </div>
-        </div>
 
-        {/* Clear Filters */}
-        {hasAnyFilters && (
+          {/* Clear Filters */}
+          {hasAnyFilters && (
+            <button
+              type="button"
+              onClick={handleClearFilters}
+              className="flex items-center gap-1.5 px-3 py-2 bg-rose-500/10 hover:bg-rose-500/20 text-rose-500 rounded-xl text-[11px] font-bold transition-all h-[38px] cursor-pointer shrink-0"
+              title="Clear filters"
+            >
+              <RotateCw size={12} />
+              <span>Clear</span>
+            </button>
+          )}
+
+          {/* Create Site Button */}
           <button
-            onClick={handleClearFilters}
-            className="flex items-center gap-1.5 px-3 py-2 bg-rose-500/10 hover:bg-rose-500/20 text-rose-500 rounded-lg text-[11px] font-black uppercase tracking-widest transition-all h-[38px]"
+            type="button"
+            onClick={() => navigate('/app/panel/sites/create')}
+            className="flex items-center justify-center gap-1.5 px-4 py-2 bg-btn-primary hover:opacity-90 text-btn-primary-fg text-[13px] font-bold rounded-xl transition-all shrink-0 cursor-pointer h-[38px] shadow-xs"
           >
-            <RotateCw size={12} /> Clear
+            <Plus size={16} />
+            <span className="whitespace-nowrap">Create Site</span>
           </button>
-        )}
+        </div>
       </div>
 
       {/* Count */}

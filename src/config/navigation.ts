@@ -6,6 +6,7 @@ import {
   PlusSquare,
   FileText,
   Users,
+  UserCheck,
   Receipt,
   Box,
   BarChart,
@@ -32,7 +33,8 @@ export const NAV_ITEMS: NavItem[] = [
   { label: 'Inventory',      icon: Package,         path: '/app/panel/inventory' },
   { label: 'Add Stock',      icon: PlusSquare,      path: '/app/panel/add-stock',        requiredRoles: ADMIN_OR_MANAGER },
   { label: 'Bill Details',   icon: FileText,        path: '/app/panel/bills',            requiredRoles: ADMIN_OR_MANAGER },
-  { label: 'Vendors',        icon: Users,           path: '/app/panel/vendors',          requiredRoles: ADMIN_OR_MANAGER },
+  { label: 'Vendors',          icon: Users,           path: '/app/panel/vendors',          requiredRoles: ADMIN_OR_MANAGER },
+  { label: 'Credit Customers', icon: UserCheck,       path: '/app/panel/credit-customers' },
   {
     label: 'Other',
     icon: MoreHorizontal,

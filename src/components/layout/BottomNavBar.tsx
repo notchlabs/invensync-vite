@@ -1,6 +1,6 @@
 import { NavLink, useLocation } from 'react-router-dom'
 import { motion } from 'framer-motion'
-import { Package, ShoppingCart, Receipt } from 'lucide-react'
+import { Package, ShoppingCart, ReceiptIndianRupee, Users } from 'lucide-react'
 
 export interface BottomNavItem {
   label: string
@@ -11,23 +11,21 @@ export interface BottomNavItem {
 
 const BOTTOM_NAV_ITEMS: BottomNavItem[] = [
   {
-    label: 'Inventory',
-    path: '/app/panel/inventory',
-    icon: Package,
-    checkActive: (pathname: string) =>
-      pathname.startsWith('/app/panel/inventory') &&
-      !pathname.startsWith('/app/panel/inventory/consumption'),
-  },
-  {
     label: 'Consumption',
     path: '/app/panel/consumption',
     icon: ShoppingCart,
     checkActive: (pathname: string) => pathname.startsWith('/app/panel/consumption'),
   },
   {
+    label: 'Credit Customers',
+    path: '/app/panel/credit-customers',
+    icon: Users,
+    checkActive: (pathname: string) => pathname.startsWith('/app/panel/credit-customers'),
+  },
+  {
     label: 'View Day Sales',
     path: '/app/panel/inventory/consumption',
-    icon: Receipt,
+    icon: ReceiptIndianRupee,
     checkActive: (pathname: string) =>
       pathname.startsWith('/app/panel/inventory/consumption'),
   },
