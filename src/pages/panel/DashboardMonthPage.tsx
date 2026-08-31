@@ -1,6 +1,6 @@
 import { useEffect, useState } from 'react'
-import { useParams } from 'react-router-dom'
-import { ChevronDown, Clock, TrendingUp, TrendingDown, Sun, Moon } from 'lucide-react'
+import { useNavigate, useParams } from 'react-router-dom'
+import { ChevronDown, Clock, TrendingUp, TrendingDown, Sun, Moon, Tag, ShoppingCart, Calendar, ShoppingBag, PieChart, ExternalLink } from 'lucide-react'
 import Skeleton from 'react-loading-skeleton'
 import { SalesService, type MonthlySummary, type ConsumptionBucket, type DaySaleData } from '../../services/salesService'
 import { ConsumptionService, type BucketItem } from '../../services/consumptionService'
@@ -18,6 +18,24 @@ const fmtTime = (iso?: string) => {
   return `${h}:${m} ${ampm}`
 }
 
+const formatDateBlock = (dateStr: string) => {
+  const parts = dateStr.split('-')
+  if (parts.length === 3) {
+    const year = parts[0]
+    const monthIdx = parseInt(parts[1], 10) - 1
+    const dayNum = parseInt(parts[2], 10).toString()
+    const monthNames = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec']
+    const dateObj = new Date(parseInt(year, 10), monthIdx, parseInt(parts[2], 10))
+    const days = ['Sunday', 'Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday']
+    return {
+      dayNum,
+      monthYear: `${monthNames[monthIdx] || ''}, ${year}`,
+      dayName: days[dateObj.getDay()] || ''
+    }
+  }
+  return { dayNum: dateStr, monthYear: '', dayName: '' }
+}
+
 const SITE_ID = Number(ENV.DEFAULT_SITE_ID)
 const CU_ID   = Number(ENV.DEFAULT_CONSUMPTION_UNIT_ID)
 
@@ -32,10 +50,6 @@ function monthLabel(year: number, month: number) {
 
 function lastDayOfMonth(year: number, month: number) {
   return new Date(year, month, 0).getDate()
-}
-
-function dayName(dateStr: string) {
-  return new Date(dateStr).toLocaleDateString('default', { weekday: 'long' })
 }
 
 /* ── Sub-components ──────────────────────────────────────── */
@@ -124,6 +138,7 @@ function DaySaleCard({ loading, data, variant }: Readonly<{ loading: boolean; da
 
 /* ── Main page ───────────────────────────────────────────── */
 export default function DashboardMonthPage() {
+  const navigate = useNavigate()
   const { monthYear = '' } = useParams<{ monthYear: string }>()
   const { year, month } = parseMonthYear(monthYear)
 
@@ -373,18 +388,73 @@ export default function DashboardMonthPage() {
       </div>
 
       {/* ── Daily Sales ─────────────────────────────────────── */}
-      <div className="flex flex-col gap-3">
-        <p className="text-[10px] font-black text-muted-text uppercase tracking-widest">Daily Sales</p>
-        <div className="flex flex-col gap-2">
+      <div className="flex flex-col gap-4">
+        {/* Header Title + Stats Pills */}
+        <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
+          <div className="flex items-center gap-3">
+            <div className="w-10 h-10 rounded-xl bg-emerald-500/15 border border-emerald-500/30 flex items-center justify-center text-emerald-400 shrink-0">
+              <TrendingUp size={20} />
+            </div>
+            <div>
+              <h2 className="text-lg md:text-xl font-bold text-primary-text tracking-tight">Daily Sales</h2>
+              <p className="text-xs text-muted-text font-medium">Overview of your daily sales performance and profitability.</p>
+            </div>
+          </div>
+
+          {/* Quick summary stat badges */}
+          {!loading && buckets.length > 0 && (() => {
+            const totalPurchases = buckets.reduce((sum, b) => sum + (b.totalAmountIncTax || 0), 0);
+            const totalProfits = buckets.reduce((sum, b) => sum + ((b.totalSales || 0) - (b.totalAmountIncTax || 0)), 0);
+            const totalSales = buckets.reduce((sum, b) => sum + (b.totalSales || 0), 0);
+            const avgProfitPct = totalSales > 0 ? (totalProfits / totalSales) * 100 : 0;
+
+            return (
+              <div className="flex items-center gap-2 flex-wrap">
+                <div className="bg-card border border-border-main rounded-xl px-3 py-1.5 flex items-center gap-2.5">
+                  <div className="w-7 h-7 rounded-lg bg-blue-500/10 border border-blue-500/20 text-blue-400 flex items-center justify-center shrink-0">
+                    <ShoppingBag size={13} />
+                  </div>
+                  <div>
+                    <p className="text-[9.5px] font-bold text-muted-text uppercase tracking-wider">Total Purchase</p>
+                    <p className="text-[12px] font-black text-primary-text">₹{formatIndianNumber(totalPurchases)}</p>
+                  </div>
+                </div>
+
+                <div className="bg-card border border-border-main rounded-xl px-3 py-1.5 flex items-center gap-2.5">
+                  <div className="w-7 h-7 rounded-lg bg-emerald-500/10 border border-emerald-500/20 text-emerald-400 flex items-center justify-center shrink-0">
+                    <TrendingUp size={13} />
+                  </div>
+                  <div>
+                    <p className="text-[9.5px] font-bold text-muted-text uppercase tracking-wider">Total Profit</p>
+                    <p className="text-[12px] font-black text-emerald-400">₹{formatIndianNumber(totalProfits)}</p>
+                  </div>
+                </div>
+
+                <div className="bg-card border border-border-main rounded-xl px-3 py-1.5 flex items-center gap-2.5">
+                  <div className="w-7 h-7 rounded-lg bg-purple-500/10 border border-purple-500/20 text-purple-400 flex items-center justify-center shrink-0">
+                    <PieChart size={13} />
+                  </div>
+                  <div>
+                    <p className="text-[9.5px] font-bold text-muted-text uppercase tracking-wider">Avg Profit %</p>
+                    <p className="text-[12px] font-black text-purple-400">+{avgProfitPct.toFixed(1)}%</p>
+                  </div>
+                </div>
+              </div>
+            );
+          })()}
+        </div>
+
+        {/* Bucket List Cards */}
+        <div className="flex flex-col gap-2.5">
           {loading ? (
             (['d1','d2','d3','d4','d5','d6','d7'] as const).map((k) => (
               <div key={k} className="bg-card border border-border-main rounded-2xl px-4 py-3.5 flex items-center gap-4">
-                <div className="min-w-[110px] flex flex-col gap-1.5">
+                <div className="min-w-[130px] flex flex-col gap-1.5">
                   <Skeleton width={100} height={13} borderRadius={4} />
                   <Skeleton width={60} height={11} borderRadius={4} />
                 </div>
-                <div className="flex-1 grid grid-cols-3 gap-2">
-                  {(['sale','purchase','profit'] as const).map((col) => (
+                <div className="flex-1 grid grid-cols-4 gap-2">
+                  {(['sale','purchase','profit','diff'] as const).map((col) => (
                     <div key={col} className="flex flex-col gap-1">
                       <Skeleton width={44} height={10} borderRadius={3} />
                       <Skeleton width={80} height={13} borderRadius={4} />
@@ -402,49 +472,120 @@ export default function DashboardMonthPage() {
               const profitPct = b.totalSales > 0 ? (profit / b.totalSales) * 100 : 0
               const isOpen    = expandedDate === b.consumptionDate
               const isProfit  = profit >= 0
+              const { dayNum, monthYear, dayName } = formatDateBlock(b.consumptionDate)
+
+              const billedDiff = b.billedDiff ?? (b.recordedBilledAmountByManager != null && b.invoicedSales != null ? b.recordedBilledAmountByManager - b.invoicedSales : 0);
+              const posDiff = b.posDiff ?? (b.recordedPosAmountByManager != null && b.upiAmount != null ? b.recordedPosAmountByManager - b.upiAmount : 0);
+
+              const bPos = billedDiff > 0;
+              const bNeg = billedDiff < 0;
+              const pPos = posDiff > 0;
+              const pNeg = posDiff < 0;
 
               return (
-                <div key={b.consumptionDate} className="bg-card border border-border-main rounded-2xl overflow-hidden">
+                <div key={b.consumptionDate} className="bg-card border border-border-main rounded-2xl overflow-hidden shadow-xs">
                   <button
                     onClick={() => handleToggleDate(b.consumptionDate)}
-                    className="w-full flex flex-col sm:flex-row sm:items-center gap-2 sm:gap-4 px-4 py-3.5 hover:bg-surface transition-colors cursor-pointer text-left"
+                    className="w-full flex flex-col md:flex-row md:items-center justify-between gap-3 px-4 py-3.5 hover:bg-surface/50 transition-colors cursor-pointer text-left"
                   >
-                    {/* Date + chevron row (mobile only collapses chevron to top-right) */}
-                    <div className="flex items-center justify-between sm:block sm:min-w-[110px]">
-                      <div>
-                        <p className="text-[13px] font-black text-primary-text leading-tight">{b.label}</p>
-                        <p className="text-[11px] font-medium text-muted-text mt-0.5">{dayName(b.consumptionDate)}</p>
+                    {/* Date Block (Left) */}
+                    <div className="flex items-center justify-between md:justify-start gap-3 min-w-[135px]">
+                      <div className="bg-surface/80 border border-border-main/60 rounded-xl px-3 py-1.5 flex items-center gap-2.5">
+                        <div className="w-7 h-7 rounded-lg bg-emerald-500/15 text-emerald-400 flex items-center justify-center shrink-0">
+                          <Calendar size={15} />
+                        </div>
+                        <div className="flex flex-col">
+                          <div className="flex items-baseline gap-1">
+                            <span className="text-base font-black text-primary-text leading-none">{dayNum}</span>
+                            <span className="text-[10px] font-bold text-muted-text">{monthYear}</span>
+                          </div>
+                          <span className="text-[9.5px] font-medium text-muted-text/70">{dayName}</span>
+                        </div>
                       </div>
-                      <ChevronDown
-                        size={15}
-                        className={`sm:hidden text-muted-text shrink-0 transition-transform duration-200 ${isOpen ? 'rotate-180' : ''}`}
-                      />
-                    </div>
 
-                    <div className="flex-1 grid grid-cols-3 gap-2">
-                      <div>
-                        <p className="text-[10px] font-bold text-muted-text uppercase tracking-wider">Sale</p>
-                        <p className="text-[12px] sm:text-[13px] font-black text-primary-text">₹{formatIndianNumber(b.totalSales)}</p>
-                      </div>
-                      <div>
-                        <p className="text-[10px] font-bold text-muted-text uppercase tracking-wider">Purchase</p>
-                        <p className="text-[12px] sm:text-[13px] font-black text-primary-text">₹{formatIndianNumber(b.totalAmountIncTax)}</p>
-                      </div>
-                      <div>
-                        <p className="text-[10px] font-bold text-muted-text uppercase tracking-wider">Profit</p>
-                        <p className={`text-[12px] sm:text-[13px] font-black ${isProfit ? 'text-emerald-600 dark:text-emerald-400' : 'text-rose-500'}`}>
-                          ₹{formatIndianNumber(Math.abs(profit))}
-                        </p>
-                        <p className={`text-[10px] font-bold ${isProfit ? 'text-emerald-500' : 'text-rose-500'}`}>
-                          {isProfit ? '+' : '-'}{Math.abs(profitPct).toFixed(0)}%
-                        </p>
+                      <div className="w-8 h-8 rounded-lg bg-surface border border-border-main md:hidden flex items-center justify-center text-muted-text">
+                        <ChevronDown size={15} className={`transition-transform duration-200 ${isOpen ? 'rotate-180' : ''}`} />
                       </div>
                     </div>
 
-                    <ChevronDown
-                      size={15}
-                      className={`hidden sm:block text-muted-text shrink-0 transition-transform duration-200 ${isOpen ? 'rotate-180' : ''}`}
-                    />
+                    {/* 4 Stats Columns */}
+                    <div className="flex-1 grid grid-cols-2 md:grid-cols-4 gap-3 items-center md:px-3">
+                      {/* Sale Column */}
+                      <div className="flex items-center gap-2.5">
+                        <div className="w-8 h-8 rounded-full bg-surface border border-border-main flex items-center justify-center text-muted-text shrink-0">
+                          <Tag size={14} />
+                        </div>
+                        <div>
+                          <p className="text-[10px] font-bold text-muted-text uppercase tracking-wider">Sale</p>
+                          <p className="text-[12.5px] sm:text-[13.5px] font-black text-primary-text">₹{formatIndianNumber(b.totalSales)}</p>
+                        </div>
+                      </div>
+
+                      {/* Purchase Column */}
+                      <div className="flex items-center gap-2.5 md:border-l md:border-border-main/40 md:pl-4">
+                        <div className="w-8 h-8 rounded-full bg-blue-500/10 border border-blue-500/20 text-blue-400 flex items-center justify-center shrink-0">
+                          <ShoppingCart size={14} />
+                        </div>
+                        <div>
+                          <p className="text-[10px] font-bold text-muted-text uppercase tracking-wider">Purchase</p>
+                          <p className="text-[12.5px] sm:text-[13.5px] font-black text-primary-text">₹{formatIndianNumber(b.totalAmountIncTax)}</p>
+                        </div>
+                      </div>
+
+                      {/* Profit Column */}
+                      <div className="flex items-center gap-2.5 md:border-l md:border-border-main/40 md:pl-4">
+                        <div className={`w-8 h-8 rounded-full flex items-center justify-center shrink-0 ${
+                          isProfit ? 'bg-emerald-500/10 border border-emerald-500/20 text-emerald-400' : 'bg-rose-500/10 border border-rose-500/20 text-rose-500'
+                        }`}>
+                          {isProfit ? <TrendingUp size={14} /> : <TrendingDown size={14} />}
+                        </div>
+                        <div>
+                          <p className="text-[10px] font-bold text-muted-text uppercase tracking-wider">Profit</p>
+                          <p className={`text-[12.5px] sm:text-[13.5px] font-black ${isProfit ? 'text-emerald-400' : 'text-rose-500'}`}>
+                            ₹{formatIndianNumber(Math.abs(profit))}
+                          </p>
+                          <p className={`text-[9.5px] font-bold ${isProfit ? 'text-emerald-500' : 'text-rose-500'}`}>
+                            {isProfit ? '+' : '-'}{Math.abs(profitPct).toFixed(0)}%
+                          </p>
+                        </div>
+                      </div>
+
+                      {/* Difference Column */}
+                      <div className="md:border-l md:border-border-main/40 md:pl-4">
+                        <p className="text-[10px] font-bold text-muted-text uppercase tracking-wider">Difference</p>
+                        <div className="flex flex-col gap-0.5 mt-0.5">
+                          <p className={`text-[11px] sm:text-[12px] font-black leading-tight ${
+                            bPos ? 'text-emerald-400' : bNeg ? 'text-rose-500' : 'text-muted-text'
+                          }`}>
+                            Bill: {bPos ? '+' : bNeg ? '– ' : ''}₹{formatIndianNumber(Math.abs(billedDiff))}
+                          </p>
+                          <p className={`text-[11px] sm:text-[12px] font-black leading-tight ${
+                            pPos ? 'text-emerald-400' : pNeg ? 'text-rose-500' : 'text-muted-text'
+                          }`}>
+                            POS: {pPos ? '+' : pNeg ? '– ' : ''}₹{formatIndianNumber(Math.abs(posDiff))}
+                          </p>
+                        </div>
+                      </div>
+                    </div>
+
+                    {/* Desktop & Mobile Actions */}
+                    <div className="flex items-center gap-1.5 shrink-0">
+                      <button
+                        type="button"
+                        onClick={(e) => {
+                          e.stopPropagation()
+                          navigate(`/app/panel/inventory/consumption?date=${b.consumptionDate}&site=${SITE_ID}&cuId=${CU_ID}`)
+                        }}
+                        className="w-8 h-8 rounded-lg bg-surface border border-border-main flex items-center justify-center text-muted-text hover:text-white hover:border-secondary-text/50 transition-all cursor-pointer"
+                        title="View Day Sales / Consumption"
+                      >
+                        <ExternalLink size={14} />
+                      </button>
+
+                      <div className="hidden md:flex items-center justify-center w-8 h-8 rounded-lg bg-surface border border-border-main text-muted-text hover:text-primary-text transition-colors shrink-0">
+                        <ChevronDown size={15} className={`transition-transform duration-200 ${isOpen ? 'rotate-180' : ''}`} />
+                      </div>
+                    </div>
                   </button>
 
                   {isOpen && (

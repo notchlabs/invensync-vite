@@ -1,10 +1,11 @@
 import { useState, useCallback, useEffect, useRef } from "react";
-import { useSearchParams, useNavigate } from "react-router-dom";
+import { useSearchParams } from "react-router-dom";
 import { useMsal } from "@azure/msal-react";
 import {
   LayoutGrid,
   ArrowRightLeft,
   RotateCw,
+  ShoppingBag,
 } from "lucide-react";
 import { SiteFilter } from "../../components/filters/SiteFilter";
 import { ProductFilter } from "../../components/filters/ProductFilter";
@@ -28,15 +29,9 @@ import type {
   InventoryItem,
   InventoryFetchPayload,
 } from "../../types/inventory";
-import { ShoppingBag } from "lucide-react";
-import { ENV } from "../../config/env";
-
-
 
 export default function InventoryPage() {
   const [searchParams, setSearchParams] = useSearchParams();
-  const navigate = useNavigate();
-  const SITE_ID = Number(ENV.DEFAULT_SITE_ID)
   const { accounts } = useMsal();
   const claims = accounts[0]?.idTokenClaims ?? {};
   const tokenRoles: string[] = Array.isArray(claims['roles']) ? (claims['roles'] as string[]) : [];

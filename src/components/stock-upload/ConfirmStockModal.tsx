@@ -1,5 +1,5 @@
 import { useState, useEffect, useMemo, useRef } from 'react';
-import { FileText, Trash2, Plus } from 'lucide-react';
+import { FileText, Trash2, Plus, Calendar } from 'lucide-react';
 import { StockUploadService, type DuplicateInfo, type CreateBatchPayload } from '../../services/stockUploadService';
 import toast from 'react-hot-toast';
 import type { UploadQueueItem } from './UploadArea';
@@ -16,6 +16,19 @@ interface ConfirmStockModalProps {
   queue: UploadQueueItem[];
   onSuccess: (itemId?: string) => void;
 }
+
+const formatExpiryDisplay = (dateStr: string | Date) => {
+  const s = String(dateStr).slice(0, 10);
+  const [year, month, day] = s.split('-');
+  if (year && month && day) {
+    const months = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'];
+    const mIdx = parseInt(month, 10) - 1;
+    if (mIdx >= 0 && mIdx < 12) {
+      return `${day} ${months[mIdx]} ${year}`;
+    }
+  }
+  return s;
+};
 
 // ─── Main Modal ───
 export function ConfirmStockModal({ isOpen, onClose, queue, onSuccess }: ConfirmStockModalProps) {
@@ -397,7 +410,7 @@ export function ConfirmStockModal({ isOpen, onClose, queue, onSuccess }: Confirm
                       <div className="rounded-xl border border-border-main/60 bg-surface/20 overflow-x-auto custom-scrollbar">
                         <table className="w-full text-left table-fixed min-w-[700px]">
                           <colgroup>
-                            <col className="w-10" />
+                            <col className="w-8" />
                             <col />
                             <col className="w-[70px]" />
                             <col className="w-[60px]" />
@@ -405,7 +418,7 @@ export function ConfirmStockModal({ isOpen, onClose, queue, onSuccess }: Confirm
                             <col className="w-[60px]" />
                             <col className="w-[80px]" />
                             <col className="w-[110px]" />
-                            <col className="w-10" />
+                            <col className="w-8" />
                           </colgroup>
                           <thead className="bg-table-head/80 border-b border-border-main/60">
                             <tr>
@@ -444,7 +457,36 @@ export function ConfirmStockModal({ isOpen, onClose, queue, onSuccess }: Confirm
                                 <tr key={`${selectedItem?.id || 'x'}-${i}`} className="hover:bg-surface/50 transition-colors group">
                                   <td className="px-2 py-2 text-[11px] font-bold text-muted-text text-center">{i + 1}</td>
                                   <td className="px-2 py-2 overflow-hidden">
-                                    <ProductPickerCell product={p} index={i} onUpdate={handleProductUpdate} disabled={isDuplicate} />
+                                    <div className="flex items-center gap-1.5 min-w-0">
+                                      {/* Calendar Icon Button on Left */}
+                                      <div className="relative shrink-0 flex items-center">
+                                        <button
+                                          type="button"
+                                          disabled={isDuplicate}
+                                          className={`p-1.5 rounded-lg border transition-all cursor-pointer flex items-center justify-center ${
+                                            p.expiryDate
+                                              ? 'bg-amber-500/15 border-amber-500/50 text-amber-400 shadow-2xs'
+                                              : 'bg-card border-border-main text-muted-text/80 hover:text-primary-text hover:border-secondary-text/50'
+                                          }`}
+                                          title={p.expiryDate ? `Expiry Date: ${formatExpiryDisplay(p.expiryDate)}` : 'Set Expiry Date'}
+                                        >
+                                          <Calendar size={13} />
+                                        </button>
+                                        <input
+                                          type="date"
+                                          disabled={isDuplicate}
+                                          value={p.expiryDate ? String(p.expiryDate).slice(0, 10) : ''}
+                                          onChange={e => handleProductChange(i, 'expiryDate', e.target.value || null)}
+                                          className="absolute inset-0 opacity-0 cursor-pointer w-full h-full [color-scheme:dark]"
+                                          title={p.expiryDate ? `Expiry Date: ${formatExpiryDisplay(p.expiryDate)}` : 'Set Expiry Date'}
+                                        />
+                                      </div>
+
+                                      {/* Product Name Selector */}
+                                      <div className="flex-1 min-w-0">
+                                        <ProductPickerCell product={p} index={i} onUpdate={handleProductUpdate} disabled={isDuplicate} />
+                                      </div>
+                                    </div>
                                   </td>
                                   <td className="px-2 py-2">
                                     <input type="number" disabled={isDuplicate} className={`w-full bg-card border border-border-main ${isDuplicate ? 'opacity-50 cursor-not-allowed' : 'hover:border-secondary-text/50 focus:border-secondary-text'} rounded-md px-1.5 py-1 text-[11px] font-bold text-primary-text text-center outline-none`} value={rawQty} onChange={e => handleProductChange(i, 'quantity', e.target.value)} />
@@ -479,6 +521,7 @@ export function ConfirmStockModal({ isOpen, onClose, queue, onSuccess }: Confirm
                                       title="Discount %" 
                                     />
                                   </td>
+
                                   <td className="px-2 py-2 text-right">
                                     <div className="flex flex-col text-[11px] font-black text-primary-text tracking-tight">
                                       {formatIndianCurrency(totalIncl)}

@@ -1,5 +1,5 @@
 import { Loader2, Building2, Box, RotateCw, X, Check, ArrowUp, ArrowDown, ArrowUpDown } from 'lucide-react'
-import { useEffect, useRef, useState } from 'react'
+import { useEffect, useRef } from 'react'
 
 const formatAmount = (val: number): string => {
   if (val >= 100_000) return `${(val / 100_000).toFixed(2)} L`

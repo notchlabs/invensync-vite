@@ -51,6 +51,12 @@ export interface ConsumptionBucket {
   itemsCount: number;
   totalAmountIncTax: number;
   consumptionDate: string;
+  invoicedSales?: number;
+  recordedBilledAmountByManager?: number;
+  billedDiff?: number;
+  upiAmount?: number;
+  recordedPosAmountByManager?: number;
+  posDiff?: number;
 }
 
 export class SalesService {

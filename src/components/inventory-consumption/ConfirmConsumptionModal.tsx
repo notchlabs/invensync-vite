@@ -1,17 +1,14 @@
-import { useState, useEffect, useRef } from 'react'
+import { useState, useEffect } from 'react'
 import { motion } from 'framer-motion'
 import {
   X,
-  Send,
   Banknote,
   Gift,
   ShoppingCart,
-  ShoppingBag,
   ArrowRight,
   Minus,
   Plus,
   User,
-  ChevronDown,
   Check,
   Info,
   CreditCard,
@@ -34,11 +31,13 @@ export function ConfirmConsumptionModal({
   onClose,
   onRemove,
   onSuccess,
+  onUpdateQty,
 }: {
   cart: Map<number, CartEntry>
   onClose: () => void
   onRemove: (id: number) => void
   onSuccess: () => void
+  onUpdateQty?: (id: number, qty: number) => void
 }) {
   const entries = Array.from(cart.values())
 
@@ -105,10 +104,37 @@ export function ConfirmConsumptionModal({
     })
   }
 
-  const handleStepAmount = (productId: number, delta: number) => {
+  const handleQtyChange = (productId: number, newQty: number) => {
+    if (newQty <= 0) {
+      onRemove(productId)
+      return
+    }
+    const entry = cart.get(productId)
+    if (!entry) return
+
+    if (onUpdateQty) {
+      onUpdateQty(productId, newQty)
+    } else {
+      entry.qty = newQty
+    }
+
+    const baseUnitPrice = (entry.mrp && entry.mrp > 0) ? entry.mrp : (entry.price || 0)
     const currentAmt = parseFloat(settings.get(productId)?.amount || '0')
-    const newAmt = Math.max(0, currentAmt + delta)
-    updateSetting(productId, 'amount', String(newAmt))
+
+    let unitPrice = baseUnitPrice
+    if (!isNaN(currentAmt) && currentAmt > 0 && entry.qty > 0) {
+      const calculatedCurrent = baseUnitPrice * entry.qty
+      if (Math.abs(currentAmt - calculatedCurrent) > 0.01) {
+        unitPrice = currentAmt / entry.qty
+      }
+    }
+
+    const calculatedNew = unitPrice * newQty
+    const formattedAmount = Number.isInteger(calculatedNew)
+      ? String(calculatedNew)
+      : calculatedNew.toFixed(2)
+
+    updateSetting(productId, 'amount', formattedAmount)
   }
 
   const handleConfirm = async () => {
@@ -300,7 +326,8 @@ export function ConfirmConsumptionModal({
             if (!cfg) return null
 
             const isCredit = cfg.paymentMode === 'Credit'
-            const itemAmount = parseFloat(cfg.amount) || 0
+            const currentAmt = parseFloat(cfg.amount) || 0
+            const unitPrice = entry.qty > 0 ? currentAmt / entry.qty : ((entry.mrp && entry.mrp > 0) ? entry.mrp : (entry.price || 0))
 
             return (
               <div
@@ -336,39 +363,58 @@ export function ConfirmConsumptionModal({
                   </button>
                 </div>
 
-                {/* Row 2: Stepper Control (Left) + Item Price (Right) */}
+                {/* Row 2: Quantity Stepper (Left) + Editable Total Amount & Per Unit Price (Right) */}
                 <div className="flex items-center justify-between gap-3">
+                  {/* Quantity Stepper */}
                   <div className="flex items-center bg-surface border border-border-main rounded-xl p-0.5 gap-0.5 shadow-2xs">
                     <button
                       type="button"
-                      onClick={() => handleStepAmount(entry.productId, -10)}
-                      className="w-6 h-6 rounded-lg bg-card border border-border-main hover:bg-surface text-emerald-700 dark:text-emerald-400 flex items-center justify-center font-bold transition-colors cursor-pointer"
+                      onClick={() => handleQtyChange(entry.productId, entry.qty - 1)}
+                      className="w-6 h-6 rounded-lg bg-card border border-border-main hover:bg-surface text-primary-text flex items-center justify-center font-bold transition-colors cursor-pointer"
+                      title="Decrease quantity"
                     >
                       <Minus className="w-3 h-3" />
                     </button>
                     <input
                       type="number"
-                      value={cfg.amount}
-                      onChange={e =>
-                        updateSetting(entry.productId, 'amount', e.target.value)
-                      }
-                      className={`w-9 text-center bg-transparent text-[12px] font-bold text-primary-text outline-none ${
-                        emptyIds.has(entry.productId) ? 'text-rose-500' : ''
-                      }`}
-                      placeholder="0"
+                      min="1"
+                      value={entry.qty}
+                      onChange={e => {
+                        const val = parseInt(e.target.value, 10)
+                        handleQtyChange(entry.productId, isNaN(val) ? 0 : val)
+                      }}
+                      className="w-9 text-center bg-transparent text-[12px] font-bold text-primary-text outline-none"
                     />
                     <button
                       type="button"
-                      onClick={() => handleStepAmount(entry.productId, 10)}
-                      className="w-6 h-6 rounded-lg bg-card border border-border-main hover:bg-surface text-emerald-700 dark:text-emerald-400 flex items-center justify-center font-bold transition-colors cursor-pointer"
+                      onClick={() => handleQtyChange(entry.productId, entry.qty + 1)}
+                      className="w-6 h-6 rounded-lg bg-card border border-border-main hover:bg-surface text-primary-text flex items-center justify-center font-bold transition-colors cursor-pointer"
+                      title="Increase quantity"
                     >
                       <Plus className="w-3 h-3" />
                     </button>
                   </div>
 
-                  <div className="text-right">
-                    <span className="text-[13px] font-bold text-primary-text">
-                      {formatIndianCurrency(itemAmount)}
+                  {/* Editable Total Amount + Per Unit Price */}
+                  <div className="flex flex-col items-end gap-0.5">
+                    <div className="flex items-center gap-1 bg-surface border border-border-main rounded-xl px-2.5 py-1 shadow-2xs focus-within:border-accent">
+                      <span className="text-[12px] font-bold text-muted-text">₹</span>
+                      <input
+                        type="number"
+                        step="0.01"
+                        min="0"
+                        value={cfg.amount}
+                        onChange={e =>
+                          updateSetting(entry.productId, 'amount', e.target.value)
+                        }
+                        className={`w-20 text-right bg-transparent text-[13px] font-bold text-primary-text outline-none ${
+                          emptyIds.has(entry.productId) ? 'text-rose-500' : ''
+                        }`}
+                        placeholder="0.00"
+                      />
+                    </div>
+                    <span className="text-[10px] font-medium text-secondary-text tracking-tight pr-0.5">
+                      {formatIndianCurrency(unitPrice)} per unit
                     </span>
                   </div>
                 </div>

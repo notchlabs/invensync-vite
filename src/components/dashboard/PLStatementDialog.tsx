@@ -4,7 +4,7 @@ import { useEffect, useState, useRef, useCallback } from "react";
 import { useNavigate } from "react-router-dom";
 import { ReportService, type ProfitLossMonth } from "../../services/reportService";
 import { ENV } from "../../config/env";
-import { fmtShort, formatIndianNumber } from "../../utils/numberFormat";
+import { formatIndianCurrency, formatIndianNumber } from "../../utils/numberFormat";
 import Skeleton from "react-loading-skeleton";
 import { X, AlertTriangle, CheckCircle2, Loader2, ExternalLink, Download, TrendingUp, TrendingDown, Minus } from "lucide-react";
 import html2canvas from "html2canvas-pro";
@@ -192,7 +192,7 @@ export function PLStatementDialog({ rows, onClose }: Readonly<{ rows: ProfitLoss
                 <p className="text-[9px] font-black text-muted-text uppercase tracking-[0.2em]">Revenue</p>
                 
                 <div className="flex items-center justify-between">
-                  <span className="text-[13px] font-semibold text-primary-text">Sales Revenue</span>
+                  <span className="text-[13px] font-semibold text-primary-text">Sales Revenue (exc Loyalty )</span>
                   <span className="text-[13px] font-black text-green-700 dark:text-emerald-400 tabular-nums shrink-0 text-right">₹{formatIndianNumber(row.sales)}</span>
                 </div>
     
@@ -208,7 +208,7 @@ export function PLStatementDialog({ rows, onClose }: Readonly<{ rows: ProfitLoss
                     <span className="text-[10px] font-bold text-muted-text">{grossMarginPct.toFixed(1)}% of revenue</span>
                   </div>
                   <span className={`text-[15px] font-black tabular-nums ${grossMargin >= 0 ? 'text-green-700 dark:text-emerald-400' : 'text-rose-500'}`}>
-                    {grossMargin < 0 ? '– ' : ''}{fmtShort(Math.abs(grossMargin))}
+                    {grossMargin < 0 ? '– ' : ''}{formatIndianCurrency(Math.abs(grossMargin))}
                   </span>
                 </div>
               </div>

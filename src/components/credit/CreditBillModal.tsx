@@ -1,8 +1,7 @@
-import React, { useRef } from 'react'
+import { useRef } from 'react'
 import { motion } from 'framer-motion'
 import {
   X,
-  Printer,
   FileText,
   Calendar,
   User,
@@ -53,10 +52,6 @@ export function CreditBillModal({
     hour: '2-digit',
     minute: '2-digit',
   })
-
-  const handlePrint = () => {
-    window.print()
-  }
 
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center p-3 sm:p-4 bg-black/60 backdrop-blur-xs overflow-y-auto">

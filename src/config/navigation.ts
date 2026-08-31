@@ -12,6 +12,7 @@ import {
   BarChart,
   FolderOpen,
   MoreHorizontal,
+  ReceiptIndianRupee,
   type LucideIcon
 } from 'lucide-react'
 
@@ -32,6 +33,7 @@ export const NAV_ITEMS: NavItem[] = [
   { label: 'Transit',        icon: Truck,           path: '/app/panel/transit',          requiredRoles: ADMIN_OR_MANAGER },
   { label: 'Inventory',      icon: Package,         path: '/app/panel/inventory' },
   { label: 'Add Stock',      icon: PlusSquare,      path: '/app/panel/add-stock',        requiredRoles: ADMIN_OR_MANAGER },
+  { label: 'View Day Sales', icon: ReceiptIndianRupee, path: '/app/panel/inventory/consumption' },
   { label: 'Bill Details',   icon: FileText,        path: '/app/panel/bills',            requiredRoles: ADMIN_OR_MANAGER },
   { label: 'Vendors',          icon: Users,           path: '/app/panel/vendors',          requiredRoles: ADMIN_OR_MANAGER },
   { label: 'Credit Customers', icon: UserCheck,       path: '/app/panel/credit-customers' },

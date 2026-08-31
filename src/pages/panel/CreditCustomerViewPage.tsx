@@ -1,25 +1,18 @@
-import React, { useEffect, useMemo, useState } from 'react'
-import { useParams, useNavigate, Link } from 'react-router-dom'
+import { useEffect, useMemo, useState } from 'react'
+import { useParams, useNavigate } from 'react-router-dom'
 import { motion, AnimatePresence } from 'framer-motion'
 import {
   ArrowLeft,
-  ArrowUpRight,
   ArrowDownLeft,
-  Phone,
   Calendar,
   Search,
   CreditCard,
-  Plus,
   CheckCircle2,
   AlertCircle,
   X,
-  RefreshCw,
   Receipt,
   FileText,
-  FileSpreadsheet,
-  Clock,
   CheckSquare,
-  ShieldCheck,
 } from 'lucide-react'
 import toast from 'react-hot-toast'
 import {
@@ -30,7 +23,6 @@ import {
 import { formatIndianCurrency } from '../../utils/numberFormat'
 import { PageHeader } from '../../components/common/PageHeader'
 import { CreditBillModal } from '../../components/credit/CreditBillModal'
-import { exportCreditBillToExcel } from '../../utils/creditExcelExporter'
 import Skeleton from 'react-loading-skeleton'
 
 export default function CreditCustomerViewPage() {
@@ -41,7 +33,6 @@ export default function CreditCustomerViewPage() {
   const [transactions, setTransactions] = useState<CreditTransaction[]>([])
   const [isLoading, setIsLoading] = useState(true)
   const [search, setSearch] = useState('')
-  const [filterType, setFilterType] = useState<'ALL' | 'CONSUMPTION_CREDIT' | 'PAYMENT_SETTLEMENT'>('ALL')
 
   // Selection State
   const [selectedTxnIds, setSelectedTxnIds] = useState<string[]>([])
@@ -143,10 +134,7 @@ export default function CreditCustomerViewPage() {
     })
   }, [pendingTransactions, search])
 
-  // Selectable credit transactions for selection
-  const selectableTransactions = useMemo(() => {
-    return filteredTransactions
-  }, [filteredTransactions])
+
 
   const selectedTransactions = useMemo(() => {
     return transactions.filter(t => selectedTxnIds.includes(t.id))
@@ -156,18 +144,7 @@ export default function CreditCustomerViewPage() {
     return selectedTransactions.reduce((acc, t) => acc + (t.amount || 0), 0)
   }, [selectedTransactions])
 
-  const isAllSelectableSelected = useMemo(() => {
-    if (selectableTransactions.length === 0) return false
-    return selectableTransactions.every(t => selectedTxnIds.includes(t.id))
-  }, [selectableTransactions, selectedTxnIds])
 
-  const toggleSelectAll = () => {
-    if (isAllSelectableSelected) {
-      setSelectedTxnIds([])
-    } else {
-      setSelectedTxnIds(selectableTransactions.map(t => t.id))
-    }
-  }
 
   const toggleSelectTxn = (txnId: string) => {
     setSelectedTxnIds(prev =>

@@ -32,7 +32,9 @@ export default function DailyConsumptionPage() {
 
   // Local component state resolving URL IDs
   const [selectedSite, setSelectedSite] = useState<Site | null>(null);
+  const dateParam = searchParams.get('date');
   const [selectedDate, setSelectedDate] = useState<string>(() => {
+    if (dateParam) return dateParam;
     const d = new Date();
     const year = d.getFullYear();
     const month = String(d.getMonth() + 1).padStart(2, '0');

@@ -1,18 +1,15 @@
 import { useState, useEffect, useRef, useCallback } from 'react'
-import { Search, Package, ShoppingBag, ChevronRight, LineChartIcon } from 'lucide-react'
+import { Search, Package, ShoppingBag, ChevronRight } from 'lucide-react'
 import { AnimatePresence, motion } from 'framer-motion'
 import Skeleton from 'react-loading-skeleton'
 import { InventoryService, type PreparationProduct } from '../../services/inventoryService'
-import type { InventoryItem, Site } from '../../types/inventory'
+import type { InventoryItem } from '../../types/inventory'
 import { ENV } from '../../config/env'
 import type { CartEntry } from '../../components/inventory-consumption/types'
 import { ProductCard } from '../../components/inventory-consumption/ProductCard'
 import { ConfirmConsumptionModal } from '../../components/inventory-consumption/ConfirmConsumptionModal'
 import { BogoOfferModal } from '../../components/inventory-consumption/BogoOfferModal'
 import { ColdCoffeeOfferModal } from '../../components/inventory-consumption/ColdCoffeeOfferModal'
-import { useNavigate } from 'react-router-dom'
-import type { ApiResponse } from '../../types/api'
-import type { PaginatedResponse } from '../../services/common/common.types'
 import { useMsal } from '@azure/msal-react'
 import { EditCompositeModal } from '../../components/inventory/EditCompositeModal'
 
@@ -33,7 +30,6 @@ export default function ConsumptionPage() {
   const tokenRoles: string[] = Array.isArray(claims['roles']) ? (claims['roles'] as string[]) : []
   const isAdmin = tokenRoles.includes('ADMIN')
 
-  const [siteName, setSiteName]   = useState('')
   const [tab, setTab]             = useState<Tab>('inventory')
   const [search, setSearch]       = useState('')
   const [showModal, setShowModal] = useState(false)
@@ -74,18 +70,6 @@ export default function ConsumptionPage() {
   // Preparation tab
   const [prepItems, setPrepItems]     = useState<PreparationProduct[]>([])
   const [prepLoading, setPrepLoading] = useState(false)
-  const navigate = useNavigate()
-
-  // ── Site name
-  useEffect(() => {
-    InventoryService.fetchSitesByIds([SITE_ID])
-      .then((res: ApiResponse<PaginatedResponse<Site>>) => {
-        const sites = res.data?.content ?? []
-        const site  = sites.find((s: Site) => s.id === SITE_ID)
-        if (site?.name) setSiteName(site.name)
-      })
-      .catch(() => {})
-  }, [])
 
   // ── Inventory load
   const loadInventory = useCallback(async (reset = false) => {
@@ -152,6 +136,17 @@ export default function ConsumptionPage() {
       const next = new Map(prev)
       const ex   = next.get(entry.productId)
       next.set(entry.productId, { ...entry, qty: ex ? ex.qty + 1 : 1 })
+      return next
+    })
+  }
+
+  const updateCartQty = (productId: number, newQty: number) => {
+    setCart(prev => {
+      const next = new Map(prev)
+      const ex   = next.get(productId)
+      if (!ex) return prev
+      if (newQty <= 0) next.delete(productId)
+      else next.set(productId, { ...ex, qty: newQty })
       return next
     })
   }
@@ -474,6 +469,7 @@ export default function ConsumptionPage() {
             onClose={() => setShowModal(false)}
             onRemove={removeEntireFromCart}
             onSuccess={handleConsumeSuccess}
+            onUpdateQty={updateCartQty}
           />
         )}
       </AnimatePresence>
