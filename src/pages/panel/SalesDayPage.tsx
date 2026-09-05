@@ -1,6 +1,6 @@
 import { useState, useEffect, useMemo, useCallback } from 'react';
 import { useSearchParams } from 'react-router-dom';
-import { Calendar, Store, ChevronDown, MessageCircle, CheckCircle2, Clock, Terminal } from 'lucide-react';
+import { Calendar, Store, ChevronDown, MessageCircle, CheckCircle2, Clock, Copy, Terminal } from 'lucide-react';
 import { PageHeader } from '../../components/common/PageHeader';
 import { ConsumptionService, type BucketItem, type ExistingSales, type Shift } from '../../services/consumptionService';
 import { InventoryService } from '../../services/inventoryService';
@@ -29,13 +29,13 @@ export default function SalesDayPage() {
 
   const [selectedSite, setSelectedSite] = useState<Site | null>(null);
   const [sites, setSites] = useState<Site[]>([]);
-  const [selectedCuId] = useState<number | null>(() => {
+  const [selectedCuId, setSelectedCuId] = useState<number | null>(() => {
     return cuIdParam ? Number(cuIdParam) : null;
   });
 
   const [items, setItems] = useState<BucketItem[]>([]);
   const [shifts, setShifts] = useState<Shift[]>([]);
-  const [, setSalesRecord] = useState<ExistingSales | null>(null);
+  const [salesRecord, setSalesRecord] = useState<ExistingSales | null>(null);
   const [isConcluded, setIsConcluded] = useState<boolean>(false);
 
   const [isLoadingItems, setIsLoadingItems] = useState(false);

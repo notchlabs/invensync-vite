@@ -16,22 +16,22 @@ export interface AsciiReportOptions {
   includeShiftSection?: boolean;
 }
 
-const INNER_WIDTH = 32;
+// Use a width that fits comfortably in WhatsApp monospace on mobile
+const W = 34;
 
 const fmtVal = (num?: number): string => {
   const val = num || 0;
-  return '₹' + val.toLocaleString('en-IN', { minimumFractionDigits: 2, maximumFractionDigits: 2 });
+  return 'Rs.' + val.toLocaleString('en-IN', { minimumFractionDigits: 2, maximumFractionDigits: 2 });
 };
 
-const formatRow = (
-  borderLeft: string,
-  label: string,
-  valStr: string,
-  borderRight: string,
-  width = INNER_WIDTH
-): string => {
-  const neededSpaces = Math.max(1, width - label.length - valStr.length);
-  return `${borderLeft}${label}${' '.repeat(neededSpaces)}${valStr}${borderRight}`;
+/**
+ * Build a row like:  | LABEL          Rs.1,234.00 |
+ * All characters are plain ASCII so WhatsApp monospace renders them single-width.
+ */
+const row = (label: string, value: string, indent = 0): string => {
+  const prefix = ' '.repeat(indent) + label;
+  const gap = Math.max(1, W - 4 - prefix.length - value.length); // 4 = "| " + " |"
+  return `| ${prefix}${' '.repeat(gap)}${value} |`;
 };
 
 export const generateAsciiReport = (opts: AsciiReportOptions): string => {
@@ -47,71 +47,68 @@ export const generateAsciiReport = (opts: AsciiReportOptions): string => {
   const cash = opts.cashAmount || 0;
   const loyalty = opts.loyalty || 0;
 
+  const border = '+' + '-'.repeat(W - 2) + '+';
+  const dblBorder = '+' + '='.repeat(W - 2) + '+';
 
   const lines: string[] = [];
 
-  // ── Box 1: SALES FORMATION (Double Line Box) ──
-  lines.push('╔' + '═'.repeat(INNER_WIDTH) + '╗');
-  const padLeft = Math.max(0, Math.floor((INNER_WIDTH - title.length) / 2));
-  const padRight = Math.max(0, INNER_WIDTH - title.length - padLeft);
-  lines.push('║' + ' '.repeat(padLeft) + title + ' '.repeat(padRight) + '║');
-  lines.push('╠' + '═'.repeat(INNER_WIDTH) + '╣');
-  lines.push(formatRow('║', '  TOTAL', fmtVal(totalSale) + ' ', '║'));
-  lines.push(formatRow('║', '  ├─ WBC', fmtVal(wbcSale) + ' ', '║'));
-  lines.push(formatRow('║', '  └─ W STORE', fmtVal(wStoreSale) + ' ', '║'));
-  lines.push('╚' + '═'.repeat(INNER_WIDTH) + '╝');
+  // ── Box 1: TOTAL SALES (double border) ──
+  lines.push(dblBorder);
+  const pad = Math.max(0, W - 2 - title.length);
+  const pl = Math.floor(pad / 2);
+  const pr = pad - pl;
+  lines.push('|' + ' '.repeat(pl) + title + ' '.repeat(pr) + '|');
+  lines.push(dblBorder);
+  lines.push(row('TOTAL', fmtVal(totalSale)));
+  lines.push(row('|- WBC', fmtVal(wbcSale)));
+  lines.push(row("'- W STORE", fmtVal(wStoreSale)));
+  lines.push(dblBorder);
   lines.push('');
 
-  // ── Box 2: SHIFT (Single Line Box) ──
+  // ── Box 2: SHIFT ──
   const showShift = opts.includeShiftSection !== false;
   if (showShift) {
-    const shiftHeader = '┌─ SHIFT ';
-    const dashShift = Math.max(1, INNER_WIDTH + 1 - shiftHeader.length);
-    lines.push(shiftHeader + '─'.repeat(dashShift) + '┐');
-    lines.push(formatRow('│', ' ☀ DAY', fmtVal(dayShiftSale) + '  ', '│'));
-    lines.push(formatRow('│', ' ◐ NIGHT', fmtVal(nightShiftSale) + '  ', '│'));
-    lines.push('└' + '─'.repeat(INNER_WIDTH) + '┘');
+    lines.push(border);
+    lines.push(row('SHIFT', ''));
+    lines.push(border);
+    lines.push(row('DAY', fmtVal(dayShiftSale)));
+    lines.push(row('NIGHT', fmtVal(nightShiftSale)));
+    lines.push(border);
     lines.push('');
   }
 
-  // ── Box 3: BILLING (Single Line Box) ──
-  const billingHeader = '┌─ BILLING ';
-  const dashBilling = Math.max(1, INNER_WIDTH + 1 - billingHeader.length);
-  lines.push(billingHeader + '─'.repeat(dashBilling) + '┐');
-  lines.push(formatRow('│', ' BILLED', fmtVal(billedAmount) + '  ', '│'));
-  lines.push(formatRow('│', ' NON-BILLED', fmtVal(nonBilledAmount) + '  ', '│'));
-  lines.push('└' + '─'.repeat(INNER_WIDTH) + '┘');
+  // ── Box 3: BILLING ──
+  lines.push(border);
+  lines.push(row('BILLING', ''));
+  lines.push(border);
+  lines.push(row('BILLED', fmtVal(billedAmount)));
+  lines.push(row('NON-BILLED', fmtVal(nonBilledAmount)));
+  lines.push(border);
   lines.push('');
 
-  // ── Box 4: COLLECTION (Single Line Box) ──
-  const collHeader = '┌─ COLLECTION ';
-  const dashColl = Math.max(1, INNER_WIDTH + 1 - collHeader.length);
-  lines.push(collHeader + '─'.repeat(dashColl) + '┐');
-  lines.push(formatRow('│', ' UPI / CARD', fmtVal(upi) + '  ', '│'));
-  lines.push(formatRow('│', ' CASH', fmtVal(cash) + '  ', '│'));
-  lines.push(formatRow('│', ' LOYALTY', fmtVal(loyalty) + '  ', '│'));
-  lines.push('└' + '─'.repeat(INNER_WIDTH) + '┘');
+  // ── Box 4: COLLECTION ──
+  lines.push(border);
+  lines.push(row('COLLECTION', ''));
+  lines.push(border);
+  lines.push(row('UPI / CARD', fmtVal(upi)));
+  lines.push(row('CASH', fmtVal(cash)));
+  lines.push(row('LOYALTY', fmtVal(loyalty)));
+  lines.push(border);
   lines.push('');
 
   // ── Footer ──
-  const footerLabel = ' generated by invensync ';
-  const totalWidth = INNER_WIDTH + 2;
-  const footerPadLeft = Math.max(0, Math.floor((totalWidth - footerLabel.length) / 2));
-  const footerPadRight = Math.max(0, totalWidth - footerLabel.length - footerPadLeft);
-  lines.push('─'.repeat(footerPadLeft) + footerLabel + '─'.repeat(footerPadRight));
+  lines.push('-- generated by invensync --');
 
   return lines.join('\n');
 };
 
 export const generateWhatsAppAsciiMessage = (opts: AsciiReportOptions): string => {
   const site = opts.outletName || 'WildBean Cafe Rengali';
-  const date = opts.dateStr ? ` - ${opts.dateStr}` : '';
   const asciiBox = generateAsciiReport(opts);
 
-  return [
-    `🏪 *${site}*${date ? `\n📅 *${opts.dateStr}*` : ''}`,
-    '```',
-    asciiBox,
-    '```',
-  ].join('\n');
+  const header = opts.dateStr
+    ? `*${site}*\n*${opts.dateStr}*`
+    : `*${site}*`;
+
+  return [header, '```', asciiBox, '```'].join('\n');
 };
