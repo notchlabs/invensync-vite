@@ -29,6 +29,7 @@ function SidebarContent({
   // Get roles from claims
   const claims = accounts[0]?.idTokenClaims ?? {}
   const tokenRoles: string[] = Array.isArray(claims['roles']) ? claims['roles'] : []
+  const isAdmin = tokenRoles.includes('ADMIN')
 
   // Filter visible items based on roles
   const visibleItems = NAV_ITEMS.filter(item => {
@@ -144,10 +145,14 @@ function SidebarContent({
                       <div className={`flex flex-col gap-0.5 ${isCollapsed ? 'lg:pl-0' : 'pl-4 border-l-2 border-border-main/30 ml-4 py-1'}`}>
                         {item.children.map(child => {
                           const ChildIcon = child.icon
+                          const childPath = (isAdmin && (child.label === 'Day Sales' || child.path === '/app/panel/inventory/consumption'))
+                            ? '/app/panel/sales-day'
+                            : (child.path || '#')
+
                           return (
                             <NavLink
                               key={child.label}
-                              to={child.path!}
+                              to={childPath}
                               title={isCollapsed ? child.label : ''}
                               onClick={onNavClick}
                               className={({ isActive }) =>
@@ -191,10 +196,14 @@ function SidebarContent({
           }
 
           const Icon = item.icon
+          const itemPath = (isAdmin && (item.label === 'Day Sales' || item.path === '/app/panel/inventory/consumption'))
+            ? '/app/panel/sales-day'
+            : (item.path || '#')
+
           return (
             <NavLink
               key={item.label}
-              to={item.path!}
+              to={itemPath}
               title={isCollapsed ? item.label : ''}
               onClick={onNavClick}
               className={({ isActive }) =>

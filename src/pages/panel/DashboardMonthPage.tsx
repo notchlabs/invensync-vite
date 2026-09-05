@@ -574,7 +574,8 @@ export default function DashboardMonthPage() {
                         type="button"
                         onClick={(e) => {
                           e.stopPropagation()
-                          navigate(`/app/panel/inventory/consumption?date=${b.consumptionDate}&site=${SITE_ID}&cuId=${CU_ID}`)
+                          const target = `/app/panel/inventory/consumption?date=${b.consumptionDate}&site=${SITE_ID}&cuId=${CU_ID}`
+                          navigate(target)
                         }}
                         className="w-8 h-8 rounded-lg bg-surface border border-border-main flex items-center justify-center text-muted-text hover:text-white hover:border-secondary-text/50 transition-all cursor-pointer"
                         title="View Day Sales / Consumption"

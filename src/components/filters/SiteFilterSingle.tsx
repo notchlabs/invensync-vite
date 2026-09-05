@@ -9,6 +9,7 @@ interface SiteFilterSingleProps {
   className?: string
   alignDropdown?: 'left' | 'right'
   openUpwards?: boolean
+  skipAuthRedirect?: boolean
 }
 
 export function SiteFilterSingle({ 
@@ -17,11 +18,12 @@ export function SiteFilterSingle({
   placeholder = "Select Destination Site", 
   className = "",
   alignDropdown = "left",
-  openUpwards = false
+  openUpwards = false,
+  skipAuthRedirect = false,
 }: SiteFilterSingleProps) {
   
   const handleFetch = async (query: string) => {
-    const res = await InventoryService.fetchSites(0, 50, query)
+    const res = await InventoryService.fetchSites(0, 50, query, { skipAuthRedirect })
     return res.data.content || []
   }
 

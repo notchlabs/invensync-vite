@@ -4,13 +4,11 @@ import { Search, RotateCw, Mail, Phone, ShoppingBag } from 'lucide-react'
 import { InfiniteScrollTable, type Column } from '../../components/common/InfiniteScrollTable'
 import { PageHeader } from '../../components/common/PageHeader'
 import { InventoryService, type VendorStat } from '../../services/inventoryService'
+import { fmtShort } from '../../utils/numberFormat';
 
 const formatCurrency = (n: number) => {
-  if (!n) return '₹0'
-  if (n >= 100_000) return `₹${(n / 100_000).toFixed(2)} L`
-  if (n >= 1_000) return `₹${(n / 1_000).toFixed(2)} K`
-  return `₹${n.toFixed(2)}`
-}
+  return fmtShort(n);
+};
 
 function VendorAvatar({ name }: { name: string }) {
   const initials = name

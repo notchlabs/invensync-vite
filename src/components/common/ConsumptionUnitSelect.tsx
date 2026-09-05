@@ -18,6 +18,7 @@ interface ConsumptionUnitSelectProps {
   className?: string
   error?: boolean
   openUpwards?: boolean
+  skipAuthRedirect?: boolean
 }
 
 export function ConsumptionUnitSelect({ 
@@ -28,7 +29,8 @@ export function ConsumptionUnitSelect({
   label, 
   className = '', 
   error, 
-  openUpwards 
+  openUpwards,
+  skipAuthRedirect = false
 }: ConsumptionUnitSelectProps) {
   const hasLoadedRecentFor = useRef<number | null>(null)
 
@@ -41,13 +43,13 @@ export function ConsumptionUnitSelect({
         let targetId = initialCuId
 
         if (!targetId) {
-          const recentRes = await InventoryService.fetchRecentConsumptionId(siteId)
+          const recentRes = await InventoryService.fetchRecentConsumptionId(siteId, { skipAuthRedirect })
           targetId = recentRes.data
         }
 
         if (targetId) {
           // Fetch all units to find the matching one to auto-select
-          const unitsRes = await InventoryService.fetchConsumptionUnits(siteId)
+          const unitsRes = await InventoryService.fetchConsumptionUnits(siteId, '', { skipAuthRedirect })
           const units = unitsRes.data?.content || []
           const found = units.find((u: ConsumptionUnit) => u.id === Number(targetId))
           if (found) {
@@ -63,7 +65,7 @@ export function ConsumptionUnitSelect({
     }
 
     handleInitialSelection()
-  }, [siteId, onChange, value, initialCuId])
+  }, [siteId, onChange, value, initialCuId, skipAuthRedirect])
 
   return (
     <div className={`flex flex-col gap-1.5 ${className}`}>
@@ -71,7 +73,7 @@ export function ConsumptionUnitSelect({
       <SearchableSingleSelect<ConsumptionUnit>
         placeholder="Select Consumption Type..."
         fetchData={async (query) => {
-          const res = await InventoryService.fetchConsumptionUnits(siteId, query)
+          const res = await InventoryService.fetchConsumptionUnits(siteId, query, { skipAuthRedirect })
           return res.data?.content || []
         }}
         keyExtractor={(item) => item.id}

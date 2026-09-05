@@ -63,9 +63,9 @@ export function BottomNavBar() {
       },
       {
         label: 'Day Sales',
-        path: '/app/panel/inventory/consumption',
+        path: '/app/panel/sales-day',
         icon: ReceiptIndianRupee,
-        checkActive: (p) => p.startsWith('/app/panel/inventory/consumption'),
+        checkActive: (p) => p.startsWith('/app/panel/sales-day'),
       },
     ]
   } else if (isManager) {
@@ -117,7 +117,7 @@ export function BottomNavBar() {
         checkActive: (p) => p.startsWith('/app/panel/credit-customers'),
       },
       {
-        label: 'View Day Sales',
+        label: 'Day Sales',
         path: '/app/panel/inventory/consumption',
         icon: ReceiptIndianRupee,
         checkActive: (p) => p.startsWith('/app/panel/inventory/consumption'),

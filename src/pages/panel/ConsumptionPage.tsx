@@ -9,7 +9,7 @@ import type { CartEntry } from '../../components/inventory-consumption/types'
 import { ProductCard } from '../../components/inventory-consumption/ProductCard'
 import { ConfirmConsumptionModal } from '../../components/inventory-consumption/ConfirmConsumptionModal'
 import { BogoOfferModal } from '../../components/inventory-consumption/BogoOfferModal'
-import { ColdCoffeeOfferModal } from '../../components/inventory-consumption/ColdCoffeeOfferModal'
+import { Buy2Get25OffModal } from '../../components/inventory-consumption/Buy2Get25OffModal'
 import { useMsal } from '@azure/msal-react'
 import { EditCompositeModal } from '../../components/inventory/EditCompositeModal'
 
@@ -34,7 +34,7 @@ export default function ConsumptionPage() {
   const [search, setSearch]       = useState('')
   const [showModal, setShowModal] = useState(false)
   const [showBogoModal, setShowBogoModal] = useState(false)
-  const [showColdCoffeeModal, setShowColdCoffeeModal] = useState(false)
+  const [showBuy2Get25Modal, setShowBuy2Get25Modal] = useState(false)
   const [editingProductId, setEditingProductId] = useState<number | null>(null)
   const [isEditModalOpen, setIsEditModalOpen]   = useState(false)
 
@@ -50,8 +50,8 @@ export default function ConsumptionPage() {
     }
   }
 
-  const handleColdCoffeeSuccess = () => {
-    setShowColdCoffeeModal(false)
+  const handleBuy2Get25Success = () => {
+    setShowBuy2Get25Modal(false)
     if (tab === 'inventory') {
       loadInventory(true)
     } else {
@@ -380,7 +380,7 @@ export default function ConsumptionPage() {
             </div>
 
             <div
-              onClick={() => setShowColdCoffeeModal(true)}
+              onClick={() => setShowBuy2Get25Modal(true)}
               className="bg-card border border-border-main rounded-2xl p-5 flex flex-col justify-between relative overflow-hidden transition-all shadow-sm group hover:border-[#f0b44c]/30 cursor-pointer active:scale-[0.98]"
             >
               {/* Card background/gradient elements for premium feel */}
@@ -389,17 +389,17 @@ export default function ConsumptionPage() {
               <div className="flex flex-col gap-2.5">
                 <div className="flex items-center justify-between">
                   <div className="px-2.5 py-1 rounded-full bg-[#f0b44c]/10 text-[#d99805] text-[11px] font-black tracking-wider uppercase border border-[#f0b44c]/20">
-                    Promo
+                    25% OFF
                   </div>
                   <span className="w-2.5 h-2.5 rounded-full bg-emerald-500 animate-pulse animate-duration-1000" />
                 </div>
                 
                 <h3 className="text-[18px] font-black text-primary-text tracking-tight mt-1 leading-snug">
-                  Cold Coffee @25
+                  Buy Any 2 & Get 25% Off
                 </h3>
                 
                 <p className="text-[12px] text-muted-text font-medium leading-relaxed">
-                  Billing items under Cold Coffee offer.
+                  Select any 2 items and get 25% discount on chosen item.
                 </p>
               </div>
 
@@ -484,12 +484,12 @@ export default function ConsumptionPage() {
         )}
       </AnimatePresence>
 
-      {/* ── Cold Coffee Offer Modal ───────────────────────────────── */}
+      {/* ── Buy 2 & Get 25% Off Modal ────────────────────────────── */}
       <AnimatePresence>
-        {showColdCoffeeModal && (
-          <ColdCoffeeOfferModal
-            onClose={() => setShowColdCoffeeModal(false)}
-            onSuccess={handleColdCoffeeSuccess}
+        {showBuy2Get25Modal && (
+          <Buy2Get25OffModal
+            onClose={() => setShowBuy2Get25Modal(false)}
+            onSuccess={handleBuy2Get25Success}
           />
         )}
       </AnimatePresence>

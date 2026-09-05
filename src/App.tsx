@@ -39,6 +39,8 @@ const PurchaseOrderPage = lazy(() => import('./pages/panel/PurchaseOrderPage'))
 const DocumentsPage     = lazy(() => import('./pages/panel/DocumentsPage'))
 const CreditCustomersPage = lazy(() => import('./pages/panel/CreditCustomersPage'))
 const CreditCustomerViewPage = lazy(() => import('./pages/panel/CreditCustomerViewPage'))
+const SalesDayPage      = lazy(() => import('./pages/panel/SalesDayPage'))
+const PublicConsumptionPage  = lazy(() => import('./pages/PublicConsumptionPage'))
 
 function ScrollToTop() {
   const { pathname } = useLocation()
@@ -79,6 +81,7 @@ function App() {
             <Route path="/terms"       element={<TermsPage />} />
             <Route path="/privacy"     element={<PrivacyPage />} />
             <Route path="/unauthorized" element={<UnauthorizedPage />} />
+            <Route path="/app/consumption" element={<PublicConsumptionPage />} />
 
             {/* Protected Routes — lazy-loaded; MSAL only initialised when visited */}
             <Route element={<AuthGuard />}>
@@ -86,6 +89,7 @@ function App() {
                 <Route path="/app/panel/inventory"             element={<InventoryPage />} />
                 <Route path="/app/panel/inventory/consumption" element={<DailyConsumptionPage />} />
                 <Route path="/app/panel/consumption"           element={<ConsumptionPage />} />
+                <Route path="/app/panel/sales-day"             element={<SalesDayPage />} />
                 <Route path="/app/panel/credit-customers"      element={<CreditCustomersPage />} />
                 <Route path="/app/panel/credit-customers/:id/view" element={<CreditCustomerViewPage />} />
 

@@ -202,8 +202,8 @@ export class InventoryService {
   /**
    * Fetch paginated sites
    */
-  static async fetchSites(page: number, size: number, searchTerm: string = ''): Promise<ApiResponse<PaginatedResponse<Site>>> {
-    return ApiService.post(`/site/fetchAll?page=${page}&size=${size}`, { searchTerm });
+  static async fetchSites(page: number, size: number, searchTerm: string = '', options?: RequestInit & { skipAuthRedirect?: boolean }): Promise<ApiResponse<PaginatedResponse<Site>>> {
+    return ApiService.post(`/site/fetchAll?page=${page}&size=${size}`, { searchTerm }, options);
   }
 
   /**
@@ -216,8 +216,8 @@ export class InventoryService {
   /**
    * Helpers to fetch entities by a list of IDs for URL hydration
    */
-  static async fetchSitesByIds(ids: number[]) {
-    return ApiService.post<ApiResponse<PaginatedResponse<Site>>>('/site/fetchAll?page=0&size=100', { ids });
+  static async fetchSitesByIds(ids: number[], options?: RequestInit & { skipAuthRedirect?: boolean }) {
+    return ApiService.post<ApiResponse<PaginatedResponse<Site>>>('/site/fetchAll?page=0&size=100', { ids }, options);
   }
 
   static async fetchProductsByIds(ids: number[]) {
@@ -274,15 +274,15 @@ export class InventoryService {
   /**
    * Fetch consumption units for a specific site
    */
-  static async fetchConsumptionUnits(siteId: number, searchTerm: string = ''): Promise<ApiResponse<PaginatedResponse<ConsumptionUnit>>> {
-    return ApiService.post('/list/consumption-units?page=0&size=100', { siteId, searchTerm });
+  static async fetchConsumptionUnits(siteId: number, searchTerm: string = '', options?: RequestInit & { skipAuthRedirect?: boolean }): Promise<ApiResponse<PaginatedResponse<ConsumptionUnit>>> {
+    return ApiService.post('/list/consumption-units?page=0&size=100', { siteId, searchTerm }, options);
   }
 
   /**
    * Fetch the most recent consumption unit ID for a site
    */
-  static async fetchRecentConsumptionId(siteId: number): Promise<ApiResponse<number>> {
-    return ApiService.get(`/consumption/recent-consumptions?siteId=${siteId}`);
+  static async fetchRecentConsumptionId(siteId: number, options?: RequestInit & { skipAuthRedirect?: boolean }): Promise<ApiResponse<number>> {
+    return ApiService.get(`/consumption/recent-consumptions?siteId=${siteId}`, options);
   }
 
   /**

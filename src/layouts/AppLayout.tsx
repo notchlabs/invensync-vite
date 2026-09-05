@@ -214,7 +214,7 @@ function AppLayoutContent() {
         </header>
 
         {/* Page Content */}
-        <div className="flex-1 flex flex-col min-h-0 overflow-hidden relative pb-16 lg:pb-0">
+        <div className="flex-1 flex flex-col min-h-0 overflow-y-auto overflow-x-hidden relative pb-16 lg:pb-0">
           <Outlet />
         </div>
 

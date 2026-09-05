@@ -1,6 +1,6 @@
 import { useState, useEffect, useMemo, useCallback } from 'react';
 import { useSearchParams } from 'react-router-dom';
-import { CheckCircle2, Unlock } from 'lucide-react';
+import { CheckCircle2, Unlock, MessageCircle } from 'lucide-react';
 import { useMsal } from '@azure/msal-react';
 import toast from 'react-hot-toast';
 
@@ -8,8 +8,10 @@ import { PageHeader } from '../../components/common/PageHeader';
 import { ConsumptionService, type BucketItem, type ExistingSales, type Shift } from '../../services/consumptionService';
 import type { Site } from '../../types/inventory';
 import { InventoryService } from '../../services/inventoryService';
+import { formatDateToDisplay } from '../../utils/dateUtils';
 
 import { ENV } from '../../config/env';
+import { generateWhatsAppAsciiMessage } from '../../utils/asciiReportGenerator';
 
 import { ConsumptionFilters } from '../../components/consumption/ConsumptionFilters';
 import { type ConsumptionUnit } from '../../components/common/ConsumptionUnitSelect';
@@ -274,7 +276,12 @@ export default function DailyConsumptionPage() {
     if (!isConcluded && items.length > 0) {
       items.forEach(item => {
         const sale = item.cash + item.upi + item.loyalty;
-        const isWbc = item.vendorIds === '-1';
+        const isWbc = Boolean(
+          item.vendorNames?.toLowerCase().includes('wild bean') || 
+          item.vendorNames?.toLowerCase().includes('wbc') ||
+          item.vendorIds === '-1' || 
+          item.vendorIds?.includes('-1')
+        );
         if (isWbc) {
           aggr.wbcSale += sale
         } else {
@@ -292,10 +299,10 @@ export default function DailyConsumptionPage() {
     return aggr;
   }, [items, shifts, isConcluded, salesRecord, selectedCu]);
 
-  const handleSave = (concludeShift: boolean, readings?: { mop: number; pos: number }) => {
+  const handleSave = (concludeShift: boolean, readings?: { mop: number; pos: number }): Promise<boolean> => {
     if (!selectedSite || !selectedCu || !selectedDate) {
       toast.error('Missing site or consumption unit Context');
-      return;
+      return Promise.resolve(false);
     }
 
     const payload = {
@@ -320,57 +327,59 @@ export default function DailyConsumptionPage() {
     const loader = toast.loading(concludeShift ? 'Ending shift...' : 'Saving sales data...');
 
     if (concludeShift) {
-      ConsumptionService.endShift(payload)
-        .then(res => {
-          if (res.success) {
-            // Verify and retrieve the correct salesId after shift end
-            ConsumptionService.existsSalesByDateAndSiteId(payload.date, payload.siteId)
-              .then(existsRes => {
-                if (existsRes.success && existsRes.data && readings) {
-                  ConsumptionService.saveSalesAudit(existsRes.data.id, {
-                    recordedBilledAmountByManager: readings.mop,
-                    recordedPosAmountByManager: readings.pos,
-                    cashCollectedByManager: 0,
-                    upiCollectedByManager: 0
-                  })
-                    .then(() => {
-                      toast.success('Audit data synchronized');
-                    })
-                    .catch(auditErr => {
-                      console.error('Failed to auto-save audit:', auditErr);
-                      toast.error('Shift ended, but audit sync failed.');
-                    })
-                    .finally(() => {
-                      toast.success('Shift ended successfully', { id: loader });
-                      window.location.reload();
-                    });
-                } else {
-                  toast.success('Shift ended successfully', { id: loader });
-                  window.location.reload();
+      return new Promise<boolean>((resolve) => {
+        ConsumptionService.endShift(payload)
+          .then(async (res) => {
+            if (res.success) {
+              toast.success('Shift ended successfully', { id: loader });
+
+              try {
+                const [existsRes, shiftsRes] = await Promise.all([
+                  ConsumptionService.existsSalesByDateAndSiteId(payload.date, payload.siteId),
+                  ConsumptionService.fetchShifts(payload.date)
+                ]);
+
+                if (existsRes.success && existsRes.data) {
+                  setSalesRecord(existsRes.data);
+                  if (readings) {
+                    await ConsumptionService.saveSalesAudit(existsRes.data.id, {
+                      recordedBilledAmountByManager: readings.mop,
+                      recordedPosAmountByManager: readings.pos,
+                      cashCollectedByManager: 0,
+                      upiCollectedByManager: 0
+                    }).catch(auditErr => console.error('Audit save error:', auditErr));
+                  }
                 }
-              })
-              .catch(verifyErr => {
-                console.error('Verification error after shift end:', verifyErr);
-                toast.success('Shift ended successfully', { id: loader });
-                window.location.reload();
-              });
-          } else {
-            toast.error(res.message || 'Failed to end shift', { id: loader });
+
+                setShifts(shiftsRes.data || []);
+              } catch (e) {
+                console.error('Fetch after shift end failed:', e);
+              } finally {
+                setIsSaving(false);
+                resolve(true);
+              }
+            } else {
+              toast.error(res.message || 'Failed to end shift', { id: loader });
+              setIsSaving(false);
+              resolve(false);
+            }
+          })
+          .catch(err => {
+            console.error('End shift error:', err);
+            toast.error('Failed to end shift', { id: loader });
             setIsSaving(false);
-          }
-        })
-        .catch(err => {
-          console.error('End shift error:', err);
-          toast.error('Failed to end shift', { id: loader });
-          setIsSaving(false);
-        });
+            resolve(false);
+          });
+      });
     } else {
-      ConsumptionService.saveSales(payload)
+      return ConsumptionService.saveSales(payload)
         .then(() => {
           toast.success('Progress saved', { id: loader });
+          return true;
         })
         .catch((err: Error) => {
           toast.error(err.message || 'Failed to save', { id: loader });
+          return false;
         })
         .finally(() => {
           setIsSaving(false);
@@ -378,9 +387,8 @@ export default function DailyConsumptionPage() {
     }
   };
 
-  const handleConfirmEndShift = (mop: number, pos: number) => {
-    setIsEndShiftModalOpen(false);
-    handleSave(true, { mop, pos });
+  const handleConfirmEndShift = (mop: number, pos: number): Promise<boolean> => {
+    return handleSave(true, { mop, pos });
   };
 
   const handleSaveAudit = () => {
@@ -406,6 +414,44 @@ export default function DailyConsumptionPage() {
 
   const dayAggr = useMemo(() => getDayReportAggregations(), [getDayReportAggregations]);
 
+  const handleSendWhatsAppAlert = () => {
+    const formattedDate = formatDateToDisplay(selectedDate);
+
+    const dayShift = shifts.find(s => s.shiftType === 'DAY');
+    const nightShift = shifts.find(s => s.shiftType === 'NIGHT');
+    const dayShiftSale = dayShift?.totalSale || 0;
+    const nightShiftSale = nightShift?.totalSale || 0;
+
+    const message = generateWhatsAppAsciiMessage({
+      title: 'DAILY SALES',
+      outletName: 'WildBean Cafe Rengali',
+      dateStr: formattedDate,
+      isConcluded,
+      totalSale: dayAggr.totalSale,
+      wbcSale: dayAggr.wbcSale,
+      wStoreSale: dayAggr.wStoreSale,
+      dayShiftSale,
+      nightShiftSale,
+      billedAmount: dayAggr.billedMop,
+      nonBilledAmount: dayAggr.nonBilled,
+      upiAndCardAmount: dayAggr.upiTotal,
+      cashAmount: dayAggr.cashTotal,
+      loyalty: dayAggr.loyaltyTotal,
+      includeShiftSection: true,
+    });
+
+    // Copy formatted text to clipboard
+    if (navigator.clipboard && navigator.clipboard.writeText) {
+      navigator.clipboard.writeText(message).catch((e) => console.error('Clipboard error:', e));
+    }
+
+    // Open WhatsApp with prefilled message
+    const waUrl = `https://api.whatsapp.com/send?text=${encodeURIComponent(message)}`;
+    window.open(waUrl, '_blank');
+
+    toast.success('Report copied to clipboard & opening WhatsApp!', { duration: 4000 });
+  };
+
   return (
     <div className="w-full h-full overflow-y-auto overflow-x-hidden custom-scrollbar">
       <div className="p-4 md:p-6 max-w-[1400px] mx-auto w-full flex flex-col gap-6 pb-20">
@@ -425,24 +471,59 @@ export default function DailyConsumptionPage() {
         />
 
         {isConcluded && (
-          <div className="bg-[#065f46]/10 border border-[#065f46]/20 p-4 rounded-xl flex flex-col sm:flex-row sm:items-center justify-between gap-4">
-            <div className="flex items-start gap-3">
-              <CheckCircle2 className="text-[#065f46] mt-0.5 shrink-0" size={20} />
-              <div className="flex flex-col">
-                <span className="font-bold text-[#065f46]">Sales already recorded</span>
-                <span className="text-[13px] text-[#065f46]">Sales for this consumption date have been successfully concluded. No further changes are allowed.</span>
+          <div className="flex flex-col gap-2.5">
+            {/* Shift Concluded Status Card */}
+            <div className="bg-card border border-border-main p-3 sm:p-4 rounded-xl flex items-center justify-between gap-3 shadow-sm min-w-0">
+              <div className="flex items-center gap-2.5 min-w-0">
+                <div className="w-8 h-8 rounded-lg bg-emerald-500/10 text-emerald-500 border border-emerald-500/20 flex items-center justify-center shrink-0">
+                  <CheckCircle2 size={16} />
+                </div>
+                <div className="flex flex-col gap-0.5 min-w-0">
+                  <span className="font-bold text-primary-text text-[13.5px] truncate">
+                    Shift Concluded
+                  </span>
+                  <span className="text-[11.5px] text-muted-text font-normal truncate">
+                    Sales data recorded and locked.
+                  </span>
+                </div>
               </div>
+
+              {isAdmin && (
+                <button
+                  disabled={isOpenShiftLoading}
+                  onClick={handleOpenShift}
+                  className="whitespace-nowrap px-3 py-1.5 bg-secondary hover:bg-secondary/80 border border-border-main text-muted-text hover:text-primary-text text-[11px] font-semibold rounded-lg transition-all shadow-sm shrink-0 flex items-center justify-center gap-1.5 disabled:opacity-50 cursor-pointer"
+                >
+                  <Unlock size={13} />
+                  {isOpenShiftLoading ? 'Opening...' : 'Open Shift'}
+                </button>
+              )}
             </div>
-            {isAdmin && (
+
+            {/* Separate WhatsApp Report Card */}
+            <div className="bg-card border border-border-main p-3 sm:p-3.5 rounded-xl flex items-center justify-between gap-3 shadow-sm">
+              <div className="flex items-center gap-2.5 min-w-0">
+                <div className="w-8 h-8 rounded-lg bg-emerald-500/10 text-emerald-500 border border-emerald-500/20 flex items-center justify-center shrink-0">
+                  <MessageCircle size={15} />
+                </div>
+                <div className="flex flex-col gap-0.5 min-w-0">
+                  <span className="font-bold text-primary-text text-[13px] truncate">
+                    WhatsApp Report
+                  </span>
+                  <span className="text-[11px] text-muted-text truncate">
+                    Send report update to group <strong className="text-primary-text font-medium">"Rengali Wildbean Cafe"</strong>
+                  </span>
+                </div>
+              </div>
+
               <button
-                disabled={isOpenShiftLoading}
-                onClick={handleOpenShift}
-                className="px-4 py-2 bg-[#065f46] hover:bg-[#044e39] text-white text-[13px] font-bold rounded-lg transition-all shadow-sm shrink-0 flex items-center justify-center gap-1.5 disabled:opacity-50 cursor-pointer"
+                onClick={handleSendWhatsAppAlert}
+                className="px-3.5 py-1.5 bg-secondary hover:bg-secondary/80 border border-border-main text-emerald-600 dark:text-emerald-400 font-semibold text-[11.5px] rounded-lg transition-all shadow-sm shrink-0 flex items-center gap-1.5 cursor-pointer"
               >
-                <Unlock size={15} />
-                {isOpenShiftLoading ? 'Opening Shift...' : 'Open Shift'}
+                <MessageCircle size={13} />
+                <span>Send WhatsApp</span>
               </button>
-            )}
+            </div>
           </div>
         )}
 
@@ -495,14 +576,14 @@ export default function DailyConsumptionPage() {
             <button
               disabled={isSaving}
               onClick={() => setIsEndShiftModalOpen(true)}
-              className="w-full sm:w-auto px-8 py-3 bg-red-600 text-white text-[14px] font-bold rounded-lg hover:bg-red-700 transition-all shadow-sm disabled:opacity-50"
+              className="w-full sm:w-auto px-8 py-3 bg-red-600 text-white text-[14px] font-bold rounded-lg hover:bg-red-700 transition-all shadow-sm disabled:opacity-50 cursor-pointer"
             >
               End Shift
             </button>
             <button
               disabled={isSaving}
               onClick={() => handleSave(false)}
-              className="w-full sm:w-auto px-8 py-3 bg-neutral-900 dark:bg-neutral-100 text-white dark:text-neutral-900 text-[14px] font-bold rounded-lg hover:opacity-90 transition-all shadow-sm disabled:opacity-50"
+              className="w-full sm:w-auto px-8 py-3 bg-neutral-900 dark:bg-neutral-100 text-white dark:text-neutral-900 text-[14px] font-bold rounded-lg hover:opacity-90 transition-all shadow-sm disabled:opacity-50 cursor-pointer"
             >
               Save
             </button>
@@ -514,7 +595,9 @@ export default function DailyConsumptionPage() {
         isOpen={isEndShiftModalOpen}
         onClose={() => setIsEndShiftModalOpen(false)}
         onConfirm={handleConfirmEndShift}
+        onSendWhatsApp={handleSendWhatsAppAlert}
         isLoading={isSaving}
+        selectedDate={selectedDate}
       />
     </div>
   );

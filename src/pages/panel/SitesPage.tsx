@@ -12,11 +12,11 @@ const STATUS_OPTIONS = [
   { value: 'COMPLETED', label: 'Completed' },
 ]
 
+import { fmtShort } from '../../utils/numberFormat';
+
 const formatInventoryValue = (value: number) => {
-  if (!value || value === 0) return '₹0'
-  const lakhs = value / 100000
-  return `₹${lakhs % 1 === 0 ? lakhs.toFixed(0) : lakhs.toFixed(2)} L`
-}
+  return fmtShort(value);
+};
 
 const formatDate = (dateStr: string | null) => {
   if (!dateStr) return ''

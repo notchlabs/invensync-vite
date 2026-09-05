@@ -1,7 +1,8 @@
-import { Coffee, Store, BarChart3, Receipt, FileText, CreditCard, Banknote, Crown, Clock, Calendar as CalendarIcon } from 'lucide-react';
+import { Coffee, Store, BarChart3, Receipt, FileText, CreditCard, Banknote, Crown, Clock, Calendar as CalendarIcon, MessageCircle } from 'lucide-react';
 import { formatDateToDisplay } from '../../utils/dateUtils';
 import Skeleton from 'react-loading-skeleton';
 import { motion, AnimatePresence } from 'framer-motion';
+import toast from 'react-hot-toast';
 
 const fmtTime = (iso?: string) => {
   if (!iso) return null
@@ -20,6 +21,9 @@ const fmtTime = (iso?: string) => {
   return d.toLocaleTimeString('en-US', { hour: 'numeric', minute: '2-digit', hour12: true })
 }
 
+import type { Shift } from '../../services/consumptionService';
+import { generateWhatsAppAsciiMessage } from '../../utils/asciiReportGenerator';
+
 interface ReportCardProps {
   type: 'shift' | 'day';
   title: string;
@@ -37,12 +41,53 @@ interface ReportCardProps {
   isLoading?: boolean;
   lastUpdated?: string;
   isConcluded?: boolean;
+  shifts?: Shift[];
 }
 
-export const ReportCard = ({ type, title, date, data, isLoading, lastUpdated, isConcluded }: ReportCardProps) => {
+export const ReportCard = ({ type, title, date, data, isLoading, lastUpdated, isConcluded, shifts }: ReportCardProps) => {
   const isDayReport = type === 'day';
   const isNightShift = title?.toLowerCase().includes('shift b') || title?.toLowerCase().includes('night');
   const isOrangeShift = !isDayReport && !isNightShift;
+
+  const dayShift = shifts?.find(s => s.shiftType === 'DAY');
+  const nightShift = shifts?.find(s => s.shiftType === 'NIGHT');
+  const dayShiftSale = dayShift?.totalSale || 0;
+  const nightShiftSale = nightShift?.totalSale || 0;
+  const hasShiftDetails = Boolean(shifts && shifts.length > 0 && (dayShiftSale > 0 || nightShiftSale > 0));
+
+  const handleSendWhatsAppShift = (e: React.MouseEvent) => {
+    e.stopPropagation();
+    const formattedDate = date ? formatDateToDisplay(date) : '';
+    const siteDisplayName = 'WildBean Cafe Rengali';
+
+    const cleanTitle = title.endsWith('Report') ? title : `${title} Report`;
+    const message = generateWhatsAppAsciiMessage({
+      title: isDayReport ? 'DAILY SALES' : cleanTitle.toUpperCase(),
+      outletName: siteDisplayName,
+      dateStr: formattedDate,
+      isConcluded,
+      totalSale: data.totalSale,
+      wbcSale: data.wbcSale,
+      wStoreSale: data.wStoreSale,
+      dayShiftSale: isDayReport ? dayShiftSale : (title.toLowerCase().includes('day') ? (data.totalSale || 0) : 0),
+      nightShiftSale: isDayReport ? nightShiftSale : (isNightShift ? (data.totalSale || 0) : 0),
+      billedAmount: data.billedMop,
+      nonBilledAmount: data.nonBilled,
+      upiAndCardAmount: data.upiTotal,
+      cashAmount: data.cashTotal,
+      loyalty: data.loyaltyTotal,
+      includeShiftSection: isDayReport || hasShiftDetails,
+    });
+
+    if (navigator.clipboard && navigator.clipboard.writeText) {
+      navigator.clipboard.writeText(message).catch((err) => console.error('Clipboard error:', err));
+    }
+
+    const waUrl = `https://api.whatsapp.com/send?text=${encodeURIComponent(message)}`;
+    window.open(waUrl, '_blank');
+
+    toast.success(`${cleanTitle} copied & opening WhatsApp!`, { duration: 4000 });
+  };
 
   // Theme logic
   let cardBg = "bg-green-50/40 dark:bg-green-500/5";
@@ -118,24 +163,36 @@ export const ReportCard = ({ type, title, date, data, isLoading, lastUpdated, is
             transition={{ duration: 0.3 }}
             className="flex flex-col h-full"
           >
-            <div className={`p-4 border-b ${headerBorder} flex items-center justify-between`}>
-              <div className={`flex items-center gap-2 ${headerText} font-bold text-[14px]`}>
-                {isDayReport ? <CalendarIcon size={16} /> : <Clock size={16} />}
-                {title} - {formatDateToDisplay(date)}
+            <div className={`p-4 border-b ${headerBorder} flex items-center justify-between gap-2`}>
+              <div className={`flex items-center gap-2 ${headerText} font-bold text-[14px] min-w-0`}>
+                {isDayReport ? <CalendarIcon size={16} className="shrink-0" /> : <Clock size={16} className="shrink-0" />}
+                <span className="truncate">{title} - {formatDateToDisplay(date)}</span>
               </div>
-              {fmtTime(lastUpdated) && (
-                <div className="flex flex-col items-end gap-0.5">
-                  <span className={`flex items-center gap-1 text-[11px] font-semibold ${headerText} opacity-70`}>
-                    <Clock size={11} />
-                    {fmtTime(lastUpdated)}
-                  </span>
-                  {isDayReport && !isConcluded && (
-                    <span className="text-[9px] font-bold uppercase tracking-wider text-amber-500">
-                      Last updated
+              <div className="flex items-center gap-2 shrink-0">
+                <button
+                  type="button"
+                  onClick={handleSendWhatsAppShift}
+                  className="px-2 py-1 bg-emerald-600 hover:bg-emerald-700 active:scale-95 text-white font-bold text-[11px] rounded-lg transition-all flex items-center gap-1 cursor-pointer border border-emerald-500/30 shadow-sm shrink-0"
+                  title={`Send ${title} Report to WhatsApp`}
+                >
+                  <MessageCircle size={13} />
+                  <span className="hidden sm:inline">WhatsApp</span>
+                </button>
+
+                {fmtTime(lastUpdated) && (
+                  <div className="flex flex-col items-end gap-0.5">
+                    <span className={`flex items-center gap-1 text-[11px] font-semibold ${headerText} opacity-70`}>
+                      <Clock size={11} />
+                      {fmtTime(lastUpdated)}
                     </span>
-                  )}
-                </div>
-              )}
+                    {isDayReport && !isConcluded && (
+                      <span className="text-[9px] font-bold uppercase tracking-wider text-amber-500">
+                        Last updated
+                      </span>
+                    )}
+                  </div>
+                )}
+              </div>
             </div>
 
             <div className="p-5 flex flex-col gap-6">

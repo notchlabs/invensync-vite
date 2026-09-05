@@ -82,6 +82,7 @@ export const ConsumptionSummary = ({
         isLoading={isLoading}
         lastUpdated={lastUpdated}
         isConcluded={isConcluded}
+        shifts={shifts}
       />
     </div>
   );

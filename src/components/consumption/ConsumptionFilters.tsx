@@ -10,6 +10,7 @@ interface ConsumptionFiltersProps {
   selectedCu: ConsumptionUnit | null;
   setSelectedCu: (cu: ConsumptionUnit | null) => void;
   initialCuId?: number | null;
+  skipAuthRedirect?: boolean;
 }
 
 export const ConsumptionFilters = ({
@@ -20,6 +21,7 @@ export const ConsumptionFilters = ({
   selectedCu,
   setSelectedCu,
   initialCuId,
+  skipAuthRedirect = false,
 }: ConsumptionFiltersProps) => {
   return (
     <div className="bg-card border border-border-main p-4 rounded-xl shadow-sm flex flex-col sm:flex-row gap-4 items-stretch sm:items-center">
@@ -34,6 +36,7 @@ export const ConsumptionFilters = ({
       <SiteFilterSingle
         value={selectedSite} 
         onChange={setSelectedSite} 
+        skipAuthRedirect={skipAuthRedirect}
         className="flex-1 min-w-0 w-full sm:w-auto"
       />
       {selectedSite && (
@@ -42,6 +45,7 @@ export const ConsumptionFilters = ({
           value={selectedCu}
           onChange={setSelectedCu}
           initialCuId={initialCuId}
+          skipAuthRedirect={skipAuthRedirect}
           className="flex-1 min-w-0 w-full sm:w-auto"
         />
       )}

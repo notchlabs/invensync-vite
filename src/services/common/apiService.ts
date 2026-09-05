@@ -1,4 +1,4 @@
-import { authenticatedFetch } from './apiClient';
+import { authenticatedFetch, type AuthenticatedFetchOptions } from './apiClient';
 import { ENV } from '../../config/env';
 import toast from 'react-hot-toast';
 
@@ -10,7 +10,7 @@ export class ApiService {
     method: 'GET' | 'POST' | 'PUT' | 'PATCH' | 'DELETE',
     endpoint: string,
     body?: unknown,
-    options: RequestInit = {}
+    options: AuthenticatedFetchOptions = {}
   ): Promise<T> {
     // Construct full URL if endpoint is relative
     const url = endpoint.startsWith('http')
@@ -24,7 +24,7 @@ export class ApiService {
       headers.set('Content-Type', 'application/json');
     }
 
-    const config: RequestInit = {
+    const config: AuthenticatedFetchOptions = {
       ...options,
       method,
       headers,
@@ -64,23 +64,23 @@ export class ApiService {
     return response.json();
   }
 
-  static async get<T>(endpoint: string, options?: RequestInit): Promise<T> {
+  static async get<T>(endpoint: string, options?: AuthenticatedFetchOptions): Promise<T> {
     return this.request<T>('GET', endpoint, undefined, options);
   }
 
-  static async post<T>(endpoint: string, body?: unknown, options?: RequestInit): Promise<T> {
+  static async post<T>(endpoint: string, body?: unknown, options?: AuthenticatedFetchOptions): Promise<T> {
     return this.request<T>('POST', endpoint, body, options);
   }
 
-  static async put<T>(endpoint: string, body?: unknown, options?: RequestInit): Promise<T> {
+  static async put<T>(endpoint: string, body?: unknown, options?: AuthenticatedFetchOptions): Promise<T> {
     return this.request<T>('PUT', endpoint, body, options);
   }
 
-  static async patch<T>(endpoint: string, body?: unknown, options?: RequestInit): Promise<T> {
+  static async patch<T>(endpoint: string, body?: unknown, options?: AuthenticatedFetchOptions): Promise<T> {
     return this.request<T>('PATCH', endpoint, body, options);
   }
 
-  static async delete<T>(endpoint: string, options?: RequestInit): Promise<T> {
+  static async delete<T>(endpoint: string, options?: AuthenticatedFetchOptions): Promise<T> {
     return this.request<T>('DELETE', endpoint, undefined, options);
   }
 }

@@ -102,6 +102,7 @@ export interface BucketItem {
   vendorIds: string;
   price: number;
   tax: number;
+  total: number;
   qty: number;
   consumedByEmail: string;
   unit: string;
@@ -161,22 +162,29 @@ export class ConsumptionService {
   /**
    * Check if sales/audit exists for a specific date and site
    */
-  static async existsSalesByDateAndSiteId(date: string, siteId: number): Promise<ApiResponse<ExistingSales | null>> {
-    return ApiService.get(`/sales/exists?date=${date}&siteId=${siteId}`);
+  static async existsSalesByDateAndSiteId(date: string, siteId: number, options?: RequestInit & { skipAuthRedirect?: boolean }): Promise<ApiResponse<ExistingSales | null>> {
+    return ApiService.get(`/sales/exists?date=${date}&siteId=${siteId}`, options);
   }
 
   /**
    * Fetch shifts timeframes for a given date
    */
-  static async fetchShifts(date: string): Promise<ApiResponse<Shift[]>> {
-    return ApiService.get(`/sales/fetch-shifts?date=${date}`);
+  static async fetchShifts(date: string, options?: RequestInit & { skipAuthRedirect?: boolean }): Promise<ApiResponse<Shift[]>> {
+    return ApiService.get(`/sales/fetch-shifts?date=${date}`, options);
   }
 
   /**
    * Fetch consumption logic bucket items
    */
-  static async fetchBucketItems(payload: { siteId: number; consumptionUnitId: number; fromDate: string; toDate: string; sortDir: string; productName: string }): Promise<ApiResponse<BucketItem[]>> {
-    return ApiService.post('/list/fetch-consumptions', payload);
+  static async fetchBucketItems(payload: { siteId: number; consumptionUnitId: number; fromDate: string; toDate: string; sortDir: string; productName: string }, options?: RequestInit & { skipAuthRedirect?: boolean }): Promise<ApiResponse<BucketItem[]>> {
+    return ApiService.post('/list/fetch-consumptions', payload, options);
+  }
+
+  /**
+   * Fetch consumption logic bucket items (lite version)
+   */
+  static async fetchBucketItemsLite(payload: { siteId: number; consumptionUnitId: number; fromDate: string; toDate: string; sortDir: string; productName: string }, options?: RequestInit & { skipAuthRedirect?: boolean }): Promise<ApiResponse<BucketItem[]>> {
+    return ApiService.post('/list/fetch-consumptions-lite', payload, options);
   }
 
   /**

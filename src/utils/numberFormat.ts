@@ -14,11 +14,32 @@ export const formatIndianCurrency = (num: number | string | undefined | null): s
   return `₹${formatIndianNumber(num)}`;
 };
 
-export const fmtShort = (n: number): string => {
-  const abs  = Math.abs(n)
-  const sign = n < 0 ? '-' : ''
-  if (abs >= 1_00_00_000) return `${sign}₹${(abs / 1_00_00_000).toFixed(2)} Cr`
-  if (abs >= 1_00_000)    return `${sign}₹${(abs / 1_00_00_000).toFixed(2)} L`
-  if (abs >= 1_000)       return `${sign}₹${(abs / 1_000).toFixed(2)} K`
-  return `${sign}₹${abs % 1 !== 0 ? abs.toFixed(2) : abs}`
-}
+export const fmtShort = (n: number | string | undefined | null): string => {
+  if (n === null || n === undefined) return '₹0';
+  const num = Number(n);
+  if (isNaN(num)) return '₹0';
+
+  const abs = Math.abs(num);
+  const sign = num < 0 ? '-' : '';
+
+  if (abs >= 1_00_00_000) {
+    const val = abs / 1_00_00_000;
+    const formatted = val % 1 === 0 ? val.toFixed(0) : val.toFixed(2).replace(/\.?0+$/, '');
+    return `${sign}₹${formatted} Cr`;
+  }
+
+  if (abs >= 1_00_000) {
+    const val = abs / 1_00_000;
+    const formatted = val % 1 === 0 ? val.toFixed(0) : val.toFixed(2).replace(/\.?0+$/, '');
+    return `${sign}₹${formatted} L`;
+  }
+
+  if (abs >= 1_000) {
+    const val = abs / 1_000;
+    const formatted = val % 1 === 0 ? val.toFixed(0) : val.toFixed(1).replace(/\.?0+$/, '');
+    return `${sign}₹${formatted}K`;
+  }
+
+  const formatted = abs % 1 === 0 ? abs.toFixed(0) : abs.toFixed(2).replace(/\.?0+$/, '');
+  return `${sign}₹${formatted}`;
+};

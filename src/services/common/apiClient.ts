@@ -19,6 +19,10 @@ const getScopesForEndpoint = (endpoint: string): string[] | null => {
   return null;
 };
 
+export interface AuthenticatedFetchOptions extends RequestInit {
+  skipAuthRedirect?: boolean;
+}
+
 /**
  * A custom fetch wrapper that automatically dynamically attaches Azure AD MSAL Bearer tokens
  * to outgoing API requests if the endpoint is mapped in our protected resources. 
@@ -26,7 +30,7 @@ const getScopesForEndpoint = (endpoint: string): string[] | null => {
  */
 export const authenticatedFetch = async (
   input: RequestInfo | URL,
-  init?: RequestInit
+  init?: AuthenticatedFetchOptions
 ): Promise<Response> => {
   const endpoint = typeof input === 'string' ? input : (input as Request).url;
   let authToken = '';
@@ -50,10 +54,9 @@ export const authenticatedFetch = async (
         });
         authToken = response.accessToken;
       } catch (error) {
-        // If the error requires user interaction (expired session, consent needed, etc.)
-        // redirect to login instead of popup — popups are blocked when not triggered
-        // by a direct user click (e.g. from useEffect / API calls).
-        if (error instanceof InteractionRequiredAuthError) {
+        if (init?.skipAuthRedirect) {
+          console.warn('Token acquisition failed on public request, proceeding without token');
+        } else if (error instanceof InteractionRequiredAuthError) {
           console.warn('Token requires interaction — redirecting to login');
           await msalInstance.acquireTokenRedirect({
             ...loginRequest,
@@ -63,14 +66,19 @@ export const authenticatedFetch = async (
           // acquireTokenRedirect navigates away — execution won't continue past here.
           // When the user returns, handleRedirectPromise picks up the new tokens.
           throw new Error('Redirecting to login for token renewal');
+        } else {
+          console.error('Silent token acquisition failed with unexpected error', error);
+          throw new Error('Authentication required');
         }
-        console.error('Silent token acquisition failed with unexpected error', error);
-        throw new Error('Authentication required');
       }
     } else {
-      console.warn("No active account found. Redirecting to login.");
-      await msalInstance.loginRedirect(loginRequest);
-      throw new Error('Redirecting to login');
+      if (init?.skipAuthRedirect) {
+        console.warn('No active account found for public request, proceeding without auth header.');
+      } else {
+        console.warn("No active account found. Redirecting to login.");
+        await msalInstance.loginRedirect(loginRequest);
+        throw new Error('Redirecting to login');
+      }
     }
   }
 
