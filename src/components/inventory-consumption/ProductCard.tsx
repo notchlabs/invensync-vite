@@ -1,7 +1,6 @@
 // ── ProductCard ───────────────────────────────────────────────────────────────
 
 import { Minus, Plus, Edit3 } from "lucide-react"
-import { motion, AnimatePresence } from "framer-motion"
 import { ProductImage } from "./ProductImage"
 import { formatIndianCurrency } from "../../utils/numberFormat"
 
@@ -76,46 +75,35 @@ export function ProductCard({
         </div>
 
         <div className="relative flex items-center justify-end h-full">
-          <AnimatePresence mode="wait">
-            {cartQty > 0 ? (
-              <motion.div
-                key="qty-controls"
-                initial={{ opacity: 0, scale: 0.8, x: 20 }}
-                animate={{ opacity: 1, scale: 1, x: 0 }}
-                exit={{ opacity: 0, scale: 0.8, x: 20 }}
-                transition={{ type: "spring", stiffness: 350, damping: 25 }}
-                className="flex items-center rounded-xl overflow-hidden shrink-0 border border-border-main/60 shadow-sm"
+          {cartQty > 0 ? (
+            <div className="flex items-center rounded-xl overflow-hidden shrink-0 border border-border-main/60 shadow-sm">
+              <button
+                type="button"
+                onClick={onRemove}
+                className="w-9 h-9 bg-gray-900 dark:bg-gray-700 text-white flex items-center justify-center hover:opacity-80 transition-opacity cursor-pointer"
               >
-                <button
-                  onClick={onRemove}
-                  className="w-9 h-9 bg-gray-900 dark:bg-gray-700 text-white flex items-center justify-center hover:opacity-80 transition-opacity cursor-pointer"
-                >
-                  <Minus size={14} />
-                </button>
-                <span className="text-[14px] font-black text-primary-text w-9 text-center bg-card tabular-nums">
-                  {cartQty}
-                </span>
-                <button
-                  onClick={onAdd}
-                  className="w-9 h-9 bg-[#f0b44c] text-white flex items-center justify-center hover:opacity-80 transition-opacity cursor-pointer"
-                >
-                  <Plus size={14} />
-                </button>
-              </motion.div>
-            ) : (
-              <motion.button
-                key="add-btn"
-                initial={{ opacity: 0, scale: 0.8, x: -20 }}
-                animate={{ opacity: 1, scale: 1, x: 0 }}
-                exit={{ opacity: 0, scale: 0.8, x: -20 }}
-                transition={{ type: "spring", stiffness: 350, damping: 25 }}
+                <Minus size={14} />
+              </button>
+              <span className="text-[14px] font-black text-primary-text w-9 text-center bg-card tabular-nums">
+                {cartQty}
+              </span>
+              <button
+                type="button"
                 onClick={onAdd}
-                className={`h-9 px-5 bg-card text-primary-text text-[12px] font-black rounded-xl border ${isOutOfStock ? 'border-dashed border-border-main' : 'border-border-main shadow-sm'} hover:bg-surface transition-all cursor-pointer shrink-0 active:scale-[0.97]`}
+                className="w-9 h-9 bg-[#f0b44c] text-white flex items-center justify-center hover:opacity-80 transition-opacity cursor-pointer"
               >
-                ADD
-              </motion.button>
-            )}
-          </AnimatePresence>
+                <Plus size={14} />
+              </button>
+            </div>
+          ) : (
+            <button
+              type="button"
+              onClick={onAdd}
+              className={`h-9 px-5 bg-card text-primary-text text-[12px] font-black rounded-xl border ${isOutOfStock ? 'border-dashed border-border-main' : 'border-border-main shadow-sm'} hover:bg-surface transition-colors cursor-pointer shrink-0 active:scale-[0.97]`}
+            >
+              ADD
+            </button>
+          )}
         </div>
       </div>
     </div>

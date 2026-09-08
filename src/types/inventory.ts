@@ -19,6 +19,24 @@ export interface Product {
   price: number;
   tax: number;
   priceIncTax: number;
+  barcode?: string;
+  categoryId?: number;
+  categoryName?: string;
+}
+
+export interface ProductCategory {
+  id: number;
+  name: string;
+  description?: string;
+  createdAt?: string;
+}
+
+export interface PriceHistoryItem {
+  id: number;
+  oldPrice: number | null;
+  newPrice: number;
+  changedBy: string | null;
+  changedAt: string;
 }
 
 export interface Site {
@@ -69,6 +87,8 @@ export interface InventoryItem {
   imageUrl: string | null;
   istId?: number | null;
   date?: string | null;
+  barcode?: string | null;
+  categoryId?: number | null;
 }
 
 export interface InventoryFetchPayload {

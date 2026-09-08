@@ -1,5 +1,5 @@
 import { useState, useEffect, useRef, useCallback } from 'react'
-import { Search, Package, ShoppingBag, ChevronRight } from 'lucide-react'
+import { Search, Package, ShoppingBag, ChevronRight, ScanBarcode } from 'lucide-react'
 import { AnimatePresence, motion } from 'framer-motion'
 import Skeleton from 'react-loading-skeleton'
 import { InventoryService, type PreparationProduct } from '../../services/inventoryService'
@@ -12,6 +12,8 @@ import { BogoOfferModal } from '../../components/inventory-consumption/BogoOffer
 import { Buy2Get25OffModal } from '../../components/inventory-consumption/Buy2Get25OffModal'
 import { useMsal } from '@azure/msal-react'
 import { EditCompositeModal } from '../../components/inventory/EditCompositeModal'
+import { EditProductModal } from '../../components/inventory/EditProductModal'
+import { BarcodeScanModal } from '../../components/inventory-consumption/BarcodeScanModal'
 
 // ── constants ─────────────────────────────────────────────────────────────────
 
@@ -37,6 +39,9 @@ export default function ConsumptionPage() {
   const [showBuy2Get25Modal, setShowBuy2Get25Modal] = useState(false)
   const [editingProductId, setEditingProductId] = useState<number | null>(null)
   const [isEditModalOpen, setIsEditModalOpen]   = useState(false)
+  const [editInventoryItem, setEditInventoryItem] = useState<InventoryItem | null>(null)
+  const [isEditProductOpen, setIsEditProductOpen] = useState(false)
+  const [isScanModalOpen, setIsScanModalOpen]       = useState(false)
 
   // Cart
   const [cart, setCart] = useState<Map<number, CartEntry>>(new Map())
@@ -165,6 +170,20 @@ export default function ConsumptionPage() {
     setCart(prev => { const next = new Map(prev); next.delete(productId); return next })
   }
 
+  const handleScanAddProduct = (entry: CartEntry) => {
+    setCart(prev => {
+      const next = new Map(prev)
+      const ex = next.get(entry.productId)
+      next.set(entry.productId, { ...entry, qty: (ex ? ex.qty : 0) + entry.qty })
+      return next
+    })
+  }
+
+  const handleScanAddAndOpen = (entry: CartEntry) => {
+    handleScanAddProduct(entry)
+    setShowModal(true)
+  }
+
   const handleConsumeSuccess = () => {
     setCart(new Map())
     setShowModal(false)
@@ -189,17 +208,28 @@ export default function ConsumptionPage() {
   return (
     <div className="flex flex-col h-full overflow-hidden">
 
-      {/* ── Search ───────────────────────────────────────────────── */}
+      {/* ── Search & Scan ────────────────────────────────────────── */}
       <div className="px-5 md:px-8 pt-3 sm:pt-4 pb-3 shrink-0">
-        <div className="relative">
-          <Search size={14} className="absolute left-3.5 top-1/2 -translate-y-1/2 text-muted-text" />
-          <input
-            type="text"
-            placeholder="Search products"
-            value={search}
-            onChange={e => setSearch(e.target.value)}
-            className="w-full h-[42px] pl-10 pr-4 bg-card border border-border-main rounded-xl text-[13px] font-medium text-primary-text outline-none focus:border-secondary-text transition-all"
-          />
+        <div className="flex items-center gap-2.5">
+          <div className="relative flex-1">
+            <Search size={14} className="absolute left-3.5 top-1/2 -translate-y-1/2 text-muted-text" />
+            <input
+              type="text"
+              placeholder="Search products"
+              value={search}
+              onChange={e => setSearch(e.target.value)}
+              className="w-full h-[42px] pl-10 pr-4 bg-card border border-border-main rounded-xl text-[13px] font-medium text-primary-text outline-none focus:border-secondary-text transition-all"
+            />
+          </div>
+          <button
+            type="button"
+            onClick={() => setIsScanModalOpen(true)}
+            className="h-[42px] px-3.5 sm:px-4 bg-card hover:bg-surface border border-border-main hover:border-secondary-text/80 rounded-xl text-[13px] font-bold text-primary-text flex items-center gap-2 transition-all shrink-0 cursor-pointer shadow-sm active:scale-95 group"
+            title="Scan Product Barcode"
+          >
+            <ScanBarcode size={17} className="text-accent transition-transform group-hover:scale-110" />
+            <span className="font-semibold text-[13px]">Scan</span>
+          </button>
         </div>
       </div>
 
@@ -260,6 +290,7 @@ export default function ConsumptionPage() {
                             onAdd={() => addToCart({ productId: item.productId, productName: item.productName, unit: item.unit, price: itemCostPrice, mrp: itemMrp, imageUrl: resolvedImg, source: 'inventory', cgstInPerc: item.cgstInPerc || 0, sgstInPerc: item.sgstInPerc || 0 })}
                             onRemove={() => removeFromCart(item.productId)}
                             isOutOfStock={false}
+                            onEdit={() => { setEditInventoryItem(item); setIsEditProductOpen(true) }}
                           />
                         )
                       })}
@@ -295,6 +326,7 @@ export default function ConsumptionPage() {
                                 onAdd={() => addToCart({ productId: item.productId, productName: item.productName, unit: item.unit, price: itemCostPrice, mrp: itemMrp, imageUrl: resolvedImg, source: 'inventory', cgstInPerc: item.cgstInPerc || 0, sgstInPerc: item.sgstInPerc || 0 })}
                                 onRemove={() => removeFromCart(item.productId)}
                                 isOutOfStock={true}
+                                onEdit={() => { setEditInventoryItem(item); setIsEditProductOpen(true) }}
                               />
                             )
                           })}
@@ -508,6 +540,28 @@ export default function ConsumptionPage() {
           }}
         />
       )}
+
+      {/* ── Edit Product Modal (inventory items) ────────────────── */}
+      <EditProductModal
+        isOpen={isEditProductOpen}
+        onClose={() => {
+          setIsEditProductOpen(false)
+          setEditInventoryItem(null)
+        }}
+        item={editInventoryItem}
+        onSuccess={() => {
+          loadInventory(true)
+        }}
+      />
+
+      {/* ── Barcode Scan Modal ────────────────────────────────────── */}
+      <BarcodeScanModal
+        isOpen={isScanModalOpen}
+        onClose={() => setIsScanModalOpen(false)}
+        onAddProduct={handleScanAddProduct}
+        onAddAndOpenConsumption={handleScanAddAndOpen}
+        invItems={invItems}
+      />
     </div>
   )
 }

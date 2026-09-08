@@ -59,26 +59,53 @@ export const ConsumedItemRow = ({
   );
   const isDriverCoffee = Boolean(item.driverOfferSale);
 
+  const mrp = Number(item.price ?? 0);
+  const qty = Number(item.qty ?? 0);
+  const expectedTotal = mrp * qty;
+
+  const paymentSum = Number(item.cash || 0) + Number(item.upi || 0) + Number(item.noBill || 0) + Number(item.loyalty || 0);
+  const total = paymentSum > 0
+    ? paymentSum
+    : (item.total != null && !isNaN(Number(item.total)) && Number(item.total) > 0 ? Number(item.total) : paymentSum);
+
+  const isMismatch = !isCredit && Math.abs(expectedTotal - total) > 0.01;
+
   const baseRow = `border-b border-border-main/50 last:border-0 transition-colors ${isAlt ? 'bg-black/[0.01] dark:bg-white/[0.01]' : 'bg-transparent'} hover:bg-black/[0.02] dark:hover:bg-white/[0.02]`
 
   const inputs = (
     <div className="grid grid-cols-4 gap-2">
-      {FIELDS.map(({ label, field }) => (
-        <div key={field} className="flex flex-col gap-1 min-w-0">
-          <label className="text-[10px] text-muted-text font-bold uppercase tracking-wider font-display">{label}</label>
-          <input
-            type="number"
-            disabled={isConcluded || isCredit}
-            value={item[field] as number}
-            onFocus={(e) => e.target.select()}
-            onChange={(e) => updateItem(idx, field, Number(e.target.value))}
-            className="w-full h-9 lg:h-8 px-2 text-[13px] font-bold text-primary-text bg-surface border border-border-main rounded-lg outline-none focus:border-primary-text focus:bg-card focus:ring-2 focus:ring-primary-text/5 transition-all font-display disabled:opacity-40 disabled:cursor-not-allowed"
-            title={isCredit ? 'Credit sale input is locked' : undefined}
-          />
-        </div>
-      ))}
+      {FIELDS.map(({ label, field }) => {
+        const val = item[field] != null ? (item[field] as number) : 0;
+        if (isCredit) {
+          return (
+            <div key={field} className="flex flex-col gap-1 min-w-0">
+              <span className="text-[10px] text-muted-text font-bold uppercase tracking-wider font-display">{label}</span>
+              <div
+                className="w-full h-9 lg:h-8 px-2 text-[13px] font-bold text-muted-text/60 bg-surface/40 border border-border-main/50 rounded-lg flex items-center font-display select-none cursor-not-allowed"
+                title="Credit sale input cannot be edited"
+              >
+                {val}
+              </div>
+            </div>
+          );
+        }
+
+        return (
+          <div key={field} className="flex flex-col gap-1 min-w-0">
+            <label className="text-[10px] text-muted-text font-bold uppercase tracking-wider font-display">{label}</label>
+            <input
+              type="number"
+              disabled={isConcluded}
+              value={val}
+              onFocus={(e) => e.target.select()}
+              onChange={(e) => updateItem?.(idx, field, Number(e.target.value))}
+              className="w-full h-9 lg:h-8 px-2 text-[13px] font-bold text-primary-text bg-surface border border-border-main rounded-lg outline-none focus:border-primary-text focus:bg-card focus:ring-2 focus:ring-primary-text/5 transition-all font-display disabled:opacity-40 disabled:cursor-not-allowed"
+            />
+          </div>
+        );
+      })}
     </div>
-  )
+  );
 
   return (
     <div className={baseRow}>
@@ -95,7 +122,14 @@ export const ConsumedItemRow = ({
                 : <span className="text-[12px] font-black text-muted-text/50">{item.productName?.charAt(0) ?? '?'}</span>
               }
             </div>
-            <span className="w-full text-center text-[10px] font-black border border-[#065f46] text-[#065f46] bg-green-50/40 dark:bg-green-900/20 px-1 py-0.5 rounded-md truncate">
+            <span 
+              className={`w-full text-center text-[10px] font-black border px-1 py-0.5 rounded-md truncate ${
+                isMismatch
+                  ? 'border-red-500/60 text-red-600 dark:text-red-400 bg-red-500/10'
+                  : 'border-[#065f46] text-[#065f46] bg-green-50/40 dark:bg-green-900/20'
+              }`}
+              title={isMismatch ? `Mismatch: MRP × Qty (₹${expectedTotal.toFixed(2)}) ≠ Total (₹${total.toFixed(2)})` : undefined}
+            >
               ₹{(item.price ?? 0).toFixed(0)}
             </span>
           </div>
@@ -219,7 +253,14 @@ export const ConsumedItemRow = ({
         {/* Col 4: qty + amount */}
         <div className="flex items-center gap-3 px-4">
           <span className="text-[12px] font-semibold text-muted-text whitespace-nowrap">{item.qty} {item.unit}</span>
-          <span className="text-[13px] font-black border border-[#065f46] text-[#065f46] bg-green-50/40 dark:bg-green-900/20 px-3 py-1.5 rounded-lg whitespace-nowrap">
+          <span 
+            className={`text-[13px] font-black border px-3 py-1.5 rounded-lg whitespace-nowrap ${
+              isMismatch
+                ? 'border-red-500/60 text-red-600 dark:text-red-400 bg-red-500/10'
+                : 'border-[#065f46] text-[#065f46] bg-green-50/40 dark:bg-green-900/20'
+            }`}
+            title={isMismatch ? `Mismatch: MRP × Qty (₹${expectedTotal.toFixed(2)}) ≠ Total (₹${total.toFixed(2)})` : undefined}
+          >
             ₹{(item.price ?? 0).toFixed(2)}
           </span>
         </div>

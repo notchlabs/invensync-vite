@@ -43,7 +43,6 @@ export function ConfirmConsumptionModal({
   const entries = Array.from(cart.values())
 
   const [isConfirming, setIsConfirming] = useState(false)
-  const [emptyIds, setEmptyIds] = useState<Set<number>>(new Set())
   const [creditCustomers, setCreditCustomers] = useState<CreditCustomer[]>(() => CreditCustomerService.getCustomers())
   const [selectedCustomerId, setSelectedCustomerId] = useState<string>('')
   const [itemCustomerMap, setItemCustomerMap] = useState<Map<number, string>>(
@@ -67,8 +66,9 @@ export function ConfirmConsumptionModal({
     const m = new Map<number, ItemSettings>()
     entries.forEach(e => {
       const displayPrice = (e.mrp && e.mrp > 0) ? e.mrp : e.price
+      const total = displayPrice > 0 ? displayPrice * e.qty : 0
       m.set(e.productId, {
-        amount: String(displayPrice > 0 ? displayPrice * e.qty : 0),
+        amount: Number.isInteger(total) ? String(total) : total.toFixed(2),
         paymentMode: 'UPI',
         noBill: false,
         loyalty: false,
@@ -78,17 +78,40 @@ export function ConfirmConsumptionModal({
     return m
   })
 
+  // Sync settings amounts when entries or quantities change
+  useEffect(() => {
+    setSettings(prev => {
+      const next = new Map(prev)
+      let changed = false
+      entries.forEach(e => {
+        const baseUnitPrice = (e.mrp && e.mrp > 0) ? e.mrp : (e.price || 0)
+        const calc = baseUnitPrice * e.qty
+        const expectedAmt = Number.isInteger(calc) ? String(calc) : calc.toFixed(2)
+
+        const cur = next.get(e.productId)
+        if (!cur) {
+          next.set(e.productId, {
+            amount: expectedAmt,
+            paymentMode: globalPaymentMode || 'UPI',
+            noBill: false,
+            loyalty: false,
+            driverOfferSale: DRIVER_OFFER_PRODUCT_IDS.has(e.productId),
+          })
+          changed = true
+        } else if (cur.amount !== expectedAmt) {
+          next.set(e.productId, { ...cur, amount: expectedAmt })
+          changed = true
+        }
+      })
+      return changed ? next : prev
+    })
+  }, [entries, globalPaymentMode])
+
   const updateSetting = <K extends keyof ItemSettings>(
     id: number,
     key: K,
     value: ItemSettings[K]
   ) => {
-    if (key === 'amount')
-      setEmptyIds(prev => {
-        const next = new Set(prev)
-        next.delete(id)
-        return next
-      })
     setSettings(prev => {
       const next = new Map(prev)
       const cur = next.get(id)
@@ -127,17 +150,7 @@ export function ConfirmConsumptionModal({
     }
 
     const baseUnitPrice = (entry.mrp && entry.mrp > 0) ? entry.mrp : (entry.price || 0)
-    const currentAmt = parseFloat(settings.get(productId)?.amount || '0')
-
-    let unitPrice = baseUnitPrice
-    if (!isNaN(currentAmt) && currentAmt > 0 && entry.qty > 0) {
-      const calculatedCurrent = baseUnitPrice * entry.qty
-      if (Math.abs(currentAmt - calculatedCurrent) > 0.01) {
-        unitPrice = currentAmt / entry.qty
-      }
-    }
-
-    const calculatedNew = unitPrice * newQty
+    const calculatedNew = baseUnitPrice * newQty
     const formattedAmount = Number.isInteger(calculatedNew)
       ? String(calculatedNew)
       : calculatedNew.toFixed(2)
@@ -154,7 +167,6 @@ export function ConfirmConsumptionModal({
       if (isNaN(amt) || amt < 0) invalid.add(e.productId)
     })
     if (invalid.size > 0) {
-      setEmptyIds(invalid)
       return
     }
 
@@ -358,8 +370,8 @@ export function ConfirmConsumptionModal({
             if (!cfg) return null
 
             const isCredit = cfg.paymentMode === 'Credit'
-            const currentAmt = parseFloat(cfg.amount) || 0
-            const unitPrice = entry.qty > 0 ? currentAmt / entry.qty : ((entry.mrp && entry.mrp > 0) ? entry.mrp : (entry.price || 0))
+            const baseUnitPrice = (entry.mrp && entry.mrp > 0) ? entry.mrp : (entry.price || 0)
+            const totalAmount = baseUnitPrice * entry.qty
 
             return (
               <div
@@ -434,26 +446,10 @@ export function ConfirmConsumptionModal({
                     </button>
                   </div>
 
-                  {/* Editable Total Amount + Per Unit Price */}
-                  <div className="flex flex-col items-end gap-0.5">
-                    <div className="flex items-center gap-1 bg-surface border border-border-main rounded-xl px-2.5 py-1 shadow-2xs focus-within:border-accent">
-                      <span className="text-[12px] font-bold text-muted-text">₹</span>
-                      <input
-                        type="number"
-                        step="0.01"
-                        min="0"
-                        value={cfg.amount}
-                        onChange={e =>
-                          updateSetting(entry.productId, 'amount', e.target.value)
-                        }
-                        className={`w-20 text-right bg-transparent text-[13px] font-bold text-primary-text outline-none ${
-                          emptyIds.has(entry.productId) ? 'text-rose-500' : ''
-                        }`}
-                        placeholder="0.00"
-                      />
-                    </div>
-                    <span className="text-[10px] font-medium text-secondary-text tracking-tight pr-0.5">
-                      {formatIndianCurrency(unitPrice)} per unit
+                  {/* Total Amount */}
+                  <div className="flex items-center">
+                    <span className="text-[19px] sm:text-[21px] font-black text-primary-text font-mono tracking-tight leading-none">
+                      {formatIndianCurrency(totalAmount)}
                     </span>
                   </div>
                 </div>

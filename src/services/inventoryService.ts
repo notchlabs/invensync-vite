@@ -1,5 +1,5 @@
 import type { ApiResponse } from '../types/api';
-import type { Vendor, Product, Site, InventoryItem, InventoryFetchPayload } from '../types/inventory';
+import type { Vendor, Product, Site, InventoryItem, InventoryFetchPayload, ProductCategory, PriceHistoryItem } from '../types/inventory';
 import { ApiService } from './common/apiService';
 import type { PaginatedResponse } from './common/common.types';
 
@@ -65,6 +65,9 @@ export interface UpdateProductPayload {
   imageUrl: string;
   cgstInPerc: number;
   sgstInPerc: number;
+  barcode?: string;
+  categoryId?: number | null;
+  price?: number | null;
 }
 
 export interface HsnTaxDetail {
@@ -211,6 +214,41 @@ export class InventoryService {
    */
   static async fetchInventory(page: number, size: number, payload: InventoryFetchPayload): Promise<ApiResponse<PaginatedResponse<InventoryItem>>> {
     return ApiService.post(`/list/inventory?page=${page}&size=${size}`, payload);
+  }
+
+  /**
+   * Fetch all product categories
+   */
+  static async fetchCategories(): Promise<ApiResponse<ProductCategory[]>> {
+    return ApiService.get('/product-category/list');
+  }
+
+  /**
+   * Create a new product category
+   */
+  static async createCategory(name: string, description: string = ''): Promise<ApiResponse<ProductCategory>> {
+    return ApiService.post('/product-category/create', { name, description });
+  }
+
+  /**
+   * Fetch last 3 price history entries for a product
+   */
+  static async fetchPriceHistory(productId: number): Promise<ApiResponse<PriceHistoryItem[]>> {
+    return ApiService.get(`/product/${productId}/price-history`);
+  }
+
+  /**
+   * Fetch product details by ID
+   */
+  static async getProduct(productId: number): Promise<ApiResponse<Product>> {
+    return ApiService.get(`/product/${productId}`);
+  }
+
+  /**
+   * Search product by barcode
+   */
+  static async searchByBarcode(barcode: string): Promise<ApiResponse<Product>> {
+    return ApiService.get(`/product/search-by-barcode?barcode=${encodeURIComponent(barcode)}`);
   }
 
   /**

@@ -1,5 +1,5 @@
 import { useState } from 'react';
-import { Search, ChevronDown, ChevronRight, Coffee } from 'lucide-react';
+import { Search, ChevronDown, ChevronRight, Coffee, AlertCircle } from 'lucide-react';
 import { ConsumedItemRow } from './ConsumedItemRow';
 import type { BucketItem } from '../../services/consumptionService';
 import Skeleton from 'react-loading-skeleton';
@@ -33,6 +33,27 @@ export const ConsumedItemsList = ({
   const [isExpanded, setIsExpanded] = useState(true);
   const driverCoffeeCount = items.filter(i => i.driverOfferSale).length;
 
+  const incorrectBillingCount = items.filter(item => {
+    const isCredit = Boolean(
+      item.creditCustomerId != null && 
+      item.creditCustomerId !== 0 && 
+      item.creditCustomerId !== '0' && 
+      String(item.creditCustomerId).trim() !== ''
+    );
+    if (isCredit) return false;
+
+    const mrp = Number(item.price ?? 0);
+    const qty = Number(item.qty ?? 0);
+    const expectedTotal = mrp * qty;
+
+    const paymentSum = Number(item.cash || 0) + Number(item.upi || 0) + Number(item.noBill || 0) + Number(item.loyalty || 0);
+    const total = paymentSum > 0
+      ? paymentSum
+      : (item.total != null && !isNaN(Number(item.total)) && Number(item.total) > 0 ? Number(item.total) : paymentSum);
+
+    return Math.abs(expectedTotal - total) > 0.01;
+  }).length;
+
   return (
     <div className="bg-card border border-border-main rounded-xl shadow-sm overflow-hidden">
       {/* Header */}
@@ -40,8 +61,14 @@ export const ConsumedItemsList = ({
         onClick={() => setIsExpanded(!isExpanded)}
         className="w-full flex items-center justify-between p-4 hover:bg-black/[0.02] dark:hover:bg-white/[0.02] transition-colors cursor-pointer"
       >
-        <div className="flex items-center gap-2">
+        <div className="flex items-center gap-2 flex-wrap">
           <span className="text-[15px] font-bold text-primary-text font-display">Consumed Items</span>
+          {incorrectBillingCount > 0 && (
+            <span className="text-[10.5px] font-bold text-red-600 dark:text-red-400 bg-red-500/10 border border-red-500/20 px-2 py-0.5 rounded-full flex items-center gap-1">
+              <AlertCircle size={11} className="text-red-500" />
+              {incorrectBillingCount} Incorrect Billing{incorrectBillingCount > 1 ? 's' : ''}
+            </span>
+          )}
           {driverCoffeeCount > 0 && (
             <span className="text-[10.5px] font-bold text-amber-700 dark:text-amber-300 bg-amber-500/10 border border-amber-500/20 px-2 py-0.5 rounded-full flex items-center gap-1">
               <Coffee size={11} />
