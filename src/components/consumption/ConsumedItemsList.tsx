@@ -1,5 +1,5 @@
 import { useState } from 'react';
-import { Search, ChevronDown, ChevronRight } from 'lucide-react';
+import { Search, ChevronDown, ChevronRight, Coffee } from 'lucide-react';
 import { ConsumedItemRow } from './ConsumedItemRow';
 import type { BucketItem } from '../../services/consumptionService';
 import Skeleton from 'react-loading-skeleton';
@@ -13,7 +13,7 @@ interface ConsumedItemsListProps {
   searchQuery: string;
   setSearchQuery: (query: string) => void;
   isConcluded: boolean;
-  updateItem: (index: number, field: keyof BucketItem, value: number) => void;
+  updateItem: (index: number, field: keyof BucketItem, value: number | boolean | string) => void;
   handleRevertItem: (cuBillId: number) => void;
   selectedSite?: Site | null;
   selectedCu?: ConsumptionUnit | null;
@@ -31,6 +31,7 @@ export const ConsumedItemsList = ({
   selectedCu,
 }: ConsumedItemsListProps) => {
   const [isExpanded, setIsExpanded] = useState(true);
+  const driverCoffeeCount = items.filter(i => i.driverOfferSale).length;
 
   return (
     <div className="bg-card border border-border-main rounded-xl shadow-sm overflow-hidden">
@@ -41,6 +42,12 @@ export const ConsumedItemsList = ({
       >
         <div className="flex items-center gap-2">
           <span className="text-[15px] font-bold text-primary-text font-display">Consumed Items</span>
+          {driverCoffeeCount > 0 && (
+            <span className="text-[10.5px] font-bold text-amber-700 dark:text-amber-300 bg-amber-500/10 border border-amber-500/20 px-2 py-0.5 rounded-full flex items-center gap-1">
+              <Coffee size={11} />
+              {driverCoffeeCount} Driver Coffee
+            </span>
+          )}
         </div>
         {isExpanded ? <ChevronDown size={20} className="text-muted-text" /> : <ChevronRight size={20} className="text-muted-text" />}
       </button>

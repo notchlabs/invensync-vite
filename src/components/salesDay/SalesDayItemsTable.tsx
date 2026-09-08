@@ -156,7 +156,7 @@ export const SalesDayItemsTable = ({
                       key={item.cuBillId || idx}
                       className="bg-surface/60 hover:bg-surface border border-border-main/60 rounded-xl p-3 flex flex-col gap-2.5 transition-all min-w-0"
                     >
-                      {/* Top Row: Thumbnail Image & FULL Product Name */}
+                      {/* Top Row: Thumbnail Image & Product Details */}
                       <div className="flex items-start gap-2.5 min-w-0 w-full">
                         <div className="w-9 h-9 rounded-lg bg-card border border-border-main flex items-center justify-center overflow-hidden shrink-0 mt-0.5">
                           {item.imageUrl ? (
@@ -165,33 +165,37 @@ export const SalesDayItemsTable = ({
                             <Package size={16} className="text-muted-text" />
                           )}
                         </div>
-                        <div className="flex items-center gap-1.5 flex-1 min-w-0 flex-wrap">
+                        <div className="flex flex-col gap-1.5 flex-1 min-w-0">
                           <span className="font-bold text-[13.5px] text-primary-text font-display leading-snug break-words">
                             {item.productName}
                           </span>
-                          {isWbc ? (
-                            <span className="text-[9px] font-black tracking-wider bg-black dark:bg-white text-white dark:text-black px-1.5 py-0.5 rounded uppercase shrink-0">WBC</span>
-                          ) : (
-                            <span className="text-[9px] font-black tracking-wider bg-secondary text-secondary-text border border-border-main px-1.5 py-0.5 rounded uppercase shrink-0">W STORE</span>
-                          )}
+
+                          <div className="flex items-center gap-1.5 flex-wrap">
+                            {isWbc ? (
+                              <span className="text-[9px] font-black tracking-wider bg-black dark:bg-white text-white dark:text-black px-1.5 py-0.5 rounded uppercase shrink-0">WBC</span>
+                            ) : (
+                              <span className="text-[9px] font-black tracking-wider bg-secondary text-secondary-text border border-border-main px-1.5 py-0.5 rounded uppercase shrink-0">W STORE</span>
+                            )}
+
+                            {firstName && (
+                              <span
+                                className="bg-card border border-border-main/80 text-secondary-text text-[10.5px] font-medium px-2 py-0.5 rounded-md inline-flex items-center gap-1 shrink-0"
+                                title={`Consumed by: ${item.consumedByEmail}`}
+                              >
+                                <User size={11} className="text-muted-text" />
+                                <span>{firstName}</span>
+                              </span>
+                            )}
+                          </div>
                         </div>
                       </div>
 
-                      {/* Bottom Row: Qty & Consumed By Badge on Left | Sale Price, Profit & Margin Pill on Right */}
+                      {/* Bottom Row: Qty on Left | Sale Price, Profit & Margin Pill on Right */}
                       <div className="flex items-center justify-between gap-2 pt-2 border-t border-border-main/40 w-full">
-                        <div className="flex items-center gap-1.5 flex-wrap">
+                        <div className="flex items-center gap-1.5 shrink-0">
                           <span className="bg-card border border-border-main/80 text-muted-text text-[11px] font-semibold px-2 py-0.5 rounded-md">
                             Qty: {item.qty || 1} {unitStr}
                           </span>
-                          {firstName && (
-                            <span
-                              className="bg-card border border-border-main/80 text-secondary-text text-[11px] font-medium px-2 py-0.5 rounded-md flex items-center gap-1"
-                              title={`Consumed by: ${item.consumedByEmail}`}
-                            >
-                              <User size={11} className="text-muted-text" />
-                              <span>{firstName}</span>
-                            </span>
-                          )}
                         </div>
 
                         <div className="flex items-center gap-2.5 shrink-0">

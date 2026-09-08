@@ -20,6 +20,8 @@ import { ConsumptionSummary } from '../../components/consumption/ConsumptionSumm
 import { ManagerAuditForm } from '../../components/consumption/ManagerAuditForm';
 import { EndShiftModal } from '../../components/consumption/EndShiftModal';
 
+const DRIVER_OFFER_PRODUCT_IDS = new Set([3054, 3055, 3056]);
+
 export default function DailyConsumptionPage() {
   const { accounts } = useMsal();
   const claims = accounts[0]?.idTokenClaims ?? {};
@@ -187,7 +189,13 @@ export default function DailyConsumptionPage() {
           productName: searchQuery
         };
         const res = await ConsumptionService.fetchBucketItems(payload);
-        setItems(res.data || []);
+        const fetchedItems = (res.data || []).map(item => ({
+          ...item,
+          driverOfferSale: item.driverOfferSale != null
+            ? Boolean(item.driverOfferSale)
+            : DRIVER_OFFER_PRODUCT_IDS.has(item.productId),
+        }));
+        setItems(fetchedItems);
       } catch {
         console.error('Failed to fetch bucket items');
         toast.error('Failed to load consumption items');
@@ -200,11 +208,11 @@ export default function DailyConsumptionPage() {
     return () => clearTimeout(debounce);
   }, [selectedSite, selectedDate, selectedCu, searchQuery]);
 
-  const updateItem = (index: number, field: keyof BucketItem, value: number) => {
+  const updateItem = (index: number, field: keyof BucketItem, value: number | boolean | string) => {
     if (isConcluded) return;
     const newItems = [...items];
     const item = newItems[index];
-    if (field in item) {
+    if (item) {
       const typedItem = item as unknown as Record<string, unknown>;
       typedItem[field] = value;
     }
@@ -319,7 +327,8 @@ export default function DailyConsumptionPage() {
         upi: item.upi,
         noBill: item.noBill,
         loyalty: item.loyalty,
-        total: item.loyalty + item.upi + item.cash
+        total: item.loyalty + item.upi + item.cash,
+        driverOfferSale: item.driverOfferSale ?? false,
       }))
     };
 

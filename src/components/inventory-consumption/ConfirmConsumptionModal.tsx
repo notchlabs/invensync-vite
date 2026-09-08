@@ -15,6 +15,7 @@ import {
   Trash2,
   CheckCircle2,
   FileText,
+  Tag,
 } from 'lucide-react'
 import toast from 'react-hot-toast'
 import type { CartEntry, ItemSettings } from './types'
@@ -59,6 +60,8 @@ export function ConfirmConsumptionModal({
     })
   }, [])
 
+  const DRIVER_OFFER_PRODUCT_IDS = new Set([3054, 3055, 3056])
+
   // Per-item settings — initialised from cart
   const [settings, setSettings] = useState<Map<number, ItemSettings>>(() => {
     const m = new Map<number, ItemSettings>()
@@ -69,6 +72,7 @@ export function ConfirmConsumptionModal({
         paymentMode: 'UPI',
         noBill: false,
         loyalty: false,
+        driverOfferSale: DRIVER_OFFER_PRODUCT_IDS.has(e.productId),
       })
     })
     return m
@@ -98,7 +102,11 @@ export function ConfirmConsumptionModal({
     setSettings(prev => {
       const next = new Map(prev)
       next.forEach((cfg, id) => {
-        next.set(id, { ...cfg, paymentMode: mode })
+        next.set(id, {
+          ...cfg,
+          paymentMode: mode,
+          noBill: mode === 'Credit' ? false : cfg.noBill,
+        })
       })
       return next
     })
@@ -177,6 +185,7 @@ export function ConfirmConsumptionModal({
       )
 
       if (inventoryEntries.length > 0) {
+        const anyDriverOffer = inventoryEntries.some(e => settings.get(e.productId)?.driverOfferSale)
         const records = inventoryEntries.map(e => {
           const s = settings.get(e.productId)
           const amount = parseFloat(s?.amount || '0')
@@ -184,6 +193,7 @@ export function ConfirmConsumptionModal({
           const isCredit = s?.paymentMode === 'Credit'
           const custId = isCredit ? (itemCustomerMap.get(e.productId) || selectedCustomerId) : undefined
           const costAmount = (e.price || 0) * e.qty
+          const isDriverOffer = s?.driverOfferSale ?? false
           return {
             sourceSiteId: Number(ENV.DEFAULT_SITE_ID),
             productId: e.productId,
@@ -192,16 +202,18 @@ export function ConfirmConsumptionModal({
             amountIncTax: costAmount * ((e.cgstInPerc || 0) / 100 + (e.sgstInPerc || 0) / 100 + 1),
             upi: s?.paymentMode === 'UPI' ? amount : 0,
             cash: s?.paymentMode === 'Cash' ? amount : 0,
-            noBill: s?.noBill ?? false,
+            noBill: isCredit ? false : (s?.noBill ?? false),
             loyalty: isLoyalty,
             creditCustomerId: custId ? Number(custId) : undefined,
             total: amount,
+            driverOfferSale: isDriverOffer,
           }
         })
         await ConsumptionService.consumeStock({
           consumptionUnitId: Number(ENV.DEFAULT_CONSUMPTION_UNIT_ID),
           consumptionDate,
           saveDetails: true,
+          driverOfferSale: anyDriverOffer,
           records,
         })
       }
@@ -213,9 +225,10 @@ export function ConfirmConsumptionModal({
           const cash = s?.paymentMode === 'Cash' ? amount : 0
           const upi = s?.paymentMode === 'UPI' ? amount : 0
           const loyalty = s?.paymentMode === 'Loyalty'
-          const noBill = s?.noBill ?? false
           const isCredit = s?.paymentMode === 'Credit'
+          const noBill = isCredit ? false : (s?.noBill ?? false)
           const custId = isCredit ? (itemCustomerMap.get(e.productId) || selectedCustomerId) : undefined
+          const isDriverOffer = s?.driverOfferSale ?? false
 
           await ConsumptionService.prepareAndConsume({
             compositeProductId: e.productId,
@@ -234,6 +247,7 @@ export function ConfirmConsumptionModal({
             isWbc: false,
             creditCustomerId: custId ? Number(custId) : undefined,
             total: amount,
+            driverOfferSale: isDriverOffer,
           })
         }
       }
@@ -255,6 +269,16 @@ export function ConfirmConsumptionModal({
   const noBillTotal = entries.reduce((s, e) => {
     const cfg = settings.get(e.productId)
     if (!cfg?.noBill) return s
+    return s + (parseFloat(cfg.amount) || 0)
+  }, 0)
+
+  const driverOfferCount = entries.filter(
+    e => settings.get(e.productId)?.driverOfferSale
+  ).length
+
+  const driverOfferTotal = entries.reduce((s, e) => {
+    const cfg = settings.get(e.productId)
+    if (!cfg?.driverOfferSale) return s
     return s + (parseFloat(cfg.amount) || 0)
   }, 0)
 
@@ -310,8 +334,16 @@ export function ConfirmConsumptionModal({
               {entries.length} {entries.length === 1 ? 'item' : 'items'} added
             </span>
           </div>
-          <div className="text-[11px] text-secondary-text font-medium">
-            No Bill Total: <span className="font-bold text-emerald-800 dark:text-emerald-300">{formatIndianCurrency(noBillTotal)}</span>
+          <div className="flex items-center gap-2.5 text-[11px] text-secondary-text font-medium">
+            {driverOfferCount > 0 && (
+              <span className="text-amber-700 dark:text-amber-300 font-bold bg-amber-500/10 px-2 py-0.5 rounded-md border border-amber-500/20 text-[10px] flex items-center gap-1">
+                <Tag className="w-2.5 h-2.5" />
+                {driverOfferCount} Driver Offer
+              </span>
+            )}
+            <div>
+              No Bill Total: <span className="font-bold text-emerald-800 dark:text-emerald-300">{formatIndianCurrency(noBillTotal)}</span>
+            </div>
           </div>
         </div>
 
@@ -347,9 +379,16 @@ export function ConfirmConsumptionModal({
                       <p className="text-[12px] font-bold text-primary-text uppercase tracking-tight leading-snug line-clamp-1">
                         {entry.productName}
                       </p>
-                      <p className="text-[10px] text-secondary-text font-normal capitalize mt-0.5">
-                        {entry.source}
-                      </p>
+                      <div className="flex items-center gap-1.5 mt-0.5">
+                        <p className="text-[10px] text-secondary-text font-normal capitalize">
+                          {entry.source}
+                        </p>
+                        {cfg.driverOfferSale && (
+                          <span className="text-[9px] font-bold text-amber-700 dark:text-amber-300 bg-amber-500/10 border border-amber-500/20 rounded px-1.5 py-0.2">
+                            Driver Offer
+                          </span>
+                        )}
+                      </div>
                     </div>
                   </div>
 
@@ -430,11 +469,19 @@ export function ConfirmConsumptionModal({
                     <CompactCustomSelect
                       value={cfg.paymentMode}
                       onChange={val => {
-                        updateSetting(
-                          entry.productId,
-                          'paymentMode',
-                          val as ItemSettings['paymentMode']
-                        )
+                        const newMode = val as ItemSettings['paymentMode']
+                        setSettings(prev => {
+                          const next = new Map(prev)
+                          const cur = next.get(entry.productId)
+                          if (cur) {
+                            next.set(entry.productId, {
+                              ...cur,
+                              paymentMode: newMode,
+                              noBill: newMode === 'Credit' ? false : cur.noBill,
+                            })
+                          }
+                          return next
+                        })
                         setGlobalPaymentMode(null)
                       }}
                       options={[
@@ -446,24 +493,51 @@ export function ConfirmConsumptionModal({
                     />
                   </div>
 
-                  {/* No Bill Checkbox */}
-                  <label className="flex items-center gap-1.5 cursor-pointer select-none shrink-0">
-                    <input
-                      type="checkbox"
-                      checked={cfg.noBill}
-                      onChange={e =>
-                        updateSetting(
-                          entry.productId,
-                          'noBill',
-                          e.target.checked
-                        )
-                      }
-                      className="w-3.5 h-3.5 rounded border-border-main accent-emerald-600 cursor-pointer"
-                    />
-                    <span className="text-[11px] font-medium text-secondary-text">
-                      No Bill
-                    </span>
-                  </label>
+                  <div className="flex items-center gap-2.5 shrink-0">
+                    {/* Driver Offer Checkbox */}
+                    <label className="flex items-center gap-1.5 cursor-pointer select-none group">
+                      <input
+                        type="checkbox"
+                        checked={cfg.driverOfferSale ?? false}
+                        onChange={e =>
+                          updateSetting(
+                            entry.productId,
+                            'driverOfferSale',
+                            e.target.checked
+                          )
+                        }
+                        className="w-3.5 h-3.5 rounded border-border-main accent-amber-600 cursor-pointer"
+                      />
+                      <span className={`text-[11px] font-medium transition-colors ${
+                        cfg.driverOfferSale ? 'text-amber-600 dark:text-amber-400 font-bold' : 'text-secondary-text group-hover:text-primary-text'
+                      }`}>
+                        Driver Offer
+                      </span>
+                    </label>
+
+                    {/* No Bill Checkbox - hidden when payment mode is Credit */}
+                    {!isCredit && (
+                      <label className="flex items-center gap-1.5 cursor-pointer select-none group">
+                        <input
+                          type="checkbox"
+                          checked={cfg.noBill}
+                          onChange={e =>
+                            updateSetting(
+                              entry.productId,
+                              'noBill',
+                              e.target.checked
+                            )
+                          }
+                          className="w-3.5 h-3.5 rounded border-border-main accent-emerald-600 cursor-pointer"
+                        />
+                        <span className={`text-[11px] font-medium transition-colors ${
+                          cfg.noBill ? 'text-emerald-600 dark:text-emerald-400 font-bold' : 'text-secondary-text group-hover:text-primary-text'
+                        }`}>
+                          No Bill
+                        </span>
+                      </label>
+                    )}
+                  </div>
                 </div>
 
                 {/* In-Card Credit Customer Selector */}
@@ -505,10 +579,30 @@ export function ConfirmConsumptionModal({
           {/* ── Global Payment Selection Section (Only if > 1 item) ─────────── */}
           {entries.length > 1 && (
             <div className="pt-1.5 space-y-2">
-              <div className="px-0.5">
+              <div className="px-0.5 flex items-center justify-between">
                 <span className="text-[10px] font-bold text-secondary-text tracking-wider uppercase">
                   PAYMENT SELECTION
                 </span>
+                <label className="flex items-center gap-1.5 cursor-pointer select-none">
+                  <input
+                    type="checkbox"
+                    checked={driverOfferCount === entries.length}
+                    onChange={e => {
+                      const checked = e.target.checked
+                      setSettings(prev => {
+                        const next = new Map(prev)
+                        next.forEach((cfg, id) => {
+                          next.set(id, { ...cfg, driverOfferSale: checked })
+                        })
+                        return next
+                      })
+                    }}
+                    className="w-3.5 h-3.5 rounded border-border-main accent-amber-600 cursor-pointer"
+                  />
+                  <span className="text-[10px] font-semibold text-secondary-text hover:text-amber-600 dark:hover:text-amber-400">
+                    All Driver Offer
+                  </span>
+                </label>
               </div>
 
               {/* 4 Cards Grid */}
@@ -613,6 +707,15 @@ export function ConfirmConsumptionModal({
               <span>No Bill Total</span>
               <span className="font-bold text-emerald-600 dark:text-emerald-400">{formatIndianCurrency(noBillTotal)}</span>
             </div>
+
+            {driverOfferCount > 0 && (
+              <div className="flex items-center justify-between text-[11px] font-medium text-secondary-text">
+                <span>Driver Offer Items</span>
+                <span className="font-bold text-amber-600 dark:text-amber-400">
+                  {driverOfferCount} ({formatIndianCurrency(driverOfferTotal)})
+                </span>
+              </div>
+            )}
 
             <div className="border-t border-dashed border-border-main pt-1.5 mt-1 flex items-center justify-between">
               <span className="text-xs font-bold text-primary-text">Overall Total</span>

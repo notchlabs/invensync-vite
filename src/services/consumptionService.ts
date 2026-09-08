@@ -31,6 +31,7 @@ export interface SalesProductDetail {
   noBill: number;
   loyalty: number;
   total: number;
+  driverOfferSale?: boolean;
 }
 
 export interface SaveSalesPayload {
@@ -51,6 +52,7 @@ export interface RealTimeConsumePayload {
   consumptionUnitId: number;
   consumptionDate: string;
   saveDetails: boolean;
+  driverOfferSale?: boolean;
   records: {
     sourceSiteId: number;
     productId: number;
@@ -64,6 +66,7 @@ export interface RealTimeConsumePayload {
     loyaltyAmt?: number;
     creditCustomerId?: number | string | null;
     total?: number;
+    driverOfferSale?: boolean;
   }[];
 }
 
@@ -91,6 +94,7 @@ export interface PrepareAndConsumePayload {
   isWbc: boolean;
   creditCustomerId?: number | string | null;
   total?: number;
+  driverOfferSale?: boolean;
 }
 
 export interface BucketItem {
@@ -116,6 +120,7 @@ export interface BucketItem {
   billNumber?: string | null;
   batchId?: number | null;
   istId?: number | null;
+  driverOfferSale?: boolean;
 }
 
 export interface ExistingSales {
@@ -176,14 +181,14 @@ export class ConsumptionService {
   /**
    * Fetch consumption logic bucket items
    */
-  static async fetchBucketItems(payload: { siteId: number; consumptionUnitId: number; fromDate: string; toDate: string; sortDir: string; productName: string }, options?: RequestInit & { skipAuthRedirect?: boolean }): Promise<ApiResponse<BucketItem[]>> {
+  static async fetchBucketItems(payload: { siteId: number; consumptionUnitId?: number; fromDate?: string; toDate?: string; sortDir?: string; productName?: string; productId?: number }, options?: RequestInit & { skipAuthRedirect?: boolean }): Promise<ApiResponse<BucketItem[]>> {
     return ApiService.post('/list/fetch-consumptions', payload, options);
   }
 
   /**
    * Fetch consumption logic bucket items (lite version)
    */
-  static async fetchBucketItemsLite(payload: { siteId: number; consumptionUnitId: number; fromDate: string; toDate: string; sortDir: string; productName: string }, options?: RequestInit & { skipAuthRedirect?: boolean }): Promise<ApiResponse<BucketItem[]>> {
+  static async fetchBucketItemsLite(payload: { siteId: number; consumptionUnitId?: number; fromDate?: string; toDate?: string; sortDir?: string; productName?: string; productId?: number }, options?: RequestInit & { skipAuthRedirect?: boolean }): Promise<ApiResponse<BucketItem[]>> {
     return ApiService.post('/list/fetch-consumptions-lite', payload, options);
   }
 

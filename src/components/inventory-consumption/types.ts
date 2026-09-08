@@ -3,6 +3,7 @@ export interface ItemSettings {
   paymentMode: "UPI" | "Cash" | "Loyalty" | "Credit";
   noBill: boolean;
   loyalty: boolean;
+  driverOfferSale?: boolean;
 }
 
 export interface CartEntry {

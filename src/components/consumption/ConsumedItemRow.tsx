@@ -1,4 +1,4 @@
-import { Trash2, Clock } from 'lucide-react';
+import { Trash2, Clock, Coffee } from 'lucide-react';
 import type { BucketItem } from '../../services/consumptionService';
 
 const fmtTime = (iso?: string) => {
@@ -32,7 +32,7 @@ interface ConsumedItemRowProps {
   item: BucketItem;
   idx: number;
   isConcluded: boolean;
-  updateItem: (index: number, field: keyof BucketItem, value: number) => void;
+  updateItem: (index: number, field: keyof BucketItem, value: number | boolean | string) => void;
   handleRevertItem: (cuBillId: number) => void;
 }
 
@@ -57,6 +57,7 @@ export const ConsumedItemRow = ({
     item.creditCustomerId !== '0' && 
     String(item.creditCustomerId).trim() !== ''
   );
+  const isDriverCoffee = Boolean(item.driverOfferSale);
 
   const baseRow = `border-b border-border-main/50 last:border-0 transition-colors ${isAlt ? 'bg-black/[0.01] dark:bg-white/[0.01]' : 'bg-transparent'} hover:bg-black/[0.02] dark:hover:bg-white/[0.02]`
 
@@ -111,6 +112,22 @@ export const ConsumedItemRow = ({
                 <span className="text-[8px] font-black tracking-wider bg-secondary text-secondary-text border border-border-main px-1.5 py-0.5 rounded uppercase">W STORE</span>
               )}
               {isCredit && <span className="text-[8px] font-black tracking-wider bg-amber-600 text-white px-1.5 py-0.5 rounded uppercase">CREDIT</span>}
+
+              {/* Driver Coffee Toggle */}
+              <button
+                type="button"
+                disabled={isConcluded}
+                onClick={() => updateItem(idx, 'driverOfferSale', !isDriverCoffee)}
+                className={`px-1.5 py-0.5 rounded-md text-[9px] font-bold tracking-tight transition-all inline-flex items-center gap-1 cursor-pointer border ${
+                  isDriverCoffee
+                    ? 'bg-amber-500/15 text-amber-700 dark:text-amber-300 border-amber-500/40 font-extrabold shadow-2xs'
+                    : 'bg-surface hover:bg-black/5 dark:hover:bg-white/5 text-muted-text border-border-main opacity-70 hover:opacity-100'
+                } disabled:opacity-40 disabled:cursor-not-allowed`}
+                title={isConcluded ? 'Shift is concluded' : `Click to turn Driver Coffee ${isDriverCoffee ? 'OFF' : 'ON'}`}
+              >
+                <Coffee size={10} className={isDriverCoffee ? 'text-amber-600 dark:text-amber-400' : 'text-muted-text'} />
+                <span>Driver Coffee: {isDriverCoffee ? 'ON' : 'OFF'}</span>
+              </button>
             </div>
             <div className="flex items-center gap-2 mt-1 flex-wrap">
               {time && (
@@ -163,7 +180,7 @@ export const ConsumedItemRow = ({
           <span className="text-[10px] font-black uppercase tracking-widest text-muted-text/60 leading-none mb-1 whitespace-nowrap truncate">
             {fmtName(item.consumedByEmail)}
           </span>
-          <div className="flex items-center gap-1.5 min-w-0">
+          <div className="flex items-center gap-1.5 min-w-0 flex-wrap">
             <span className="text-[13px] font-bold text-primary-text font-display leading-tight truncate">{item.productName ?? ''}</span>
             {isWbc ? (
               <span className="shrink-0 text-[8px] font-black tracking-wider bg-black dark:bg-white text-white dark:text-black px-1.5 py-0.5 rounded uppercase">WBC</span>
@@ -171,6 +188,22 @@ export const ConsumedItemRow = ({
               <span className="shrink-0 text-[8px] font-black tracking-wider bg-secondary text-secondary-text border border-border-main px-1.5 py-0.5 rounded uppercase">W STORE</span>
             )}
             {isCredit && <span className="shrink-0 text-[8px] font-black tracking-wider bg-amber-600 text-white px-1.5 py-0.5 rounded uppercase">CREDIT</span>}
+
+            {/* Driver Coffee Toggle */}
+            <button
+              type="button"
+              disabled={isConcluded}
+              onClick={() => updateItem(idx, 'driverOfferSale', !isDriverCoffee)}
+              className={`shrink-0 px-2 py-0.5 rounded-md text-[9.5px] font-bold tracking-tight transition-all inline-flex items-center gap-1 cursor-pointer border ${
+                isDriverCoffee
+                  ? 'bg-amber-500/15 text-amber-700 dark:text-amber-300 border-amber-500/40 font-extrabold shadow-2xs'
+                  : 'bg-surface hover:bg-black/5 dark:hover:bg-white/5 text-muted-text border-border-main opacity-70 hover:opacity-100'
+              } disabled:opacity-40 disabled:cursor-not-allowed`}
+              title={isConcluded ? 'Shift is concluded' : `Click to turn Driver Coffee ${isDriverCoffee ? 'OFF' : 'ON'}`}
+            >
+              <Coffee size={10} className={isDriverCoffee ? 'text-amber-600 dark:text-amber-400' : 'text-muted-text'} />
+              <span>Driver Coffee: {isDriverCoffee ? 'ON' : 'OFF'}</span>
+            </button>
           </div>
         </div>
 

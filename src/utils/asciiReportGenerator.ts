@@ -16,12 +16,12 @@ export interface AsciiReportOptions {
   includeShiftSection?: boolean;
 }
 
-// Use a width that fits comfortably in WhatsApp monospace on mobile
-const W = 34;
+// Width that fits WhatsApp monospace on mobile (~30 chars)
+const W = 30;
 
 const fmtVal = (num?: number): string => {
   const val = num || 0;
-  return 'Rs.' + val.toLocaleString('en-IN', { minimumFractionDigits: 2, maximumFractionDigits: 2 });
+  return '₹' + val.toLocaleString('en-IN', { minimumFractionDigits: 2, maximumFractionDigits: 2 });
 };
 
 /**
