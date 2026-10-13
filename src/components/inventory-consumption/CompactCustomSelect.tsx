@@ -6,11 +6,13 @@ export function CompactCustomSelect({
   onChange,
   options,
   className = '',
+  dropUp = true,
 }: {
   value: string
   onChange: (val: string) => void
   options: { label: string; value: string }[]
   className?: string
+  dropUp?: boolean
 }) {
   const [isOpen, setIsOpen] = useState(false)
   const ref = useRef<HTMLDivElement>(null)
@@ -38,13 +40,17 @@ export function CompactCustomSelect({
         <ChevronDown
           size={12}
           className={`text-secondary-text transition-transform duration-200 absolute right-1.5 top-1/2 -translate-y-1/2 ${
-            isOpen ? 'rotate-180' : ''
+            isOpen ? (dropUp ? '-rotate-180' : 'rotate-180') : ''
           }`}
         />
       </button>
 
       {isOpen && (
-        <div className="absolute top-[calc(100%+4px)] left-0 min-w-[110px] w-full bg-card border border-border-main rounded-xl shadow-xl p-1 z-[160] animate-[fadeInUp_0.15s_ease-out_both] space-y-0.5 max-h-52 overflow-y-auto">
+        <div
+          className={`absolute ${
+            dropUp ? 'bottom-[calc(100%+6px)]' : 'top-[calc(100%+4px)]'
+          } left-0 min-w-[110px] w-full bg-card border border-border-main rounded-xl shadow-2xl p-1 z-[200] animate-[fadeIn_0.15s_ease-out_both] space-y-0.5 max-h-52 overflow-y-auto`}
+        >
           {options.map(opt => {
             const isSelected = opt.value === value
             return (

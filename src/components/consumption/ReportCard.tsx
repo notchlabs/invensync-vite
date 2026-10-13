@@ -168,31 +168,20 @@ export const ReportCard = ({ type, title, date, data, isLoading, lastUpdated, is
                 {isDayReport ? <CalendarIcon size={16} className="shrink-0" /> : <Clock size={16} className="shrink-0" />}
                 <span className="truncate">{title} - {formatDateToDisplay(date)}</span>
               </div>
-              <div className="flex items-center gap-2 shrink-0">
-                <button
-                  type="button"
-                  onClick={handleSendWhatsAppShift}
-                  className="px-2 py-1 bg-emerald-600 hover:bg-emerald-700 active:scale-95 text-white font-bold text-[11px] rounded-lg transition-all flex items-center gap-1 cursor-pointer border border-emerald-500/30 shadow-sm shrink-0"
-                  title={`Send ${title} Report to WhatsApp`}
-                >
-                  <MessageCircle size={13} />
-                  <span className="hidden sm:inline">WhatsApp</span>
-                </button>
 
-                {fmtTime(lastUpdated) && (
-                  <div className="flex flex-col items-end gap-0.5">
-                    <span className={`flex items-center gap-1 text-[11px] font-semibold ${headerText} opacity-70`}>
-                      <Clock size={11} />
-                      {fmtTime(lastUpdated)}
+              {fmtTime(lastUpdated) && (
+                <div className="flex flex-col items-end gap-0.5 shrink-0">
+                  <span className={`flex items-center gap-1 text-[11px] font-semibold ${headerText} opacity-70`}>
+                    <Clock size={11} />
+                    {fmtTime(lastUpdated)}
+                  </span>
+                  {isDayReport && !isConcluded && (
+                    <span className="text-[9px] font-bold uppercase tracking-wider text-amber-500">
+                      Last updated
                     </span>
-                    {isDayReport && !isConcluded && (
-                      <span className="text-[9px] font-bold uppercase tracking-wider text-amber-500">
-                        Last updated
-                      </span>
-                    )}
-                  </div>
-                )}
-              </div>
+                  )}
+                </div>
+              )}
             </div>
 
             <div className="p-5 flex flex-col gap-6">
@@ -242,6 +231,19 @@ export const ReportCard = ({ type, title, date, data, isLoading, lastUpdated, is
                   <span className="text-primary-text font-bold">₹ {data.loyaltyTotal?.toFixed(2) || '-'}</span>
                 </div>
               </div>
+            </div>
+
+            {/* Footer Action: WhatsApp Share */}
+            <div className="px-5 pb-5 pt-1 mt-auto">
+              <button
+                type="button"
+                onClick={handleSendWhatsAppShift}
+                className="w-full py-2.5 px-3 rounded-xl bg-emerald-600/10 hover:bg-emerald-600/20 active:scale-[0.99] border border-emerald-600/30 text-emerald-700 dark:text-emerald-400 font-bold text-[12.5px] flex items-center justify-center gap-2 transition-all cursor-pointer shadow-2xs font-display"
+                title={`Send ${title} Report to WhatsApp`}
+              >
+                <MessageCircle size={15} className="text-emerald-600 dark:text-emerald-400" />
+                <span>Share Report on WhatsApp</span>
+              </button>
             </div>
           </motion.div>
         )}

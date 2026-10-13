@@ -1,10 +1,11 @@
 import { useState, useEffect } from "react"
 import { motion } from "framer-motion"
-import { X, Search, Check, AlertCircle } from "lucide-react"
+import { X, Search, AlertCircle, CreditCard, Plus, Minus } from "lucide-react"
 import Skeleton from "react-loading-skeleton"
 import { InventoryService, type PreparationProduct } from "../../services/inventoryService"
 import { ConsumptionService } from "../../services/consumptionService"
 import { ProductImage } from "./ProductImage"
+import { CompactCustomSelect } from "./CompactCustomSelect"
 import { formatIndianCurrency } from "../../utils/numberFormat"
 import { ENV } from "../../config/env"
 import toast from "react-hot-toast"
@@ -21,9 +22,9 @@ export function BogoOfferModal({ onClose, onSuccess }: BogoOfferModalProps) {
   const [selected, setSelected] = useState<PreparationProduct[]>([])
 
   // Billing states
-  const [amount, setAmount] = useState("")
   const [paymentMode, setPaymentMode] = useState<"UPI" | "Cash" | "Loyalty">("UPI")
   const [noBill, setNoBill] = useState(false)
+  const [driverOfferSale, setDriverOfferSale] = useState(false)
   const [isConfirming, setIsConfirming] = useState(false)
 
   // Search logic with debounce
@@ -41,37 +42,46 @@ export function BogoOfferModal({ onClose, onSuccess }: BogoOfferModalProps) {
     return () => clearTimeout(t)
   }, [search])
 
-  // Populate default price once 2 items are selected
-  useEffect(() => {
-    if (selected.length === 2) {
-      setAmount(String(selected[0].price || 0))
-    }
-  }, [selected])
+
 
   const handleSelect = (product: PreparationProduct) => {
     setSelected(prev => {
-      const exists = prev.find(p => p.productId === product.productId)
-      if (exists) {
-        // Deselect
-        return prev.filter(p => p.productId !== product.productId)
-      } else {
-        // Add only if selected count is < 2
-        if (prev.length < 2) {
-          return [...prev, product]
-        }
-        return [prev[0], product]
+      if (prev.length < 2) {
+        return [...prev, product]
       }
+      return prev
     })
   }
+
+  const handleRowClick = (product: PreparationProduct) => {
+    const count = selected.filter(p => p.productId === product.productId).length
+    if (count >= 2) {
+      handleRemoveProduct(product.productId)
+    } else if (selected.length < 2) {
+      handleSelect(product)
+    }
+  }
+
+  const handleRemoveProduct = (productId: number) => {
+    setSelected(prev => {
+      const idx = prev.findIndex(p => p.productId === productId)
+      if (idx >= 0) {
+        return prev.filter((_, i) => i !== idx)
+      }
+      return prev
+    })
+  }
+
+  const handleRemoveByIndex = (index: number) => {
+    setSelected(prev => prev.filter((_, i) => i !== index))
+  }
+
+  const totalAmt = selected[0]?.price || 0
 
   const handleConfirmConsume = async () => {
     if (isConfirming || selected.length !== 2) return
     
-    const amt = parseFloat(amount)
-    if (amount.trim() === "" || isNaN(amt) || amt < 0) {
-      toast.error("Please enter a valid price")
-      return
-    }
+    const amt = totalAmt
 
     setIsConfirming(true)
     try {
@@ -99,6 +109,7 @@ export function BogoOfferModal({ onClose, onSuccess }: BogoOfferModalProps) {
         loyalty,
         noBill,
         isWbc: false,
+        driverOfferSale,
       })
 
       // Product 2 (free)
@@ -117,6 +128,7 @@ export function BogoOfferModal({ onClose, onSuccess }: BogoOfferModalProps) {
         loyalty: false,
         noBill,
         isWbc: false,
+        driverOfferSale,
       })
 
       toast.success("BOGO stock consumed successfully!")
@@ -130,6 +142,7 @@ export function BogoOfferModal({ onClose, onSuccess }: BogoOfferModalProps) {
   }
 
   const isBillingMode = selected.length === 2
+  const isSameProduct = selected.length === 2 && selected[0].productId === selected[1].productId
 
   return (
     <motion.div
@@ -177,14 +190,15 @@ export function BogoOfferModal({ onClose, onSuccess }: BogoOfferModalProps) {
                   {selected.length === 0 && (
                     <span className="text-[12px] font-medium text-muted-text italic">No products selected yet</span>
                   )}
-                  {selected.map(p => (
+                  {selected.map((p, idx) => (
                     <div
-                      key={p.productId}
+                      key={`${p.productId}-${idx}`}
                       className="flex items-center gap-1 bg-[#f0b44c]/10 border border-[#f0b44c]/20 text-[#d99805] px-2.5 py-1 rounded-lg text-[11px] font-bold"
                     >
                       <span className="max-w-[80px] truncate">{p.productName}</span>
                       <button
-                        onClick={() => handleSelect(p)}
+                        type="button"
+                        onClick={() => handleRemoveByIndex(idx)}
                         className="hover:text-red-500 cursor-pointer ml-0.5"
                       >
                         <X size={12} />
@@ -224,11 +238,12 @@ export function BogoOfferModal({ onClose, onSuccess }: BogoOfferModalProps) {
                 </div>
               ) : (
                 products.map(product => {
-                  const isSelected = !!selected.find(p => p.productId === product.productId)
+                  const selectedCount = selected.filter(p => p.productId === product.productId).length
+                  const isSelected = selectedCount > 0
                   return (
                     <div
                       key={product.productId}
-                      onClick={() => handleSelect(product)}
+                      onClick={() => handleRowClick(product)}
                       className={`flex items-center justify-between p-3 rounded-xl border transition-all cursor-pointer select-none ${
                         isSelected
                           ? "bg-[#f0b44c]/5 border-[#f0b44c]/60 shadow-sm"
@@ -249,12 +264,51 @@ export function BogoOfferModal({ onClose, onSuccess }: BogoOfferModalProps) {
                         </div>
                       </div>
 
-                      <div className={`w-5 h-5 rounded-full border flex items-center justify-center transition-all ${
-                        isSelected
-                          ? "bg-[#f0b44c] border-[#f0b44c] text-white"
-                          : "border-border-main"
-                      }`}>
-                        {isSelected && <Check size={12} strokeWidth={3} />}
+                      <div className="flex items-center shrink-0">
+                        {selectedCount > 0 ? (
+                          <div 
+                            className="flex items-center gap-1.5 bg-card border border-border-main rounded-xl p-1 shadow-sm"
+                            onClick={e => e.stopPropagation()}
+                          >
+                            <button
+                              type="button"
+                              onClick={() => handleRemoveProduct(product.productId)}
+                              className="w-7 h-7 rounded-lg bg-surface hover:bg-red-500/15 hover:border-red-500/30 hover:text-red-500 text-muted-text flex items-center justify-center transition-colors cursor-pointer border border-border-main/50"
+                              title="Decrease quantity"
+                            >
+                              <Minus size={13} strokeWidth={2.5} />
+                            </button>
+
+                            <span className="w-5 text-center text-[12px] font-black text-primary-text select-none">
+                              {selectedCount}
+                            </span>
+
+                            <button
+                              type="button"
+                              onClick={() => handleSelect(product)}
+                              disabled={selected.length >= 2}
+                              className={`w-7 h-7 rounded-lg flex items-center justify-center transition-all ${
+                                selected.length < 2
+                                  ? "bg-[#f0b44c] hover:bg-[#e0a238] text-white shadow-sm cursor-pointer"
+                                  : "bg-surface border border-border-main/40 text-muted-text/40 cursor-not-allowed opacity-50"
+                              }`}
+                              title={selected.length < 2 ? "Add second item" : "Max 2 items reached"}
+                            >
+                              <Plus size={13} strokeWidth={2.5} />
+                            </button>
+                          </div>
+                        ) : (
+                          <div
+                            onClick={(e) => {
+                              e.stopPropagation()
+                              handleSelect(product)
+                            }}
+                            className="w-7 h-7 rounded-lg border border-border-main bg-card hover:border-[#f0b44c] hover:bg-[#f0b44c]/10 text-muted-text hover:text-[#d99805] flex items-center justify-center transition-all cursor-pointer shadow-sm"
+                            title="Add to offer"
+                          >
+                            <Plus size={14} strokeWidth={2.5} />
+                          </div>
+                        )}
                       </div>
                     </div>
                   )
@@ -294,7 +348,7 @@ export function BogoOfferModal({ onClose, onSuccess }: BogoOfferModalProps) {
                   </div>
                   <div className="min-w-0 mt-1">
                     <p className="text-[12px] font-black text-primary-text truncate leading-snug">
-                      {selected[0].productName}
+                      {isSameProduct ? `${selected[0].productName} (Item 1)` : selected[0].productName}
                     </p>
                     <p className="text-[10px] text-muted-text font-medium mt-0.5">
                       Original: {formatIndianCurrency(selected[0].price)}
@@ -311,7 +365,7 @@ export function BogoOfferModal({ onClose, onSuccess }: BogoOfferModalProps) {
                   </div>
                   <div className="min-w-0 mt-1">
                     <p className="text-[12px] font-black text-primary-text truncate leading-snug">
-                      {selected[1].productName}
+                      {isSameProduct ? `${selected[1].productName} (Item 2)` : selected[1].productName}
                     </p>
                     <p className="text-[10px] text-muted-text font-medium mt-0.5">
                       Original: {formatIndianCurrency(selected[1].price)}
@@ -322,53 +376,74 @@ export function BogoOfferModal({ onClose, onSuccess }: BogoOfferModalProps) {
 
               {/* Billing Form Container */}
               <div className="bg-surface rounded-2xl p-4 flex flex-col gap-3.5 border border-border-main/60 shrink-0">
-                <div>
-                  <p className="text-[10px] text-muted-text font-black uppercase tracking-wider">Item Name</p>
-                  <p className="text-[14px] font-black text-[#d99805] uppercase tracking-tight leading-snug mt-1">
-                    BOGO ({selected[0].productName} and {selected[1].productName})
-                  </p>
+                <div className="flex items-center justify-between gap-3">
+                  <div className="min-w-0">
+                    <p className="text-[10px] text-muted-text font-bold uppercase tracking-wider">Offer Title</p>
+                    <p 
+                      className="text-[12px] font-bold text-[#d99805] tracking-tight mt-0.5 truncate"
+                      title={isSameProduct
+                        ? `BOGO (2 × ${selected[0].productName})`
+                        : `BOGO (${selected[0].productName} and ${selected[1].productName})`}
+                    >
+                      {isSameProduct
+                        ? `BOGO (2 × ${selected[0].productName})`
+                        : `BOGO (${selected[0].productName} and ${selected[1].productName})`}
+                    </p>
+                  </div>
+                  <div className="flex items-center shrink-0">
+                    <span className="text-[19px] sm:text-[21px] font-black text-primary-text font-mono tracking-tight leading-none">
+                      {formatIndianCurrency(totalAmt)}
+                    </span>
+                  </div>
                 </div>
 
-                {/* Inputs & Toggles */}
-                <div className="flex flex-col gap-3">
-                  <p className="text-[10px] text-muted-text font-black uppercase tracking-wider leading-none">Billing details</p>
-                  
-                  <div className="flex flex-col sm:flex-row items-stretch sm:items-center gap-2">
-                    {/* Price input */}
-                    <input
-                      type="number"
-                      value={amount}
-                      onChange={e => setAmount(e.target.value)}
-                      className={`w-full sm:w-24 h-10 px-3 bg-card rounded-xl text-[14px] font-bold text-primary-text outline-none focus:ring-2 border border-border-main focus:border-secondary-text focus:ring-accent/5 transition-all text-center sm:text-left`}
-                      placeholder="Amount"
-                    />
-
-                    {/* Payment mode select */}
-                    <div className="flex items-center gap-2 flex-1">
-                      {(['UPI', 'Cash', 'Loyalty'] as const).map(mode => (
-                        <button
-                          key={mode}
-                          onClick={() => setPaymentMode(mode)}
-                          className={`flex-1 h-10 rounded-xl text-[13px] font-black transition-all cursor-pointer ${
-                            paymentMode === mode
-                              ? 'bg-primary-text text-card'
-                              : 'bg-card border border-border-main text-primary-text hover:bg-surface'
-                          }`}
-                        >
-                          {mode}
-                        </button>
-                      ))}
+                <div className="border-t border-border-main/60 pt-3 flex items-center justify-between gap-2 flex-wrap">
+                  {/* Payment Mode Selector Dropdown */}
+                  <div className="flex items-center gap-1.5 min-w-0">
+                    <div className="w-4 h-4 rounded-md bg-emerald-500/10 text-emerald-600 dark:text-emerald-400 flex items-center justify-center shrink-0">
+                      <CreditCard className="w-3 h-3" />
                     </div>
+                    <span className="text-[11px] font-medium text-secondary-text shrink-0">Payment:</span>
+                    <CompactCustomSelect
+                      value={paymentMode}
+                      onChange={val => setPaymentMode(val as "UPI" | "Cash" | "Loyalty")}
+                      options={[
+                        { label: 'UPI', value: 'UPI' },
+                        { label: 'Cash', value: 'Cash' },
+                        { label: 'Loyalty', value: 'Loyalty' },
+                      ]}
+                    />
+                  </div>
 
-                    {/* No bill check */}
-                    <label className="flex items-center justify-start sm:justify-center gap-2 pt-1 sm:pt-0 pb-1 sm:pb-0 shrink-0 cursor-pointer select-none pl-1 sm:pl-0">
+                  <div className="flex items-center gap-2.5 shrink-0">
+                    {/* Driver Offer Checkbox */}
+                    <label className="flex items-center gap-1.5 cursor-pointer select-none group">
+                      <input
+                        type="checkbox"
+                        checked={driverOfferSale}
+                        onChange={e => setDriverOfferSale(e.target.checked)}
+                        className="w-3.5 h-3.5 rounded border-border-main accent-amber-600 cursor-pointer"
+                      />
+                      <span className={`text-[11px] font-medium transition-colors ${
+                        driverOfferSale ? 'text-amber-600 dark:text-amber-400 font-bold' : 'text-secondary-text group-hover:text-primary-text'
+                      }`}>
+                        Driver Offer
+                      </span>
+                    </label>
+
+                    {/* No Bill Checkbox */}
+                    <label className="flex items-center gap-1.5 cursor-pointer select-none group">
                       <input
                         type="checkbox"
                         checked={noBill}
                         onChange={e => setNoBill(e.target.checked)}
-                        className="w-4 h-4 rounded border-border-main cursor-pointer accent-primary-text"
+                        className="w-3.5 h-3.5 rounded border-border-main accent-emerald-600 cursor-pointer"
                       />
-                      <span className="text-[13px] font-medium text-primary-text">No Bill</span>
+                      <span className={`text-[11px] font-medium transition-colors ${
+                        noBill ? 'text-emerald-600 dark:text-emerald-400 font-bold' : 'text-secondary-text group-hover:text-primary-text'
+                      }`}>
+                        No Bill
+                      </span>
                     </label>
                   </div>
                 </div>
@@ -390,10 +465,10 @@ export function BogoOfferModal({ onClose, onSuccess }: BogoOfferModalProps) {
               </span>
               <div className="text-right flex flex-col gap-0.5">
                 <span className="text-[12px] font-medium text-secondary-text">
-                  No Bill Total: <span className="font-black text-rose-500">{formatIndianCurrency(noBill ? (parseFloat(amount) || 0) : 0)}</span>
+                  No Bill Total: <span className="font-black text-rose-500">{formatIndianCurrency(noBill ? totalAmt : 0)}</span>
                 </span>
                 <span className="text-[13px] font-medium text-secondary-text">
-                  Overall Total: <span className="font-black text-primary-text">{formatIndianCurrency(parseFloat(amount) || 0)}</span>
+                  Overall Total: <span className="font-black text-primary-text">{formatIndianCurrency(totalAmt)}</span>
                 </span>
               </div>
             </div>
@@ -408,7 +483,7 @@ export function BogoOfferModal({ onClose, onSuccess }: BogoOfferModalProps) {
               </button>
               <button
                 onClick={handleConfirmConsume}
-                disabled={isConfirming || amount.trim() === "" || isNaN(parseFloat(amount)) || parseFloat(amount) < 0}
+                disabled={isConfirming || totalAmt <= 0}
                 className="py-3 rounded-xl bg-primary-text text-card text-[13px] font-black hover:opacity-90 transition-all cursor-pointer disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center gap-2"
               >
                 {isConfirming && (

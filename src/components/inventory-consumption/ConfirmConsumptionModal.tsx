@@ -1,4 +1,5 @@
 import { useState, useEffect } from 'react'
+import { useSearchParams } from 'react-router-dom'
 import { motion } from 'framer-motion'
 import {
   X,
@@ -15,7 +16,6 @@ import {
   Trash2,
   CheckCircle2,
   FileText,
-  Tag,
 } from 'lucide-react'
 import toast from 'react-hot-toast'
 import type { CartEntry, ItemSettings } from './types'
@@ -40,6 +40,14 @@ export function ConfirmConsumptionModal({
   onSuccess: () => void
   onUpdateQty?: (id: number, qty: number) => void
 }) {
+  const [searchParams] = useSearchParams()
+  const siteParam = searchParams.get('site')
+  const cuIdParam = searchParams.get('cuId')
+  const dateParam = searchParams.get('date')
+
+  const effectiveSiteId = siteParam ? Number(siteParam) : Number(ENV.DEFAULT_SITE_ID)
+  const effectiveCuId = cuIdParam ? Number(cuIdParam) : Number(ENV.DEFAULT_CONSUMPTION_UNIT_ID)
+
   const entries = Array.from(cart.values())
 
   const [isConfirming, setIsConfirming] = useState(false)
@@ -187,7 +195,10 @@ export function ConfirmConsumptionModal({
     setIsConfirming(true)
     try {
       const now = new Date()
-      const consumptionDate = `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, '0')}-${String(now.getDate()).padStart(2, '0')}T${String(now.getHours()).padStart(2, '0')}:${String(now.getMinutes()).padStart(2, '0')}`
+      const timeStr = `T${String(now.getHours()).padStart(2, '0')}:${String(now.getMinutes()).padStart(2, '0')}`
+      const consumptionDate = dateParam
+        ? `${dateParam}${timeStr}`
+        : `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, '0')}-${String(now.getDate()).padStart(2, '0')}${timeStr}`
 
       const inventoryEntries = Array.from(cart.values()).filter(
         e => e.source === 'inventory'
@@ -207,7 +218,7 @@ export function ConfirmConsumptionModal({
           const costAmount = (e.price || 0) * e.qty
           const isDriverOffer = s?.driverOfferSale ?? false
           return {
-            sourceSiteId: Number(ENV.DEFAULT_SITE_ID),
+            sourceSiteId: effectiveSiteId,
             productId: e.productId,
             productName: e.productName,
             quantity: e.qty,
@@ -222,7 +233,7 @@ export function ConfirmConsumptionModal({
           }
         })
         await ConsumptionService.consumeStock({
-          consumptionUnitId: Number(ENV.DEFAULT_CONSUMPTION_UNIT_ID),
+          consumptionUnitId: effectiveCuId,
           consumptionDate,
           saveDetails: true,
           driverOfferSale: anyDriverOffer,
@@ -244,9 +255,9 @@ export function ConfirmConsumptionModal({
 
           await ConsumptionService.prepareAndConsume({
             compositeProductId: e.productId,
-            siteId: Number(ENV.DEFAULT_SITE_ID),
+            siteId: effectiveSiteId,
             quantityToPrepare: e.qty,
-            consumptionUnitId: Number(ENV.DEFAULT_CONSUMPTION_UNIT_ID),
+            consumptionUnitId: effectiveCuId,
             rawMaterials: [],
             extraCharges: {},
             consumptionDate,
@@ -311,19 +322,19 @@ export function ConfirmConsumptionModal({
         animate={{ opacity: 1, scale: 1, y: 0 }}
         exit={{ opacity: 0, scale: 0.95, y: 40 }}
         transition={{ type: 'spring', stiffness: 350, damping: 30 }}
-        className="bg-card w-full h-full sm:h-auto max-w-[660px] rounded-none sm:rounded-3xl shadow-[0_20px_50px_rgb(0,0,0,0.3)] flex flex-col sm:max-h-[92vh] overflow-hidden border-0 sm:border border-border-main p-4 sm:p-5 space-y-3 sm:space-y-3.5 text-primary-text"
+        className="bg-card w-full h-full sm:h-auto max-w-[660px] rounded-none sm:rounded-3xl shadow-[0_20px_50px_rgb(0,0,0,0.3)] flex flex-col sm:max-h-[92vh] overflow-hidden border-0 sm:border border-border-main p-3 sm:p-4 space-y-2 sm:space-y-2.5 text-primary-text"
       >
         {/* ── Header ───────────────────────────────────────────────────────── */}
         <div className="flex items-center justify-between shrink-0">
-          <div className="flex items-center gap-3">
-            <div className="w-11 h-11 rounded-2xl bg-emerald-50 dark:bg-emerald-950 border border-emerald-200 dark:border-emerald-800 text-emerald-600 dark:text-emerald-400 flex items-center justify-center shrink-0">
-              <ShoppingCart className="w-5 h-5" />
+          <div className="flex items-center gap-2.5">
+            <div className="w-8 h-8 rounded-xl bg-emerald-50 dark:bg-emerald-950 border border-emerald-200 dark:border-emerald-800 text-emerald-600 dark:text-emerald-400 flex items-center justify-center shrink-0">
+              <ShoppingCart className="w-4 h-4" />
             </div>
             <div>
-              <h2 className="text-base font-bold text-primary-text leading-tight">
+              <h2 className="text-sm sm:text-[15px] font-bold text-primary-text leading-tight">
                 Confirm Consumption
               </h2>
-              <p className="text-[11px] font-normal text-secondary-text mt-0.5">
+              <p className="text-[10px] sm:text-[11px] font-normal text-secondary-text">
                 Review your items and proceed
               </p>
             </div>
@@ -332,35 +343,14 @@ export function ConfirmConsumptionModal({
           <button
             type="button"
             onClick={onClose}
-            className="w-9 h-9 rounded-full bg-surface hover:bg-border-main/40 text-primary-text flex items-center justify-center transition-colors cursor-pointer shadow-2xs shrink-0 border border-border-main"
+            className="w-7 h-7 sm:w-8 sm:h-8 rounded-full bg-surface hover:bg-border-main/40 text-primary-text flex items-center justify-center transition-colors cursor-pointer shadow-2xs shrink-0 border border-border-main"
           >
-            <X className="w-4 h-4" />
+            <X className="w-3.5 h-3.5" />
           </button>
         </div>
 
-        {/* ── Top Green Summary Banner ─────────────────────────────────────── */}
-        <div className="bg-emerald-50 dark:bg-emerald-950 rounded-xl px-3 py-2 flex items-center justify-between border border-emerald-200 dark:border-emerald-800 shrink-0">
-          <div className="flex items-center gap-1.5">
-            <CheckCircle2 className="w-4 h-4 text-emerald-600 dark:text-emerald-400 fill-emerald-600 dark:fill-emerald-400 stroke-white dark:stroke-black shrink-0" />
-            <span className="text-[11px] font-bold text-emerald-800 dark:text-emerald-200">
-              {entries.length} {entries.length === 1 ? 'item' : 'items'} added
-            </span>
-          </div>
-          <div className="flex items-center gap-2.5 text-[11px] text-secondary-text font-medium">
-            {driverOfferCount > 0 && (
-              <span className="text-amber-700 dark:text-amber-300 font-bold bg-amber-500/10 px-2 py-0.5 rounded-md border border-amber-500/20 text-[10px] flex items-center gap-1">
-                <Tag className="w-2.5 h-2.5" />
-                {driverOfferCount} Driver Offer
-              </span>
-            )}
-            <div>
-              No Bill Total: <span className="font-bold text-emerald-800 dark:text-emerald-300">{formatIndianCurrency(noBillTotal)}</span>
-            </div>
-          </div>
-        </div>
-
         {/* ── Item List ────────────────────────────────────────────────────── */}
-        <div className="flex-1 min-h-0 overflow-y-auto pr-0.5 space-y-3">
+        <div className="flex-1 min-h-0 overflow-y-auto pr-0.5 space-y-2">
           <div className="text-[10px] font-bold text-secondary-text tracking-wider uppercase px-0.5">
             ITEMS
           </div>

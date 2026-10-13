@@ -1,4 +1,5 @@
 import { useState, useEffect, useRef, useCallback } from 'react'
+import { useSearchParams } from 'react-router-dom'
 import { Search, Package, ShoppingBag, ChevronRight, ScanBarcode } from 'lucide-react'
 import { AnimatePresence, motion } from 'framer-motion'
 import Skeleton from 'react-loading-skeleton'
@@ -27,6 +28,10 @@ type Tab = 'inventory' | 'preparation' | 'offer'
 // ── ConsumptionPage ───────────────────────────────────────────────────────────
 
 export default function ConsumptionPage() {
+  const [searchParams]            = useSearchParams()
+  const siteParam                 = searchParams.get('site')
+  const effectiveSiteId           = siteParam ? Number(siteParam) : SITE_ID
+
   const { accounts } = useMsal()
   const claims = accounts[0]?.idTokenClaims ?? {}
   const tokenRoles: string[] = Array.isArray(claims['roles']) ? (claims['roles'] as string[]) : []
@@ -84,11 +89,14 @@ export default function ConsumptionPage() {
     try {
       if (reset) { invPage.current = 0; setInvHasMore(true) }
       const res = await InventoryService.fetchInventory(invPage.current, PAGE_SIZE, {
-        site: [SITE_ID], product: [], vendor: [],
+        site: [effectiveSiteId],
+        product: [],
+        vendor: [],
         searchByProductName: search.trim() || null,
         searchByBillNo: null,
         searchBySupplierName: null,
         showZeroStock: true,
+        onlyCompositeProduct: true,
       })
       const items = res.data.content ?? []
       setInvItems(prev => reset ? items : [...prev, ...items])
@@ -96,7 +104,7 @@ export default function ConsumptionPage() {
       setInvHasMore(!res.data.last)
     } catch (e) { console.error(e) }
     finally { invLoading$.current = false; setInvLoading(false) }
-  }, [search])
+  }, [search, effectiveSiteId])
 
   useEffect(() => {
     if (tab !== 'inventory') return
@@ -170,6 +178,35 @@ export default function ConsumptionPage() {
     setCart(prev => { const next = new Map(prev); next.delete(productId); return next })
   }
 
+  const handleEditPrepProduct = (item: PreparationProduct) => {
+    const inventoryItem: InventoryItem = {
+      productId: item.productId,
+      productName: item.productName,
+      unit: item.unit || 'Pcs',
+      price: item.price || 0,
+      mrp: item.price || 0,
+      imageUrl: item.productImage || null,
+      siteId: effectiveSiteId || 0,
+      quantity: 0,
+      transitQty: 0,
+      billNos: null,
+      totalExcludingTax: 0,
+      totalIncludingTax: 0,
+      cgstInPerc: 0,
+      sgstInPerc: 0,
+      hsnCode: item.hsnCode || 0,
+      hsnName: item.hsnName || '',
+      latestUpdate: '',
+      vendorNames: null,
+      site: '',
+      siteAddress: '',
+      siteCity: '',
+      siteState: '',
+    }
+    setEditInventoryItem(inventoryItem)
+    setIsEditProductOpen(true)
+  }
+
   const handleScanAddProduct = (entry: CartEntry) => {
     setCart(prev => {
       const next = new Map(prev)
@@ -228,7 +265,6 @@ export default function ConsumptionPage() {
             title="Scan Product Barcode"
           >
             <ScanBarcode size={17} className="text-accent transition-transform group-hover:scale-110" />
-            <span className="font-semibold text-[13px]">Scan</span>
           </button>
         </div>
       </div>
@@ -368,7 +404,8 @@ export default function ConsumptionPage() {
                     cartQty={cartEntry?.qty ?? 0}
                     onAdd={() => addToCart({ productId: item.productId, productName: item.productName, unit: item.unit, price: item.price, mrp: item.price, imageUrl: resolvedImg, source: 'preparation' })}
                     onRemove={() => removeFromCart(item.productId)}
-                    onEdit={isAdmin ? () => {
+                    onEdit={() => handleEditPrepProduct(item)}
+                    onEditRecipe={isAdmin ? () => {
                       setEditingProductId(item.productId)
                       setIsEditModalOpen(true)
                     } : undefined}
@@ -535,13 +572,45 @@ export default function ConsumptionPage() {
             setEditingProductId(null)
           }}
           productId={editingProductId}
+          onOpenEditProduct={() => {
+            const pItem = prepItems.find(p => p.productId === editingProductId)
+            if (pItem) {
+              handleEditPrepProduct(pItem)
+            } else {
+              setEditInventoryItem({
+                productId: editingProductId,
+                productName: '',
+                unit: 'Pcs',
+                price: 0,
+                mrp: 0,
+                imageUrl: null,
+                siteId: effectiveSiteId || 0,
+                quantity: 0,
+                transitQty: 0,
+                billNos: null,
+                totalExcludingTax: 0,
+                totalIncludingTax: 0,
+                cgstInPerc: 0,
+                sgstInPerc: 0,
+                hsnCode: 0,
+                hsnName: '',
+                latestUpdate: '',
+                vendorNames: null,
+                site: '',
+                siteAddress: '',
+                siteCity: '',
+                siteState: '',
+              })
+              setIsEditProductOpen(true)
+            }
+          }}
           onSuccess={() => {
             loadPrep(search.trim())
           }}
         />
       )}
 
-      {/* ── Edit Product Modal (inventory items) ────────────────── */}
+      {/* ── Edit Product Modal (inventory & preparation items) ────────────────── */}
       <EditProductModal
         isOpen={isEditProductOpen}
         onClose={() => {
@@ -551,6 +620,7 @@ export default function ConsumptionPage() {
         item={editInventoryItem}
         onSuccess={() => {
           loadInventory(true)
+          loadPrep(search.trim())
         }}
       />
 

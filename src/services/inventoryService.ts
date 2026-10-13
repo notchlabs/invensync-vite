@@ -74,6 +74,10 @@ export interface HsnTaxDetail {
   rateOfTax: string;
   effectiveDate: string;
   description: string;
+  cgstRate?: string;
+  sgstRate?: string;
+  igstRate?: string;
+  cessRate?: string;
 }
 
 export interface HsnItem {
@@ -408,4 +412,9 @@ export interface PreparationProduct {
   price: number;
   productName: string;
   productImage: string | null;
+  hsnCode?: number;
+  hsnName?: string;
+  barcode?: string;
+  categoryId?: number;
 }
+

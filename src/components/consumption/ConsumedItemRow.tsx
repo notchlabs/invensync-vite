@@ -62,11 +62,7 @@ export const ConsumedItemRow = ({
   const mrp = Number(item.price ?? 0);
   const qty = Number(item.qty ?? 0);
   const expectedTotal = mrp * qty;
-
-  const paymentSum = Number(item.cash || 0) + Number(item.upi || 0) + Number(item.noBill || 0) + Number(item.loyalty || 0);
-  const total = paymentSum > 0
-    ? paymentSum
-    : (item.total != null && !isNaN(Number(item.total)) && Number(item.total) > 0 ? Number(item.total) : paymentSum);
+  const total = Number(item.total ?? 0);
 
   const isMismatch = !isCredit && Math.abs(expectedTotal - total) > 0.01;
 

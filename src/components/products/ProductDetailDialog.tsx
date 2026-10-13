@@ -40,9 +40,16 @@ export function ProductDetailDialog({
 
         {/* Header */}
         <div className="flex items-start justify-between gap-3 px-5 pt-5 pb-4 shrink-0">
-          <h2 className="text-[14px] font-black text-primary-text tracking-tight leading-snug uppercase">
-            "{product.name}"
-          </h2>
+          <div className="flex flex-col gap-1 min-w-0">
+            <h2 className="text-[14px] font-black text-primary-text tracking-tight leading-snug uppercase">
+              "{product.name}"
+            </h2>
+            {product.id != null && (
+              <span className="text-[11px] font-mono font-bold text-muted-text">
+                Product ID: <span className="text-secondary-text font-medium">{product.id}</span>
+              </span>
+            )}
+          </div>
           <button
             onClick={onClose}
             className="p-1.5 rounded-lg hover:bg-surface text-muted-text hover:text-primary-text transition-colors shrink-0 mt-0.5 cursor-pointer"

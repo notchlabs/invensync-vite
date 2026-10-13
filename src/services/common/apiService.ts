@@ -1,6 +1,7 @@
 import { authenticatedFetch, type AuthenticatedFetchOptions } from './apiClient';
 import { ENV } from '../../config/env';
 import toast from 'react-hot-toast';
+import { triggerDegradedState } from '../../context/ConnectionContext';
 
 export class ApiService {
   /**
@@ -37,21 +38,24 @@ export class ApiService {
     let response: Response;
     try {
       response = await authenticatedFetch(url, config);
-    } catch {
-      // Network failure / no internet
-      toast.error('No internet connection. Please check your network.', {
-        id: 'network-error',
-        duration: 4000,
-      });
+    } catch (err) {
+      // Network failure / connection refused / no internet -> trigger health polling & banner!
+      const errStr = String(err).toLowerCase();
+      const isOffline = !navigator.onLine || errStr.includes('internet_disconnected') || errStr.includes('offline');
+      triggerDegradedState(isOffline ? 'offline' : 'server');
       throw new Error('NETWORK_ERROR');
     }
 
-    if (response.status === 502) {
-      toast.error('Server is starting up — please wait 2–3 min and try again.', {
-        id: 'server-deploying',
-        duration: 6000,
-      });
-      throw new Error('SERVER_DEPLOYING');
+    if (response.status >= 500) {
+      triggerDegradedState('server', response.status);
+      if (response.status === 502 || response.status === 503) {
+        toast.error('Server is getting refreshed, kindly wait 1–2 mins', {
+          id: 'server-deploying',
+          duration: 6000,
+        });
+        throw new Error('SERVER_DEPLOYING');
+      }
+      throw new Error('SERVER_ERROR');
     }
 
     if (!response.ok) {

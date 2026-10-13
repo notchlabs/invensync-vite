@@ -13,19 +13,23 @@ import { SalesDayItemsTable } from '../../components/salesDay/SalesDayItemsTable
 import { SalesDaySummary } from '../../components/salesDay/SalesDaySummary';
 import type { SalesDayReportData } from '../../components/salesDay/SalesDayReportCard';
 
+const getTodayDate = () => {
+  const d = new Date();
+  const year = d.getFullYear();
+  const month = String(d.getMonth() + 1).padStart(2, '0');
+  const day = String(d.getDate()).padStart(2, '0');
+  return `${year}-${month}-${day}`;
+};
+
 export default function SalesDayPage() {
   const [searchParams, setSearchParams] = useSearchParams();
 
-  // Read URL params
+  // Read initial site / cu from params or fallback to default
   const siteIdParam = searchParams.get('site') || ENV.DEFAULT_SITE_ID;
   const cuIdParam = searchParams.get('cuId') || ENV.DEFAULT_CONSUMPTION_UNIT_ID;
-  const dateParam = searchParams.get('date');
 
-  const [selectedDate, setSelectedDate] = useState<string>(() => {
-    if (dateParam) return dateParam;
-    const d = new Date();
-    return d.toISOString().split('T')[0];
-  });
+  // Always show today's date sales
+  const [selectedDate, setSelectedDate] = useState<string>(getTodayDate);
 
   const [selectedSite, setSelectedSite] = useState<Site | null>(null);
   const [sites, setSites] = useState<Site[]>([]);
@@ -39,14 +43,12 @@ export default function SalesDayPage() {
   const [isLoadingContext, setIsLoadingContext] = useState(false);
   const [searchQuery, setSearchQuery] = useState('');
 
-  // Sync state to URL params cleanly
-  const updateUrlParams = useCallback((date: string, siteId?: number, cuId?: number | null) => {
-    const params = new URLSearchParams();
-    if (date) params.set('date', date);
-    if (siteId) params.set('site', String(siteId));
-    if (cuId) params.set('cuId', String(cuId));
-    setSearchParams(params, { replace: true });
-  }, [setSearchParams]);
+  // Clear query params so URL doesn't store params for sales-day
+  useEffect(() => {
+    if (searchParams.toString()) {
+      setSearchParams({}, { replace: true });
+    }
+  }, []);
 
   // Load sites once
   useEffect(() => {
@@ -171,14 +173,12 @@ export default function SalesDayPage() {
 
   const handleDateChange = (newDate: string) => {
     setSelectedDate(newDate);
-    updateUrlParams(newDate, selectedSite?.id, selectedCuId);
   };
 
   const handleSiteChange = (siteId: number) => {
     const found = sites.find(s => s.id === siteId);
     if (found) {
       setSelectedSite(found);
-      updateUrlParams(selectedDate, found.id, selectedCuId);
     }
   };
 

@@ -1,5 +1,5 @@
 import { useState, useEffect, useRef } from 'react'
-import { X, Package, Loader2, Plus, Trash2, Upload, Search, ChevronDown } from 'lucide-react'
+import { X, Package, Loader2, Plus, Trash2, Upload, Search, ChevronDown, Edit3 } from 'lucide-react'
 import { toast } from 'react-hot-toast'
 import { InventoryService } from '../../services/inventoryService'
 import { HsnSelect } from '../common/HsnSelect'
@@ -18,9 +18,10 @@ interface EditCompositeModalProps {
   onClose: () => void
   productId: number
   onSuccess: () => void
+  onOpenEditProduct?: () => void
 }
 
-export function EditCompositeModal({ isOpen, onClose, productId, onSuccess }: EditCompositeModalProps) {
+export function EditCompositeModal({ isOpen, onClose, productId, onSuccess, onOpenEditProduct }: EditCompositeModalProps) {
   // Local Style to hide number spinners
   const noSpinnerStyle = `
     .no-spinner::-webkit-outer-spin-button,
@@ -352,8 +353,24 @@ export function EditCompositeModal({ isOpen, onClose, productId, onSuccess }: Ed
         
         {/* Header */}
         <div className="px-5 sm:px-6 py-4 bg-header border-b border-border-main flex items-center justify-between">
-          <h2 className="text-[18px] sm:text-[20px] font-black text-primary-text tracking-tight ">Edit Final Product</h2>
-          <button onClick={onClose} className="p-2 hover:bg-surface border border-transparent hover:border-border-main rounded-xl text-muted-text transition-all">
+          <div className="flex items-center gap-3">
+            <h2 className="text-[18px] sm:text-[20px] font-black text-primary-text tracking-tight">Edit Final Product</h2>
+            {onOpenEditProduct && (
+              <button
+                type="button"
+                onClick={() => {
+                  onClose()
+                  onOpenEditProduct()
+                }}
+                className="px-2.5 py-1 rounded-lg bg-card hover:bg-surface border border-border-main text-secondary-text hover:text-primary-text text-[11px] font-bold flex items-center gap-1.5 transition-all cursor-pointer shadow-2xs"
+                title="Edit Product Details (Price, Category, Barcode, etc.)"
+              >
+                <Edit3 size={12} />
+                <span>Edit Product Info</span>
+              </button>
+            )}
+          </div>
+          <button onClick={onClose} className="p-2 hover:bg-surface border border-transparent hover:border-border-main rounded-xl text-muted-text transition-all cursor-pointer">
             <X size={20} />
           </button>
         </div>

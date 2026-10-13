@@ -1,5 +1,6 @@
 import { useState, useEffect, useCallback, useRef } from 'react'
-import { X, FileText, History, ExternalLink, Box, User, Calendar, Tag } from 'lucide-react'
+import { X, FileText, History, ExternalLink, Box, User, Calendar, Tag, Hash, Copy, Check } from 'lucide-react'
+import { toast } from 'react-hot-toast'
 import { InfiniteScrollTable, type Column } from '../common/InfiniteScrollTable'
 import { InventoryService, type PurchaseRecord, type AuditLogItem } from '../../services/inventoryService'
 import type { InventoryItem } from '../../types/inventory'
@@ -18,6 +19,7 @@ export function InventoryDetailModal({ isOpen, onClose, item, hideTabs = false, 
   const [auditData, setAuditData] = useState<AuditLogItem[]>([])
   const [isLoading, setIsLoading] = useState(false)
   const [auditHasMore, setAuditHasMore] = useState(true)
+  const [copiedId, setCopiedId] = useState(false)
   
   const pageRef = useRef(0)
   const isLoadingRef = useRef(false)
@@ -227,7 +229,27 @@ export function InventoryDetailModal({ isOpen, onClose, item, hideTabs = false, 
               <Box className="text-primary-text" size={20} />
               {item.productName}
             </h2>
-            <div className="flex items-center gap-3 text-[12px]">
+            <div className="flex items-center gap-3 text-[12px] flex-wrap">
+              {item.productId != null && (
+                <div
+                  onClick={() => {
+                    navigator.clipboard.writeText(String(item.productId))
+                    setCopiedId(true)
+                    toast.success('Product ID copied to clipboard!')
+                    setTimeout(() => setCopiedId(false), 1500)
+                  }}
+                  title="Click to copy Product ID"
+                  className="flex items-center gap-1.5 px-2 py-0.5 bg-card border border-border-main hover:border-border-hover rounded text-primary-text font-bold cursor-pointer transition-colors group"
+                >
+                  <Hash size={12} className="text-primary-text" />
+                  Product ID: <span className="text-secondary-text font-medium">{item.productId}</span>
+                  {copiedId ? (
+                    <Check size={11} className="text-emerald-500 ml-0.5" />
+                  ) : (
+                    <Copy size={11} className="text-muted-text opacity-0 group-hover:opacity-100 transition-opacity ml-0.5" />
+                  )}
+                </div>
+              )}
               <div className="flex items-center gap-1.5 px-2 py-0.5 bg-card border border-border-main rounded text-primary-text font-bold">
                 <Tag size={12} className="text-primary-text" />
                 Site: <span className="text-secondary-text font-medium">{item.site}</span>

@@ -102,4 +102,5 @@ export interface InventoryFetchPayload {
   sortBy?: string | null;
   sortDir?: 'asc' | 'desc' | null;
   hsnSubHeading?: string | null;
+  onlyCompositeProduct?: boolean | null;
 }

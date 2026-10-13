@@ -4,6 +4,7 @@ import { BrowserRouter, Routes, Route, useLocation } from 'react-router-dom'
 import { useEffect, lazy, Suspense } from 'react'
 import { Toaster } from 'react-hot-toast'
 import { SkeletonTheme } from 'react-loading-skeleton'
+import { ConnectionProvider } from './context/ConnectionContext'
 
 // ─── Eagerly loaded (landing + legal — no MSAL needed) ───────────────────────
 import LandingPage from './pages/LandingPage'
@@ -51,10 +52,11 @@ function ScrollToTop() {
 function App() {
   return (
     <BrowserRouter>
-      <SkeletonTheme
-        baseColor="var(--bg-secondary)"
-        highlightColor="var(--bg-app)"
-      >
+      <ConnectionProvider>
+        <SkeletonTheme
+          baseColor="var(--bg-secondary)"
+          highlightColor="var(--bg-app)"
+        >
         <Toaster
           position="bottom-right"
           toastOptions={{
@@ -130,6 +132,7 @@ function App() {
           </Routes>
         </Suspense>
       </SkeletonTheme>
+      </ConnectionProvider>
     </BrowserRouter>
   )
 }

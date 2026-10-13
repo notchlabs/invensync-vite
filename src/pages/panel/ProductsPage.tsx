@@ -39,8 +39,13 @@ function ProductCard({ product, onViewSuppliers }: Readonly<{ product: Product; 
   return (
     <div className="bg-card border border-border-main rounded-2xl flex flex-col overflow-hidden hover:shadow-md transition-shadow">
       {/* Image */}
-      <div className="h-[130px] bg-surface border-b border-border-main flex items-center justify-center shrink-0 overflow-hidden">
+      <div className="relative h-[130px] bg-surface border-b border-border-main flex items-center justify-center shrink-0 overflow-hidden">
         <ProductImg src={product.imageUrl} name={product.name} />
+        {product.id != null && (
+          <span className="absolute top-2.5 left-2.5 text-[10px] font-mono font-bold px-1.5 py-0.5 rounded-md bg-card/90 backdrop-blur-sm border border-border-main text-secondary-text shadow-xs select-all">
+            #{product.id}
+          </span>
+        )}
       </div>
 
       {/* Body */}
@@ -69,7 +74,7 @@ function ProductCard({ product, onViewSuppliers }: Readonly<{ product: Product; 
       </div>
 
       {/* Footer */}
-      <div className="px-4 pb-4">
+      <div className="px-4 pb-4 flex items-center justify-between">
         <button
           onClick={onViewSuppliers}
           className="flex items-center gap-1.5 text-[11px] font-bold text-blue-600 dark:text-blue-400 hover:underline transition-colors cursor-pointer"
@@ -77,6 +82,11 @@ function ProductCard({ product, onViewSuppliers }: Readonly<{ product: Product; 
           <Users size={11} />
           view suppliers
         </button>
+        {product.id != null && (
+          <span className="text-[10px] font-mono font-bold text-muted-text select-all" title={`Product ID: ${product.id}`}>
+            ID: {product.id}
+          </span>
+        )}
       </div>
     </div>
   )

@@ -247,7 +247,7 @@ export function EditProductModal({ isOpen, onClose, item, onSuccess }: EditProdu
         </div>
 
         {/* Scrollable Form Area */}
-        <div className="px-6 py-2 overflow-y-auto custom-scrollbar flex flex-col gap-5 flex-1">
+        <div className="px-6 py-2 pb-16 overflow-y-auto custom-scrollbar flex flex-col gap-5 flex-1">
           
           {/* Top Section: Image + Name */}
           <div className="flex gap-6 items-start">
@@ -434,7 +434,7 @@ export function EditProductModal({ isOpen, onClose, item, onSuccess }: EditProdu
           </div>
 
           {/* HSN & Tax Details (Collapsible Accordion) */}
-          <div className="border border-border-main rounded-xl overflow-hidden bg-surface/30 transition-all">
+          <div className={`border border-border-main rounded-xl bg-surface/30 transition-all ${isHsnOpen ? 'overflow-visible' : 'overflow-hidden'}`}>
             <button
               type="button"
               onClick={() => setIsHsnOpen(!isHsnOpen)}

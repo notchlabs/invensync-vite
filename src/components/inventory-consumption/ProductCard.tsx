@@ -1,12 +1,12 @@
 // ── ProductCard ───────────────────────────────────────────────────────────────
 
-import { Minus, Plus, Edit3 } from "lucide-react"
+import { Minus, Plus, Edit3, Layers } from "lucide-react"
 import { ProductImage } from "./ProductImage"
 import { formatIndianCurrency } from "../../utils/numberFormat"
 
 export function ProductCard({
   productName, vendorName, price, unit, imageUrl,
-  cartQty, onAdd, onRemove, isOutOfStock, onEdit,
+  cartQty, onAdd, onRemove, isOutOfStock, onEdit, onEditRecipe,
 }: {
   productName: string
   vendorName?: string | null
@@ -18,6 +18,7 @@ export function ProductCard({
   onRemove: () => void
   isOutOfStock?: boolean
   onEdit?: () => void
+  onEditRecipe?: () => void
 }) {
   return (
     <div className={`bg-card border ${isOutOfStock ? 'border-dashed border-border-main opacity-[0.85]' : 'border-border-main shadow-sm'} rounded-2xl p-3.5 flex flex-col gap-3 relative transition-all`}>
@@ -39,8 +40,22 @@ export function ProductCard({
                   Out of stock
                 </div>
               )}
+              {onEditRecipe && (
+                <button
+                  type="button"
+                  onClick={(e) => {
+                    e.stopPropagation()
+                    onEditRecipe()
+                  }}
+                  className="p-1 hover:bg-card-light rounded-lg border border-border-main/50 text-muted-text hover:text-amber-500 transition-all cursor-pointer"
+                  title="Edit Recipe / Raw Materials"
+                >
+                  <Layers size={13} />
+                </button>
+              )}
               {onEdit && (
                 <button
+                  type="button"
                   onClick={(e) => {
                     e.stopPropagation()
                     onEdit()

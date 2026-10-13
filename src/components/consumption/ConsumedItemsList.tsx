@@ -45,11 +45,7 @@ export const ConsumedItemsList = ({
     const mrp = Number(item.price ?? 0);
     const qty = Number(item.qty ?? 0);
     const expectedTotal = mrp * qty;
-
-    const paymentSum = Number(item.cash || 0) + Number(item.upi || 0) + Number(item.noBill || 0) + Number(item.loyalty || 0);
-    const total = paymentSum > 0
-      ? paymentSum
-      : (item.total != null && !isNaN(Number(item.total)) && Number(item.total) > 0 ? Number(item.total) : paymentSum);
+    const total = Number(item.total ?? 0);
 
     return Math.abs(expectedTotal - total) > 0.01;
   }).length;
@@ -64,15 +60,21 @@ export const ConsumedItemsList = ({
         <div className="flex items-center gap-2 flex-wrap">
           <span className="text-[15px] font-bold text-primary-text font-display">Consumed Items</span>
           {incorrectBillingCount > 0 && (
-            <span className="text-[10.5px] font-bold text-red-600 dark:text-red-400 bg-red-500/10 border border-red-500/20 px-2 py-0.5 rounded-full flex items-center gap-1">
+            <span
+              className="text-[11px] font-bold text-red-600 dark:text-red-400 bg-red-500/10 border border-red-500/20 px-2 py-0.5 rounded-full flex items-center gap-1"
+              title={`${incorrectBillingCount} Incorrect Billing${incorrectBillingCount > 1 ? 's' : ''}`}
+            >
               <AlertCircle size={11} className="text-red-500" />
-              {incorrectBillingCount} Incorrect Billing{incorrectBillingCount > 1 ? 's' : ''}
+              {incorrectBillingCount}
             </span>
           )}
           {driverCoffeeCount > 0 && (
-            <span className="text-[10.5px] font-bold text-amber-700 dark:text-amber-300 bg-amber-500/10 border border-amber-500/20 px-2 py-0.5 rounded-full flex items-center gap-1">
+            <span
+              className="text-[11px] font-bold text-amber-700 dark:text-amber-300 bg-amber-500/10 border border-amber-500/20 px-2 py-0.5 rounded-full flex items-center gap-1"
+              title={`${driverCoffeeCount} Driver Coffee`}
+            >
               <Coffee size={11} />
-              {driverCoffeeCount} Driver Coffee
+              {driverCoffeeCount}
             </span>
           )}
         </div>

@@ -67,6 +67,7 @@ export const ConsumptionSummary = ({
             }}
             isLoading={isLoading}
             lastUpdated={shift.shiftType === 'DAY' ? DAY_SHIFT_END_TIME : lastUpdated}
+            isConcluded={isConcluded}
           />
         )
       })}

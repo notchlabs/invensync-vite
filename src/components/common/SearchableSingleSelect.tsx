@@ -39,26 +39,39 @@ export function SearchableSingleSelect<T>({
   const [items, setItems] = useState<T[]>([])
   const [isLoading, setIsLoading] = useState(false)
   const containerRef = useRef<HTMLDivElement>(null)
+  const querySeqRef = useRef(0)
 
   const loadItems = useCallback(async (query: string) => {
+    const seq = ++querySeqRef.current
     setIsLoading(true)
     try {
       const results = await fetchData(query)
-      setItems(results || [])
+      if (seq === querySeqRef.current) {
+        setItems(results || [])
+      }
     } catch (error) {
-      console.error('Failed to fetch items:', error)
-      setItems([])
+      if (seq === querySeqRef.current) {
+        console.error('Failed to fetch items:', error)
+        setItems([])
+      }
     } finally {
-      setIsLoading(false)
+      if (seq === querySeqRef.current) {
+        setIsLoading(false)
+      }
     }
   }, [fetchData])
 
   useEffect(() => {
+    if (!isOpen) return
+    if (!search || search.trim().length < 2) {
+      querySeqRef.current++
+      setItems([])
+      setIsLoading(false)
+      return
+    }
     const timer = setTimeout(() => {
-      if (isOpen) {
-        loadItems(search)
-      }
-    }, 300)
+      loadItems(search.trim())
+    }, 250)
     return () => clearTimeout(timer)
   }, [search, isOpen, loadItems])
 
