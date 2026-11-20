@@ -94,6 +94,7 @@ function App() {
                 <Route path="/app/panel/sales-day"             element={<SalesDayPage />} />
                 <Route path="/app/panel/credit-customers"      element={<CreditCustomersPage />} />
                 <Route path="/app/panel/credit-customers/:id/view" element={<CreditCustomerViewPage />} />
+                <Route path="/app/panel/documents"             element={<DocumentsPage />} />
 
                 {/* ADMIN */}
                 <Route element={<RoleGuard requiredRoles={['ADMIN']} />}>
@@ -122,7 +123,6 @@ function App() {
                   <Route path="/app/panel/reports/product-wise-profit" element={<ProductProfitReportPage />} />
                   <Route path="/app/panel/reports/vendor-wise-profit" element={<VendorProfitReportPage />} />
                   <Route path="/app/panel/purchase-orders" element={<PurchaseOrderPage />} />
-                  <Route path="/app/panel/documents"       element={<DocumentsPage />} />
                 </Route>
               </Route>
             </Route>

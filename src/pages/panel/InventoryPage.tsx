@@ -6,6 +6,7 @@ import {
   ArrowRightLeft,
   RotateCw,
   ShoppingBag,
+  FileSpreadsheet,
 } from "lucide-react";
 import { SiteFilter } from "../../components/filters/SiteFilter";
 import { ProductFilter } from "../../components/filters/ProductFilter";
@@ -22,6 +23,7 @@ import { EditProductModal } from "../../components/inventory/EditProductModal";
 import { ConsumeStockModal } from "../../components/inventory/ConsumeStockModal";
 import { CreateCompositeModal } from "../../components/inventory/CreateCompositeModal";
 import { TransferStockModal } from "../../components/inventory/TransferStockModal";
+import { ExportInventoryModal } from "../../components/inventory/ExportInventoryModal";
 import type {
   Site,
   Product,
@@ -37,10 +39,59 @@ export default function InventoryPage() {
   const tokenRoles: string[] = Array.isArray(claims['roles']) ? (claims['roles'] as string[]) : [];
   const canSeeFinancials = tokenRoles.some(r => ['ADMIN', 'MANAGER'].includes(r));
 
-  // States
-  const [selectedSites, setSelectedSites] = useState<Site[]>([]);
-  const [selectedProducts, setSelectedProducts] = useState<Product[]>([]);
-  const [selectedVendors, setSelectedVendors] = useState<Vendor[]>([]);
+  // States - initialized immediately from URL search params so refresh preserves filters and sends correct payload
+  const [selectedSites, setSelectedSites] = useState<Site[]>(() => {
+    const siteParam = searchParams.get("sites") || searchParams.get("site");
+    const ids = siteParam?.split(",").map(Number).filter(Boolean) || [];
+    return ids.map((id) => ({
+      id,
+      name: `Site #${id}`,
+      address: "",
+      city: "",
+      state: "",
+      country: "",
+      zipCode: 0,
+      gpsLat: 0,
+      gpsLng: 0,
+      startDate: null,
+      endDate: null,
+      projectType: "",
+      status: "",
+      searchKey: "",
+    }));
+  });
+
+  const [selectedProducts, setSelectedProducts] = useState<Product[]>(() => {
+    const productParam = searchParams.get("products") || searchParams.get("product");
+    const ids = productParam?.split(",").map(Number).filter(Boolean) || [];
+    return ids.map((id) => ({
+      id,
+      imageUrl: null,
+      name: `Product #${id}`,
+      hsnName: "",
+      hsnCode: 0,
+      cgstInPerc: 0,
+      sgstInPerc: 0,
+      unit: "",
+      price: 0,
+      tax: 0,
+      priceIncTax: 0,
+    }));
+  });
+
+  const [selectedVendors, setSelectedVendors] = useState<Vendor[]>(() => {
+    const vendorParam = searchParams.get("vendors") || searchParams.get("vendor");
+    const ids = vendorParam?.split(",").map(Number).filter(Boolean) || [];
+    return ids.map((id) => ({
+      id,
+      name: `Vendor #${id}`,
+      contactEmail: "",
+      contactPhone: "",
+      gstNumber: "",
+      address: "",
+    }));
+  });
+
   const [search, setSearch] = useState(searchParams.get("q") || "");
   const [searchType, setSearchType] = useState(
     searchParams.get("st") || "Product Name"
@@ -78,6 +129,9 @@ export default function InventoryPage() {
   const [isTransferOpen, setIsTransferOpen] = useState(false);
   const [transferItems, setTransferItems] = useState<InventoryItem[]>([]);
 
+  // Export Modal State
+  const [isExportOpen, setIsExportOpen] = useState(false);
+
   const getItemKey = (item: InventoryItem) =>
     `${item.productId}-${item.siteId}`;
 
@@ -87,6 +141,8 @@ export default function InventoryPage() {
   const pendingSelKeys = useRef<Set<string>>(
     new Set((searchParams.get("sel") ?? "").split(",").filter(Boolean))
   );
+
+  const isHydratingRef = useRef(false);
 
   // 1. URL Sync Effect: Update browser URL when state changes
   useEffect(() => {
@@ -115,17 +171,74 @@ export default function InventoryPage() {
     setSearchParams,
   ]);
 
-  // 2. Hydration Effect: Fetch full objects for IDs found in URL
+  // Robust detail-fetching helpers for hydration with fallback
+  const fetchSiteDetails = async (ids: number[]): Promise<Site[]> => {
+    try {
+      const res = await InventoryService.fetchSitesByIds(ids);
+      if (res.data?.content && res.data.content.length > 0) {
+        return res.data.content;
+      }
+    } catch {
+      // Endpoint may not support { ids } on certain backend builds
+    }
+    try {
+      const res = await InventoryService.fetchSites(0, 100);
+      const all = res.data?.content || [];
+      return all.filter((s) => ids.includes(s.id));
+    } catch {
+      return [];
+    }
+  };
+
+  const fetchProductDetails = async (ids: number[]): Promise<Product[]> => {
+    try {
+      const res = await InventoryService.fetchProductsByIds(ids);
+      if (res.data?.content && res.data.content.length > 0) {
+        return res.data.content;
+      }
+    } catch {
+      // fallback
+    }
+    try {
+      const res = await InventoryService.fetchProducts(0, 100);
+      const all = res.data?.content || [];
+      return all.filter((p) => ids.includes(p.id));
+    } catch {
+      return [];
+    }
+  };
+
+  const fetchVendorDetails = async (ids: number[]): Promise<Vendor[]> => {
+    try {
+      const res = await InventoryService.fetchVendorsByIds(ids);
+      if (res.data?.content && res.data.content.length > 0) {
+        return res.data.content;
+      }
+    } catch {
+      // fallback
+    }
+    try {
+      const res = await InventoryService.fetchVendors(0, 100);
+      const all = res.data?.content || [];
+      return all.filter((v) => ids.includes(v.id));
+    } catch {
+      return [];
+    }
+  };
+
+  // 2. Hydration Effect: Fetch full objects for IDs found in URL and enrich the stub objects
   useEffect(() => {
+    if (isHydrated || isHydratingRef.current) return;
+    isHydratingRef.current = true;
+
     const hydrate = async () => {
-      const siteIds =
-        searchParams.get("sites")?.split(",").map(Number).filter(Boolean) || [];
-      const productIds =
-        searchParams.get("products")?.split(",").map(Number).filter(Boolean) ||
-        [];
-      const vendorIds =
-        searchParams.get("vendors")?.split(",").map(Number).filter(Boolean) ||
-        [];
+      const siteParam = searchParams.get("sites") || searchParams.get("site");
+      const productParam = searchParams.get("products") || searchParams.get("product");
+      const vendorParam = searchParams.get("vendors") || searchParams.get("vendor");
+
+      const siteIds = siteParam?.split(",").map(Number).filter(Boolean) || [];
+      const productIds = productParam?.split(",").map(Number).filter(Boolean) || [];
+      const vendorIds = vendorParam?.split(",").map(Number).filter(Boolean) || [];
 
       if (
         siteIds.length === 0 &&
@@ -138,16 +251,31 @@ export default function InventoryPage() {
 
       try {
         if (siteIds.length > 0) {
-          const res = await InventoryService.fetchSitesByIds(siteIds);
-          setSelectedSites(res.data.content || []);
+          const sites = await fetchSiteDetails(siteIds);
+          if (sites.length > 0) {
+            setSelectedSites((prev) => {
+              const map = new Map(sites.map((s) => [s.id, s]));
+              return prev.map((p) => map.get(p.id) || p);
+            });
+          }
         }
         if (productIds.length > 0) {
-          const res = await InventoryService.fetchProductsByIds(productIds);
-          setSelectedProducts(res.data.content || []);
+          const products = await fetchProductDetails(productIds);
+          if (products.length > 0) {
+            setSelectedProducts((prev) => {
+              const map = new Map(products.map((p) => [p.id, p]));
+              return prev.map((p) => map.get(p.id) || p);
+            });
+          }
         }
         if (vendorIds.length > 0) {
-          const res = await InventoryService.fetchVendorsByIds(vendorIds);
-          setSelectedVendors(res.data.content || []);
+          const vendors = await fetchVendorDetails(vendorIds);
+          if (vendors.length > 0) {
+            setSelectedVendors((prev) => {
+              const map = new Map(vendors.map((v) => [v.id, v]));
+              return prev.map((v) => map.get(v.id) || v);
+            });
+          }
         }
       } catch (e) {
         console.error("Hydration failed", e);
@@ -156,10 +284,48 @@ export default function InventoryPage() {
       }
     };
 
-    if (!isHydrated) {
-      hydrate();
-    }
+    hydrate();
   }, [searchParams, isHydrated]);
+
+  const getFilterPayload = useCallback((): InventoryFetchPayload => {
+    const siteParam = searchParams.get("sites") || searchParams.get("site");
+    const fallbackSiteIds = siteParam?.split(",").map(Number).filter(Boolean) || [];
+    const siteIds = selectedSites.length > 0 ? selectedSites.map((s) => s.id) : fallbackSiteIds;
+
+    const productParam = searchParams.get("products") || searchParams.get("product");
+    const fallbackProductIds = productParam?.split(",").map(Number).filter(Boolean) || [];
+    const productIds = selectedProducts.length > 0 ? selectedProducts.map((p) => p.id) : fallbackProductIds;
+
+    const vendorParam = searchParams.get("vendors") || searchParams.get("vendor");
+    const fallbackVendorIds = vendorParam?.split(",").map(Number).filter(Boolean) || [];
+    const vendorIds = selectedVendors.length > 0 ? selectedVendors.map((v) => v.id) : fallbackVendorIds;
+
+    return {
+      site: siteIds,
+      product: productIds,
+      vendor: vendorIds,
+      showZeroStock: false,
+      searchByProductName:
+        searchType === "Product Name" && search.length >= 3 ? search : null,
+      searchByBillNo:
+        searchType === "Invoice No" && search.length >= 3 ? search : null,
+      searchBySupplierName:
+        searchType === "Vendor Name" && search.length >= 3 ? search : null,
+      sortBy: sortBy,
+      sortDir: sortBy ? sortDir : null,
+      hsnSubHeading: hsnSubHeading,
+    };
+  }, [
+    searchParams,
+    selectedSites,
+    selectedProducts,
+    selectedVendors,
+    searchType,
+    search,
+    sortBy,
+    sortDir,
+    hsnSubHeading,
+  ]);
 
   const loadData = useCallback(
     async (reset: boolean = false) => {
@@ -173,21 +339,7 @@ export default function InventoryPage() {
           setHasMore(true);
         }
 
-        const payload: InventoryFetchPayload = {
-          site: selectedSites.map((s) => s.id),
-          product: selectedProducts.map((p) => p.id),
-          vendor: selectedVendors.map((v) => v.id),
-          showZeroStock: false,
-          searchByProductName:
-            searchType === "Product Name" && search.length >= 3 ? search : null,
-          searchByBillNo:
-            searchType === "Invoice No" && search.length >= 3 ? search : null,
-          searchBySupplierName:
-            searchType === "Vendor Name" && search.length >= 3 ? search : null,
-          sortBy: sortBy,
-          sortDir: sortBy ? sortDir : null,
-          hsnSubHeading: hsnSubHeading,
-        };
+        const payload = getFilterPayload();
 
         const res = await InventoryService.fetchInventory(
           pageRef.current,
@@ -407,6 +559,11 @@ export default function InventoryPage() {
 
   const selectionActions = [
     {
+      label: `Export XLS (${selectedItems.size})`,
+      icon: FileSpreadsheet,
+      onClick: () => setIsExportOpen(true),
+    },
+    {
       label: "Consume",
       icon: ShoppingBag,
       onClick: handleConsumeAction,
@@ -429,6 +586,15 @@ export default function InventoryPage() {
       <PageHeader
         title="Inventory Management"
         description="Track and manage your stock across all sites"
+        actions={
+          <button
+            onClick={() => setIsExportOpen(true)}
+            className="flex items-center gap-2 px-3.5 py-1.5 bg-emerald-600 hover:bg-emerald-700 text-white rounded-xl text-[13px] font-semibold transition-all shadow-sm active:scale-95 cursor-pointer"
+          >
+            <FileSpreadsheet size={16} />
+            <span>Export XLS</span>
+          </button>
+        }
       />
 
       {/* Filters Row */}
@@ -475,15 +641,25 @@ export default function InventoryPage() {
           className="w-full sm:w-[calc(50%-6px)] md:w-auto flex-1 md:min-w-[200px]"
         />
 
-        {hasActiveFilters && (
+        <div className="flex items-center gap-2 ml-auto">
+          {hasActiveFilters && (
+            <button
+              onClick={handleClearFilters}
+              className="flex items-center gap-2 px-3 py-1.5 text-[12px] font-bold text-red-500 hover:text-red-600 hover:bg-red-50 dark:hover:bg-red-500/10 rounded-lg transition-all active:scale-95 cursor-pointer"
+            >
+              <RotateCw size={14} />
+              Clear
+            </button>
+          )}
           <button
-            onClick={handleClearFilters}
-            className="flex items-center gap-2 px-3 py-1.5 text-[12px] font-bold text-red-500 hover:text-red-600 hover:bg-red-50 dark:hover:bg-red-500/10 rounded-lg transition-all active:scale-95 ml-auto"
+            onClick={() => setIsExportOpen(true)}
+            className="flex items-center gap-1.5 px-3 py-1.5 bg-emerald-600/10 hover:bg-emerald-600/20 text-emerald-600 dark:text-emerald-400 border border-emerald-500/30 rounded-lg text-[12px] font-bold transition-all active:scale-95 cursor-pointer"
+            title="Export filtered records to Excel (max 1,000 rows)"
           >
-            <RotateCw size={14} />
-            Clear
+            <FileSpreadsheet size={15} />
+            <span>Export XLS</span>
           </button>
-        )}
+        </div>
 
 
       </div>
@@ -576,6 +752,24 @@ export default function InventoryPage() {
             // Background reload to sync with server
             loadData(true);
           }}
+        />
+      )}
+
+      {isExportOpen && (
+        <ExportInventoryModal
+          isOpen={isExportOpen}
+          onClose={() => setIsExportOpen(false)}
+          totalElements={totalElements}
+          activePayload={getFilterPayload()}
+          canSeeFinancials={canSeeFinancials}
+          metadata={{
+            siteNames: selectedSites.map((s) => s.name),
+            productNames: selectedProducts.map((p) => p.name),
+            vendorNames: selectedVendors.map((v) => v.name),
+            searchTerm: search.length >= 3 ? `${searchType}: ${search}` : undefined,
+            totalElements,
+          }}
+          selectedItemsMap={selectedItems}
         />
       )}
     </div>

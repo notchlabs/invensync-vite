@@ -1,11 +1,9 @@
-import { useState, useMemo } from 'react';
-import { Coffee, Store, BarChart3, Clock, Calendar as CalendarIcon, Receipt, FileText, CreditCard, Banknote, Crown, ChevronDown, MessageCircle, Sun, Moon, Terminal, Copy, Check } from 'lucide-react';
-import { formatDateToDisplay } from '../../utils/dateUtils';
+import { useState } from 'react';
+import { Coffee, Clock, Calendar as CalendarIcon, CreditCard, Banknote, ChevronDown, Receipt, FileText, BarChart3, Sun, Moon, Crown, History, Store } from 'lucide-react';
+import { formatDateToDisplay, formatTimeToAmPm } from '../../utils/dateUtils';
 import type { Shift } from '../../services/consumptionService';
-import { generateAsciiReport, generateWhatsAppAsciiMessage } from '../../utils/asciiReportGenerator';
 import Skeleton from 'react-loading-skeleton';
 import { motion, AnimatePresence } from 'framer-motion';
-import toast from 'react-hot-toast';
 
 export interface SalesDayReportData {
   wbcSale?: number;
@@ -33,19 +31,7 @@ interface SalesDayReportCardProps {
 }
 
 const fmtTime = (iso?: string) => {
-  if (!iso) return null;
-  const bare = iso.match(/^T(\d{2}):(\d{2})/);
-  if (bare) {
-    let h = parseInt(bare[1]);
-    const m = bare[2];
-    const ampm = h >= 12 ? 'PM' : 'AM';
-    h = h % 12 || 12;
-    return `${h}:${m} ${ampm}`;
-  }
-  const normalized = /(Z|[+-]\d{2}:?\d{2})$/.test(iso) ? iso : iso + 'Z';
-  const d = new Date(normalized);
-  if (isNaN(d.getTime())) return null;
-  return d.toLocaleTimeString('en-US', { hour: 'numeric', minute: '2-digit', hour12: true });
+  return formatTimeToAmPm(iso);
 };
 
 const formatAmount = (val?: number): string => {
@@ -60,12 +46,9 @@ export const SalesDayReportCard = ({
   data,
   isLoading,
   lastUpdated,
-  isConcluded,
   shifts,
 }: SalesDayReportCardProps) => {
   const [isExpanded, setIsExpanded] = useState(false);
-  const [showPlainText, setShowPlainText] = useState(false);
-  const [hasCopiedAscii, setHasCopiedAscii] = useState(false);
 
   const isDayReport = variant === 'dayReport';
   const isNightShift = variant === 'nightShift';
@@ -75,72 +58,6 @@ export const SalesDayReportCard = ({
   const dayShiftSale = dayShift?.totalSale || 0;
   const nightShiftSale = nightShift?.totalSale || 0;
   const hasShiftDetails = Boolean(shifts && shifts.length > 0 && (dayShiftSale > 0 || nightShiftSale > 0));
-
-  const formattedDate = date ? formatDateToDisplay(date) : '';
-  const siteDisplayName = 'WildBean Cafe Rengali';
-
-  const asciiReportText = useMemo(() => {
-    return generateAsciiReport({
-      title: isDayReport ? 'DAILY SALES' : title.toUpperCase(),
-      outletName: siteDisplayName,
-      dateStr: formattedDate,
-      isConcluded,
-      totalSale: data.totalSale,
-      wbcSale: data.wbcSale,
-      wStoreSale: data.wStoreSale,
-      dayShiftSale: isDayReport ? dayShiftSale : (variant === 'dayShift' ? (data.totalSale || 0) : 0),
-      nightShiftSale: isDayReport ? nightShiftSale : (variant === 'nightShift' ? (data.totalSale || 0) : 0),
-      billedAmount: data.billedAmount,
-      nonBilledAmount: data.nonBilledAmount,
-      upiAndCardAmount: data.upiAndCardAmount,
-      cashAmount: data.cashAmount,
-      loyalty: data.loyalty,
-      includeShiftSection: isDayReport || hasShiftDetails,
-    });
-  }, [isDayReport, title, siteDisplayName, formattedDate, isConcluded, data, dayShiftSale, nightShiftSale, variant, hasShiftDetails]);
-
-  const handleCopyAscii = (e: React.MouseEvent) => {
-    e.stopPropagation();
-    if (navigator.clipboard && navigator.clipboard.writeText) {
-      navigator.clipboard.writeText(asciiReportText).then(() => {
-        setHasCopiedAscii(true);
-        toast.success('Plain text report copied to clipboard!');
-        setTimeout(() => setHasCopiedAscii(false), 2000);
-      }).catch((err) => console.error('Clipboard error:', err));
-    }
-  };
-
-  const handleSendWhatsAppShift = (e: React.MouseEvent) => {
-    e.stopPropagation();
-
-    const cleanTitle = title.endsWith('Report') ? title : `${title} Report`;
-    const message = generateWhatsAppAsciiMessage({
-      title: isDayReport ? 'DAILY SALES' : title.toUpperCase(),
-      outletName: siteDisplayName,
-      dateStr: formattedDate,
-      isConcluded,
-      totalSale: data.totalSale,
-      wbcSale: data.wbcSale,
-      wStoreSale: data.wStoreSale,
-      dayShiftSale: isDayReport ? dayShiftSale : (variant === 'dayShift' ? (data.totalSale || 0) : 0),
-      nightShiftSale: isDayReport ? nightShiftSale : (variant === 'nightShift' ? (data.totalSale || 0) : 0),
-      billedAmount: data.billedAmount,
-      nonBilledAmount: data.nonBilledAmount,
-      upiAndCardAmount: data.upiAndCardAmount,
-      cashAmount: data.cashAmount,
-      loyalty: data.loyalty,
-      includeShiftSection: isDayReport || hasShiftDetails,
-    });
-
-    if (navigator.clipboard && navigator.clipboard.writeText) {
-      navigator.clipboard.writeText(message).catch((err) => console.error('Clipboard error:', err));
-    }
-
-    const waUrl = `https://api.whatsapp.com/send?text=${encodeURIComponent(message)}`;
-    window.open(waUrl, '_blank');
-
-    toast.success(`${cleanTitle} copied & opening WhatsApp!`, { duration: 4000 });
-  };
 
   // Styling maps based on card variant
   let cardBorder = "border-orange-500/50 dark:border-orange-500/40";
@@ -204,7 +121,7 @@ export const SalesDayReportCard = ({
             className="flex flex-col"
           >
             {/* Header */}
-            <div className={`p-3.5 sm:p-4 border-b border-border-main/50 flex items-center justify-between gap-2`}>
+            <div className={`p-3.5 sm:p-4 border-b border-border-main/50 flex items-center justify-between gap-3`}>
               <div className="flex items-center gap-2.5 min-w-0">
                 <div className={`w-8 h-8 rounded-lg ${iconBg} flex items-center justify-center shrink-0`}>
                   {isDayReport ? <CalendarIcon size={16} /> : <Clock size={16} />}
@@ -214,81 +131,13 @@ export const SalesDayReportCard = ({
                 </h3>
               </div>
 
-              {/* Header Right Actions */}
-              <div className="flex items-center gap-2 shrink-0">
-                <button
-                  type="button"
-                  onClick={() => setShowPlainText(!showPlainText)}
-                  className={`px-2 py-1 bg-surface hover:bg-surface/80 border border-border-main active:scale-95 text-secondary-text font-bold text-[11px] rounded-lg transition-all flex items-center gap-1 cursor-pointer shadow-sm shrink-0 ${showPlainText ? 'ring-1 ring-emerald-500/50 text-emerald-600 dark:text-emerald-400' : ''}`}
-                  title="View ASCII Plain Text Report"
-                >
-                  <Terminal size={13} />
-                  <span className="hidden sm:inline">Plain text</span>
-                </button>
-
-                <button
-                  type="button"
-                  onClick={handleSendWhatsAppShift}
-                  className="px-2 py-1 bg-emerald-600 hover:bg-emerald-700 active:scale-95 text-white font-bold text-[11px] rounded-lg transition-all flex items-center gap-1 cursor-pointer border border-emerald-500/30 shadow-sm shrink-0"
-                  title={`Send ${title} Report to WhatsApp`}
-                >
-                  <MessageCircle size={13} />
-                  <span className="hidden sm:inline">WhatsApp</span>
-                </button>
-
-                {isDayReport ? (
-                  <div className="flex flex-col items-end shrink-0 gap-0.5">
-                    {fmtTime(lastUpdated) && (
-                      <span className="flex items-center gap-1 text-[11px] font-semibold text-emerald-600 dark:text-emerald-400">
-                        <Clock size={11} />
-                        {fmtTime(lastUpdated)}
-                      </span>
-                    )}
-                    {!isConcluded && (
-                      <span className="text-[8.5px] font-bold uppercase tracking-wider bg-amber-500/15 text-amber-600 dark:text-amber-400 px-1.5 py-0.5 rounded">
-                        LAST UPDATED
-                      </span>
-                    )}
-                  </div>
-                ) : (
-                  fmtTime(lastUpdated) && (
-                    <div className={`px-2.5 py-0.5 rounded-full ${timePillBg} text-[11px] font-semibold flex items-center gap-1 shrink-0`}>
-                      <Clock size={11} />
-                      <span>{fmtTime(lastUpdated)}</span>
-                    </div>
-                  )
-                )}
-              </div>
-            </div>
-
-            {/* ── Plain Text Monospace Preview Container ── */}
-            <AnimatePresence>
-              {showPlainText && (
-                <motion.div
-                  initial={{ opacity: 0, height: 0 }}
-                  animate={{ opacity: 1, height: 'auto' }}
-                  exit={{ opacity: 0, height: 0 }}
-                  className="p-3.5 sm:p-4 bg-neutral-950 text-neutral-200 border-b border-border-main flex flex-col gap-2.5 overflow-hidden"
-                >
-                  <div className="flex items-center justify-between border-b border-neutral-800 pb-2">
-                    <span className="text-[11.5px] font-mono font-semibold text-neutral-400">
-                      Plain text
-                    </span>
-                    <button
-                      type="button"
-                      onClick={handleCopyAscii}
-                      className="px-2.5 py-1 bg-neutral-800 hover:bg-neutral-700 active:scale-95 text-neutral-200 font-mono text-[11px] rounded-lg transition-all flex items-center gap-1.5 cursor-pointer border border-neutral-700 shadow-sm"
-                    >
-                      {hasCopiedAscii ? <Check size={12} className="text-emerald-400" /> : <Copy size={12} />}
-                      <span>{hasCopiedAscii ? 'Copied' : 'Copy'}</span>
-                    </button>
-                  </div>
-                  <pre className="font-mono text-[11px] sm:text-[12px] leading-snug text-neutral-100 overflow-x-auto whitespace-pre selection:bg-neutral-800">
-                    {asciiReportText}
-                  </pre>
-                </motion.div>
+              {fmtTime(lastUpdated) && (
+                <div className={`px-2.5 py-1 rounded-full ${timePillBg} text-[11.5px] font-semibold flex items-center gap-1.5 shrink-0 font-mono shadow-2xs`}>
+                  <History size={13} className="shrink-0" />
+                  <span>{fmtTime(lastUpdated)}</span>
+                </div>
               )}
-            </AnimatePresence>
+            </div>
 
             <div className="p-3.5 sm:p-4 flex flex-col gap-3.5">
               {/* ── Section 1: SALE FORMATION ── */}
@@ -342,26 +191,30 @@ export const SalesDayReportCard = ({
                     SHIFT DETAILS
                   </span>
                   <div className="grid grid-cols-2 gap-2">
-                    <div className="bg-surface/60 border border-border-main/50 rounded-xl p-2.5 flex items-center justify-between">
-                      <div className="flex items-center gap-1.5">
-                        <div className="w-6 h-6 rounded-md bg-orange-500/10 text-orange-600 dark:text-orange-400 flex items-center justify-center shrink-0">
+                    <div className="bg-surface/60 border border-border-main/50 rounded-xl p-2.5 flex flex-col justify-between gap-1.5 min-w-0">
+                      <div className="flex items-center gap-1.5 min-w-0">
+                        <div className="w-5 h-5 rounded-md bg-orange-500/10 text-orange-600 dark:text-orange-400 flex items-center justify-center shrink-0">
                           <Sun size={12} />
                         </div>
-                        <span className="text-[12px] font-medium text-secondary-text">Day Shift</span>
+                        <span className="text-[11.5px] font-semibold text-secondary-text truncate whitespace-nowrap">
+                          Day Shift
+                        </span>
                       </div>
-                      <span className="text-[13px] font-bold text-primary-text font-mono">
+                      <span className="text-[13.5px] font-bold text-primary-text font-mono whitespace-nowrap">
                         ₹ {formatAmount(dayShiftSale)}
                       </span>
                     </div>
 
-                    <div className="bg-surface/60 border border-border-main/50 rounded-xl p-2.5 flex items-center justify-between">
-                      <div className="flex items-center gap-1.5">
-                        <div className="w-6 h-6 rounded-md bg-blue-500/10 text-blue-600 dark:text-blue-400 flex items-center justify-center shrink-0">
+                    <div className="bg-surface/60 border border-border-main/50 rounded-xl p-2.5 flex flex-col justify-between gap-1.5 min-w-0">
+                      <div className="flex items-center gap-1.5 min-w-0">
+                        <div className="w-5 h-5 rounded-md bg-blue-500/10 text-blue-600 dark:text-blue-400 flex items-center justify-center shrink-0">
                           <Moon size={12} />
                         </div>
-                        <span className="text-[12px] font-medium text-secondary-text">Night Shift</span>
+                        <span className="text-[11.5px] font-semibold text-secondary-text truncate whitespace-nowrap">
+                          Night Shift
+                        </span>
                       </div>
-                      <span className="text-[13px] font-bold text-primary-text font-mono">
+                      <span className="text-[13.5px] font-bold text-primary-text font-mono whitespace-nowrap">
                         ₹ {formatAmount(nightShiftSale)}
                       </span>
                     </div>

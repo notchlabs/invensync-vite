@@ -1,5 +1,5 @@
 import { Coffee, Store, BarChart3, Clock, Calendar as CalendarIcon } from 'lucide-react';
-import { formatDateToDisplay } from '../../utils/dateUtils';
+import { formatDateToDisplay, formatTimeToAmPm } from '../../utils/dateUtils';
 import Skeleton from 'react-loading-skeleton';
 import { motion, AnimatePresence } from 'framer-motion';
 
@@ -18,18 +18,7 @@ interface PublicReportCardProps {
 }
 
 const fmtTime = (iso?: string) => {
-  if (!iso) return null;
-  const bare = iso.match(/^T(\d{2}):(\d{2})/);
-  if (bare) {
-    let h = parseInt(bare[1]);
-    const m = bare[2];
-    const ampm = h >= 12 ? 'PM' : 'AM';
-    h = h % 12 || 12;
-    return `${h}:${m} ${ampm}`;
-  }
-  const normalized = /(Z|[+-]\d{2}:?\d{2})$/.test(iso) ? iso : iso + 'Z';
-  const d = new Date(normalized);
-  return d.toLocaleTimeString('en-US', { hour: 'numeric', minute: '2-digit', hour12: true });
+  return formatTimeToAmPm(iso);
 };
 
 const formatAmount = (val?: number): string => {

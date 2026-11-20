@@ -171,6 +171,29 @@ export default function SalesDayPage() {
 
   const dayAggr = useMemo(() => getDayReportAggregations(), [getDayReportAggregations]);
 
+  // Find the most recent item added based on consumedDate
+  const lastUpdated = useMemo(() => {
+    if (!items || items.length === 0) return undefined;
+    let latestIso: string | undefined = undefined;
+    let maxTime = -Infinity;
+
+    for (const it of items) {
+      if (!it.consumedDate) continue;
+      const normalized = it.consumedDate.replace(' ', 'T');
+      const timeVal = new Date(normalized).getTime();
+      if (!isNaN(timeVal)) {
+        if (timeVal > maxTime) {
+          maxTime = timeVal;
+          latestIso = it.consumedDate;
+        }
+      } else if (!latestIso || it.consumedDate > latestIso) {
+        latestIso = it.consumedDate;
+      }
+    }
+
+    return latestIso || items[0]?.consumedDate;
+  }, [items]);
+
   const handleDateChange = (newDate: string) => {
     setSelectedDate(newDate);
   };
@@ -425,6 +448,7 @@ export default function SalesDayPage() {
             selectedDate={selectedDate}
             dayAggr={dayAggr}
             isLoading={isLoadingContext}
+            lastUpdated={lastUpdated}
             isConcluded={isConcluded}
           />
         </div>

@@ -37,6 +37,7 @@ export const NAV_ITEMS: NavItem[] = [
   { label: 'Bill Details',   icon: FileText,        path: '/app/panel/bills',            requiredRoles: ADMIN_OR_MANAGER },
   { label: 'Vendors',          icon: Users,           path: '/app/panel/vendors',          requiredRoles: ADMIN_OR_MANAGER },
   { label: 'Credit Customers', icon: UserCheck,       path: '/app/panel/credit-customers' },
+  { label: 'Documents',        icon: FolderOpen,      path: '/app/panel/documents' },
   {
     label: 'Other',
     icon: MoreHorizontal,
@@ -45,7 +46,6 @@ export const NAV_ITEMS: NavItem[] = [
       { label: 'Purchase Order', icon: Receipt,         path: '/app/panel/purchase-orders',  requiredRoles: ADMIN_OR_MANAGER },
       { label: 'Products',       icon: Box,             path: '/app/panel/products',         requiredRoles: ADMIN_OR_MANAGER },
       { label: 'Reports',        icon: BarChart,        path: '/app/panel/reports',          requiredRoles: ADMIN_OR_MANAGER },
-      { label: 'Documents',      icon: FolderOpen,      path: '/app/panel/documents',        requiredRoles: ADMIN_OR_MANAGER },
     ]
   }
 ]

@@ -1,6 +1,7 @@
 import { useState, useMemo } from 'react';
-import { Package, ChevronDown, Search, X, User } from 'lucide-react';
+import { Package, ChevronDown, Search, X, User, Clock } from 'lucide-react';
 import type { BucketItem } from '../../services/consumptionService';
+import { formatTimeToAmPm } from '../../utils/dateUtils';
 import Skeleton from 'react-loading-skeleton';
 import { motion, AnimatePresence } from 'framer-motion';
 
@@ -144,6 +145,7 @@ export const SalesDayItemsTable = ({
                   const { salePrice, profit, margin } = getItemCostAndMargin(item);
                   const unitStr = item.unit || 'Ea';
                   const firstName = getFirstName(item.consumedByEmail);
+                  const itemTime = formatTimeToAmPm(item.consumedDate);
                   const isWbc = Boolean(
                     item.vendorNames?.toLowerCase().includes('wild bean') || 
                     item.vendorNames?.toLowerCase().includes('wbc') || 
@@ -184,6 +186,16 @@ export const SalesDayItemsTable = ({
                               >
                                 <User size={11} className="text-muted-text" />
                                 <span>{firstName}</span>
+                              </span>
+                            )}
+
+                            {itemTime && (
+                              <span
+                                className="bg-card border border-border-main/80 text-secondary-text text-[10.5px] font-medium px-2 py-0.5 rounded-md inline-flex items-center gap-1 shrink-0 font-mono"
+                                title={`Consumed at: ${itemTime}`}
+                              >
+                                <Clock size={11} className="text-muted-text" />
+                                <span>{itemTime}</span>
                               </span>
                             )}
                           </div>

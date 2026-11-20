@@ -1,25 +1,12 @@
 import { Coffee, Store, BarChart3, Receipt, FileText, CreditCard, Banknote, Crown, Clock, Calendar as CalendarIcon, MessageCircle } from 'lucide-react';
-import { formatDateToDisplay } from '../../utils/dateUtils';
+import { formatDateToDisplay, formatTimeToAmPm } from '../../utils/dateUtils';
 import Skeleton from 'react-loading-skeleton';
 import { motion, AnimatePresence } from 'framer-motion';
 import toast from 'react-hot-toast';
 
 const fmtTime = (iso?: string) => {
-  if (!iso) return null
-  // Bare "T14:30" constant (no timezone) → parse directly
-  const bare = iso.match(/^T(\d{2}):(\d{2})/)
-  if (bare) {
-    let h = parseInt(bare[1])
-    const m = bare[2]
-    const ampm = h >= 12 ? 'PM' : 'AM'
-    h = h % 12 || 12
-    return `${h}:${m} ${ampm}`
-  }
-  // Real UTC ISO string → append Z if no offset present so browser applies local +5:30
-  const normalized = /(Z|[+-]\d{2}:?\d{2})$/.test(iso) ? iso : iso + 'Z'
-  const d = new Date(normalized)
-  return d.toLocaleTimeString('en-US', { hour: 'numeric', minute: '2-digit', hour12: true })
-}
+  return formatTimeToAmPm(iso);
+};
 
 import type { Shift } from '../../services/consumptionService';
 import { generateWhatsAppAsciiMessage } from '../../utils/asciiReportGenerator';
